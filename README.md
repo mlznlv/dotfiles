@@ -4,6 +4,208 @@ Portable terminal UX for macOS and Linux, managed with `chezmoi` and bootstrappe
 
 The repository does **not** try to clone one machine onto every other machine. Its purpose is to preserve the same terminal muscle memory while allowing each host to run a different workload.
 
+## Quick start
+
+The intended flow for a new machine is:
+
+```text
+prepare Git access
+      ↓
+clone this repository
+      ↓
+choose an install-time profile
+      ↓
+run bootstrap.sh
+      ↓
+mise installs declared dependencies
+      ↓
+chezmoi applies $HOME configuration
+      ↓
+open a fresh login shell
+```
+
+### Prerequisites
+
+A new machine needs:
+
+- `git`;
+- `curl`;
+- access to this private GitHub repository.
+
+On Ubuntu/Debian, install the prerequisites with:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y git curl
+```
+
+On macOS, make sure the Apple command-line developer tools / Git are available before cloning the repository.
+
+### Clone
+
+The recommended checkout location is chezmoi's conventional source directory:
+
+```bash
+mkdir -p ~/.local/share
+git clone git@github.com:mlznlv/dotfiles.git ~/.local/share/chezmoi
+cd ~/.local/share/chezmoi
+```
+
+Use another Git transport if SSH authentication has not been configured yet. The bootstrap script works from any checkout location; `~/.local/share/chezmoi` is only the recommended persistent location.
+
+### Choose a profile
+
+Profiles affect **installation only**. They do not become a runtime machine identity.
+
+| Machine / use case | Platform | Profile | Command |
+|---|---|---|---|
+| Personal MacBook Air / lightweight client | macOS | `base` | `./bootstrap.sh base` |
+| Corporate MacBook Pro / local development | macOS | `local-dev` | `./bootstrap.sh local-dev` |
+| Minisforum / Ubuntu remote development host | Linux | `dev-host` | `./bootstrap.sh dev-host` |
+| Generic minimal Linux host | Linux | `base` | `./bootstrap.sh base` |
+
+`base` is the default, so this is equivalent:
+
+```bash
+./bootstrap.sh
+```
+
+### Bootstrap a new machine
+
+From the repository root:
+
+```bash
+./bootstrap.sh <profile>
+```
+
+Examples:
+
+```bash
+# Personal MacBook Air
+./bootstrap.sh base
+
+# Corporate MacBook Pro
+./bootstrap.sh local-dev
+
+# Ubuntu / Minisforum development host
+./bootstrap.sh dev-host
+```
+
+The script:
+
+1. detects macOS vs Linux;
+2. validates the selected profile;
+3. installs `mise` if necessary;
+4. runs the matching declarative `mise bootstrap` configuration;
+5. installs `chezmoi` if necessary;
+6. applies this repository as chezmoi source state.
+
+After bootstrap, start a fresh login shell:
+
+```bash
+exec zsh -l
+```
+
+### Verify the installation
+
+Basic checks:
+
+```bash
+command -v zsh
+command -v git
+command -v fzf
+command -v zoxide
+command -v mise
+
+chezmoi diff
+```
+
+Then verify interactively that:
+
+- Zsh starts without errors;
+- history works;
+- autocomplete/autosuggestions/syntax highlighting work;
+- `fzf` integration works;
+- `zoxide` works;
+- Git aliases behave as expected.
+
+On a local-development Mac, also verify Docker and existing development runtimes.
+
+On a remote development host, open a fresh SSH session and verify that the same shell UX is preserved remotely.
+
+## Updating an existing machine
+
+Pull the desired state and run the same profile again:
+
+```bash
+cd ~/.local/share/chezmoi
+git pull --ff-only
+./bootstrap.sh <profile>
+exec zsh -l
+```
+
+Examples:
+
+```bash
+# MacBook Air
+./bootstrap.sh base
+
+# MacBook Pro
+./bootstrap.sh local-dev
+
+# Minisforum
+./bootstrap.sh dev-host
+```
+
+The bootstrap process is intended to be repeatable. Re-running it should converge the machine toward the declared state rather than require a one-time installation sequence.
+
+Before or after applying dotfile changes, inspect managed differences with:
+
+```bash
+chezmoi diff
+```
+
+## Editing dotfiles
+
+The repository is the source of truth for portable terminal UX.
+
+With the recommended checkout location:
+
+```bash
+cd ~/.local/share/chezmoi
+```
+
+Typical workflow:
+
+```bash
+git status
+git diff
+
+# edit source files
+
+chezmoi diff
+chezmoi apply
+
+# verify in a fresh shell
+exec zsh -l
+```
+
+Commit only portable desired state. Do not commit credentials, private keys, tokens, machine-generated caches, or accidental snapshots of installed software.
+
+## Machine-local overrides
+
+Machine-specific exceptions that should not be shared belong in unmanaged local files.
+
+For Zsh:
+
+```text
+~/.config/zsh/local.zsh
+```
+
+The shared `.zshrc` loads this file when it exists.
+
+Use local overrides sparingly. A difference that is actually platform-wide or capability-wide should be expressed in the shared configuration instead of becoming per-machine drift.
+
 ## Target topology
 
 ```text
@@ -191,12 +393,6 @@ future tmux config
 future Neovim config
 future Git UX config
 future SSH client config
-```
-
-Machine-local exceptions should live in unmanaged local files such as:
-
-```text
-~/.config/zsh/local.zsh
 ```
 
 Secrets must not be committed to this repository.
