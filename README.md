@@ -114,19 +114,19 @@ Machine-global software belongs in `[bootstrap.packages]` under `mise/`.
 
 ```bash
 # macOS base CLI
-mise bootstrap packages use --path mise -e macos brew:<package>
+mise bootstrap packages use --path mise/config.macos.toml brew:<package>
 
 # macOS remote-client app
-mise bootstrap packages use --path mise -e macos-remote-client brew-cask:<cask>
+mise bootstrap packages use --path mise/config.macos-remote-client.toml brew-cask:<cask>
 
 # macOS local-development CLI
-mise bootstrap packages use --path mise -e macos-local-dev brew:<package>
+mise bootstrap packages use --path mise/config.macos-local-dev.toml brew:<package>
 
 # Linux base package
-mise bootstrap packages use --path mise -e linux apt:<package>
+mise bootstrap packages use --path mise/config.linux.toml apt:<package>
 
 # Linux dev-host package
-mise bootstrap packages use --path mise -e linux-dev-host apt:<package>
+mise bootstrap packages use --path mise/config.linux-dev-host.toml apt:<package>
 ```
 
 To stop managing software, remove its declaration from the corresponding `mise/config.*.toml`. Operating-system package removal remains explicit.
