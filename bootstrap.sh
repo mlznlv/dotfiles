@@ -30,8 +30,36 @@ case "$PLATFORM/$PROFILE" in
 esac
 
 if ! command -v curl >/dev/null 2>&1; then
-  echo "curl is required to bootstrap mise and chezmoi."
+  echo "curl is required to bootstrap the environment."
   exit 1
+fi
+
+if [[ "$PLATFORM" == "macos" ]]; then
+  if ! command -v brew >/dev/null 2>&1; then
+    if [[ -x /opt/homebrew/bin/brew ]]; then
+      eval "$(/opt/homebrew/bin/brew shellenv)"
+    elif [[ -x /usr/local/bin/brew ]]; then
+      eval "$(/usr/local/bin/brew shellenv)"
+    else
+      if ! xcode-select -p >/dev/null 2>&1; then
+        echo "Apple Command Line Tools are required before Homebrew can be installed."
+        echo "Run: xcode-select --install"
+        exit 1
+      fi
+
+      echo "Installing Homebrew..."
+      /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+      if [[ -x /opt/homebrew/bin/brew ]]; then
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+      elif [[ -x /usr/local/bin/brew ]]; then
+        eval "$(/usr/local/bin/brew shellenv)"
+      else
+        echo "Homebrew installation failed: brew executable was not found."
+        exit 1
+      fi
+    fi
+  fi
 fi
 
 MISE_BIN="$(command -v mise || true)"
