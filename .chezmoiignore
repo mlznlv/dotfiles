@@ -1,2 +1,5 @@
 Brewfile.common
 bootstrap.sh
+
+Brewfile.workstation
+README.md
