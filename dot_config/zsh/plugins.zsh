@@ -1,4 +1,6 @@
-# Shared Zsh plugins
+# Shared late-loaded Zsh plugins.
+# zsh-autocomplete is initialized earlier from completion.zsh because it owns
+# compinit and must be loaded before integrations that may call compdef.
 
 ZSH_PLUGIN_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
 
@@ -19,17 +21,12 @@ if command -v brew >/dev/null 2>&1; then
   BREW_SHARE="$(brew --prefix)/share"
 fi
 
-# Autocomplete
-_source_zsh_plugin \
-  "$ZSH_PLUGIN_HOME/zsh-autocomplete/zsh-autocomplete.plugin.zsh" \
-  "${BREW_SHARE:+$BREW_SHARE/zsh-autocomplete/zsh-autocomplete.plugin.zsh}"
-
-# Autosuggestions
+# Autosuggestions.
 _source_zsh_plugin \
   "$ZSH_PLUGIN_HOME/zsh-autosuggestions/zsh-autosuggestions.zsh" \
   "${BREW_SHARE:+$BREW_SHARE/zsh-autosuggestions/zsh-autosuggestions.zsh}"
 
-# Must stay last
+# Must remain the final plugin sourced so it observes all ZLE widgets/hooks.
 _source_zsh_plugin \
   "$ZSH_PLUGIN_HOME/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" \
   "${BREW_SHARE:+$BREW_SHARE/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh}"
