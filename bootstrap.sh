@@ -17,15 +17,17 @@ case "$(uname -s)" in
     ;;
 esac
 
-case "$ROLE" in
-  workstation|client)
+case "$PLATFORM/$ROLE" in
+  macos/workstation|macos/client|linux/server)
     ;;
-  "")
-    echo "Usage: ./bootstrap.sh <workstation|client>"
+  macos/|linux/)
+    echo "Usage: ./bootstrap.sh <role>"
+    echo "macOS roles: workstation, client"
+    echo "Linux roles: server"
     exit 1
     ;;
   *)
-    echo "Unsupported role: $ROLE"
+    echo "Unsupported platform/role combination: $PLATFORM/$ROLE"
     exit 1
     ;;
 esac
@@ -45,8 +47,48 @@ case "$PLATFORM" in
     fi
     ;;
   linux)
-    echo "Linux package bootstrap is not implemented yet."
-    exit 1
+    if ! command -v apt-get >/dev/null 2>&1; then
+      echo "Unsupported Linux package manager."
+      exit 1
+    fi
+
+    sudo apt-get update
+    xargs sudo apt-get install -y < "$SOURCE_DIR/packages/linux/apt.common"
+
+    ROLE_APT="$SOURCE_DIR/packages/linux/apt.$ROLE"
+    if [[ -s "$ROLE_APT" ]]; then
+      xargs sudo apt-get install -y < "$ROLE_APT"
+    fi
+
+    if ! command -v chezmoi >/dev/null 2>&1; then
+      mkdir -p "$HOME/.local/bin"
+      sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin"
+      export PATH="$HOME/.local/bin:$PATH"
+    fi
+
+    if ! command -v zoxide >/dev/null 2>&1; then
+      curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
+      export PATH="$HOME/.local/bin:$PATH"
+    fi
+
+    ZSH_PLUGIN_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
+    mkdir -p "$ZSH_PLUGIN_HOME"
+
+    install_zsh_plugin() {
+      local repository="$1"
+      local name="$2"
+
+      if [[ ! -d "$ZSH_PLUGIN_HOME/$name/.git" ]]; then
+        git clone --depth 1 "https://github.com/$repository.git" "$ZSH_PLUGIN_HOME/$name"
+      fi
+    }
+
+    install_zsh_plugin "marlonrichert/zsh-autocomplete" "zsh-autocomplete"
+    install_zsh_plugin "zsh-users/zsh-autosuggestions" "zsh-autosuggestions"
+    install_zsh_plugin "zsh-users/zsh-syntax-highlighting" "zsh-syntax-highlighting"
+
+    unset -f install_zsh_plugin
+    unset ZSH_PLUGIN_HOME
     ;;
 esac
 
