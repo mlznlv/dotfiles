@@ -1,932 +1,308 @@
 # dotfiles
 
-Portable terminal, shell, and development-environment configuration managed with `chezmoi` and Git.
+Portable terminal UX for macOS and Linux, managed with `chezmoi` and bootstrapped with `mise`.
 
-Repository:
+The repository does **not** try to clone one machine onto every other machine. Its purpose is to preserve the same terminal muscle memory while allowing each host to run a different workload.
 
-```text
-```
-
-## Goal
-
-The goal of this repository is **not to clone one machine**.
-
-The goal is to preserve a consistent terminal and shell UX across different machines and operating systems while allowing every machine to have its own role and tooling.
-
-The environment consists of three main machine types:
+## Target topology
 
 ```text
-                         dotfiles
-                            │
-                   shared terminal UX
-                            │
-          ┌─────────────────┼─────────────────┐
-          │                 │                 │
-          ▼                 ▼                 ▼
-   MacBook Pro         MacBook Air       Linux Server
-   workstation            client          remote dev
-          │                 │                 │
-   full local dev      lightweight       development
-   environment          local setup       environment
-                              │
-                              └──── SSH ────►
+                         shared terminal UX
+                                │
+                  ┌─────────────┼─────────────┐
+                  │             │             │
+                  ▼             ▼             ▼
+            MacBook Pro    MacBook Air    Linux dev host
+                macOS          macOS          Ubuntu
+                  │             │             │
+             local dev      remote-first    remote dev
+                  │             │             │
+                  └──────── SSH ┴─────────────┘
 ```
 
-The key principle is:
+The important invariant is:
 
-> Different machines. Different roles. Same core terminal UX.
+> Different machines can have different software and responsibilities while the shell UX stays familiar.
 
----
+## Architecture
 
-## Machines
+There are two separate concerns.
 
-### MacBook Pro — workstation
+### 1. Runtime shell configuration
 
-The MacBook Pro is the primary local development workstation.
-
-It can contain the full development stack:
-
-* Docker
-* Node.js / nvm
-* Python / pyenv
-* AWS CLI
-* Kubernetes tooling
-* local development services
-* IDEs and editors
-* workstation-specific applications
-* other development tooling
-
-The MacBook Pro is currently the source machine from which the existing environment is being reconstructed and cleaned up.
-
-It should remain a fully functional workstation.
-
----
-
-### MacBook Air — client
-
-The MacBook Air is a lightweight mobile client.
-
-Its main responsibilities are:
-
-* Ghostty
-* terminal UX
-* SSH
-* remote development
-* browser
-* productivity applications
-* lightweight local tools when useful
-
-It should **not** need to reproduce the complete MacBook Pro development environment.
-
-Typical workflow:
+The shell is composed from:
 
 ```text
-MacBook Air
-    │
-    ▼
-Ghostty
-    │
-    ▼
-local Zsh UX
-    │
-    ▼
-SSH
-    │
-    ▼
-Linux development server
-    │
-    ▼
-same familiar Zsh UX
+common UX
++ platform adaptation
++ capability detection
++ optional machine-local overrides
 ```
 
-The Air should remain lightweight while still feeling familiar locally and remotely.
+It does not know whether a machine is a `workstation`, `client`, `server`, `work`, or `personal` machine.
 
----
-
-### Linux Server — remote development
-
-Ubuntu or another Linux distribution acts as a remote development environment.
-
-It may contain:
-
-* Node.js
-* Python
-* compilers
-* containers
-* databases
-* project runtimes
-* language servers
-* development services
-* server-side CLI tooling
-
-It must receive the portable shell UX without macOS-specific assumptions.
-
----
-
-# UX invariant
-
-The most important thing to preserve is **UX**, not identical installed software.
-
-The following should behave consistently across supported machines:
+`~/.zshrc` is intentionally a thin composition root:
 
 ```text
-Zsh behavior
-prompt
-autocomplete
-autosuggestions
-syntax highlighting
-history
-fzf
-zoxide
-completion behavior
-keybindings
-Git workflow
-common shell functions
-navigation
+core.zsh
+paths.zsh
+platform.zsh
+local.zsh       (optional, unmanaged)
+tools.zsh
+completion.zsh
+aliases.zsh
+plugins.zsh
 ```
 
-Moving between:
+Platform-specific behavior lives under:
 
 ```text
-MacBook Pro
-MacBook Air
-Linux over SSH
+~/.config/zsh/platforms/
+├── macos.zsh
+├── macos.profile.zsh
+├── linux.zsh
+└── linux.profile.zsh
 ```
 
-should not feel like switching to three unrelated shell environments.
+Optional integrations are capability-driven. For example, Docker-specific PATH/completion is enabled only when the corresponding Docker directories exist. Missing optional software must never break shell startup.
 
----
+### 2. Machine provisioning
 
-# Architecture
+Provisioning is declarative and handled by `mise`.
 
-The target architecture separates:
+```text
+mise.toml                  shared bootstrap resources
+mise.macos.toml            macOS base packages
+mise.linux.toml            Linux base packages
+mise.macos-local-dev.toml  optional local-dev capability set
+mise.linux-dev-host.toml   optional remote-dev-host capability set
+```
 
-1. shared UX;
-2. operating-system-specific configuration;
-3. machine-role-specific configuration.
+Profiles exist only at **installation time**. They are not persisted into the shell and do not affect runtime configuration logic.
+
+## Current machine mapping
+
+### Corporate MacBook Pro
+
+```text
+platform: macOS
+profile:  local-dev
+```
+
+This is a full local development machine. Docker and other workstation applications may exist locally, but the shell discovers them by capability rather than by a persisted machine role.
+
+Bootstrap:
+
+```bash
+./bootstrap.sh local-dev
+```
+
+### Personal MacBook Air
+
+```text
+platform: macOS
+profile:  base
+```
+
+The Air is primarily a lightweight client for remote development but can gain additional local tooling later without changing the dotfiles architecture.
+
+Bootstrap:
+
+```bash
+./bootstrap.sh base
+```
+
+### Linux / Minisforum development host
+
+```text
+platform: Linux
+profile:  dev-host
+```
+
+The host provides remote compute, persistent terminal sessions, build tooling, containers, project runtimes, language servers, databases, and other development services as needed.
+
+Bootstrap:
+
+```bash
+./bootstrap.sh dev-host
+```
+
+## Bootstrap flow
+
+`bootstrap.sh` is deliberately small. It only:
+
+1. detects macOS vs Linux;
+2. selects the requested install-time capability profile;
+3. ensures `mise` is available;
+4. runs declarative `mise bootstrap` state;
+5. ensures `chezmoi` is available;
+6. applies the repository as chezmoi source state.
 
 Conceptually:
 
 ```text
-common
-├── shell behavior
-├── prompt
-├── history
-├── completion
-├── autocomplete
-├── autosuggestions
-├── syntax highlighting
-├── fzf
-├── zoxide
-├── keybindings
-├── common functions
-└── common Git UX
-
-macos
-├── Homebrew integration
-├── macOS-specific PATH
-├── Ghostty
-└── macOS-specific configuration
-
-workstation
-├── Docker
-├── Node / nvm
-├── Python / pyenv
-├── AWS
-├── Kubernetes
-└── full development tooling
-
-client
-├── Ghostty
-├── SSH
-└── lightweight local tooling
-
-linux
-├── Linux package/bootstrap logic
-├── Linux-specific PATH
-└── remote development configuration
-```
-
-This is the target architecture.
-
-The current repository is being migrated toward this model incrementally without breaking the working workstation.
-
----
-
-# Core UX vs machine tooling
-
-These are part of the shared UX:
-
-```text
-Zsh
-prompt
-history
-autocomplete
-autosuggestions
-syntax highlighting
-fzf
-zoxide
-keybindings
-completion behavior
-common functions
-```
-
-These are **not** universal UX:
-
-```text
-Docker Desktop
-JetBrains Toolbox
-Sublime Text
-Homebrew
-macOS application paths
-AWS CLI
-kubectl
-local databases
-workstation applications
-```
-
-Those belong to platform-specific or role-specific layers.
-
----
-
-# Current repository
-
-The repository currently contains approximately:
-
-```text
-.
-├── .chezmoiignore
-├── Brewfile.common
-├── Brewfile.workstation
-├── bootstrap.sh
-├── README.md
-├── dot_zprofile
-├── dot_zshrc
-└── dot_config
-    └── zsh
-        ├── aliases.zsh
-        ├── completion.zsh
-        ├── core.zsh
-        ├── paths.zsh
-        ├── plugins.zsh
-        └── tools.zsh
-```
-
-This is not yet the final role/platform-aware structure.
-
-It will be refactored gradually.
-
----
-
-# Current Zsh configuration
-
-## `core.zsh`
-
-Core Zsh behavior.
-
-Currently includes:
-
-* history configuration
-* core shell options
-
----
-
-## `paths.zsh`
-
-Optional PATH configuration.
-
-Currently includes support for:
-
-```text
-~/.local/bin
-~/.docker/bin
-JetBrains Toolbox scripts
-Sublime Text CLI
-```
-
-Paths are only added when they exist.
-
-Some of these are macOS/workstation-specific and should eventually move out of the universal shell layer.
-
----
-
-## `tools.zsh`
-
-Tool initialization.
-
-Currently includes:
-
-* nvm
-* pyenv
-* fzf
-* zoxide
-
-Tool initialization should remain conditional so missing optional software does not break shell startup.
-
----
-
-## `completion.zsh`
-
-Additional completion configuration.
-
-Docker completion is currently restored from:
-
-```text
-~/.docker/completions
-```
-
----
-
-## `plugins.zsh`
-
-Currently loads:
-
-```text
-zsh-autocomplete
-zsh-autosuggestions
-zsh-syntax-highlighting
-```
-
-`zsh-syntax-highlighting` should remain loaded last.
-
----
-
-## `aliases.zsh`
-
-Contains a small explicit set of Git aliases added during migration.
-
-The goal is **not** to recreate large Oh My Zsh alias collections.
-
-New aliases should only be added deliberately when they provide clear value.
-
----
-
-# Current shell stack
-
-Currently used:
-
-```text
-Zsh
-zsh-autocomplete
-zsh-autosuggestions
-zsh-syntax-highlighting
-fzf
-zoxide
-```
-
-A new prompt is still pending.
-
-The prompt should be:
-
-* visually useful;
-* fast;
-* portable;
-* suitable for local sessions;
-* suitable over SSH;
-* independent of Oh My Zsh.
-
----
-
-# Terminal emulator
-
-Ghostty is planned as the main terminal emulator on macOS.
-
-Important distinction:
-
-```text
-Ghostty != shell UX
-```
-
-Ghostty provides the local terminal interface.
-
-The core UX must live primarily in the shell configuration so it survives SSH.
-
-Example:
-
-```text
-MacBook Air
+bootstrap.sh
+    │
+    ├── detect OS
+    ├── select provisioning profile
     │
     ▼
-Ghostty
+  mise bootstrap
+    │
+    ├── system packages
+    └── shared Zsh plugin repositories
     │
     ▼
-SSH
+  chezmoi apply
     │
     ▼
-Linux
-    │
-    ▼
-portable Zsh configuration
+  consistent $HOME / terminal UX
 ```
 
-The remote environment should still provide the familiar prompt, completion, navigation, history behavior, and other shell UX.
-
----
-
-# Oh My Zsh migration
-
-Oh My Zsh has been removed.
-
-The previous configuration used these plugins:
+Supported combinations:
 
 ```text
-git
-macos
-docker
-brew
-nvm
-npm
-virtualenv
-qrcode
+macOS  + base
+macOS  + local-dev
+Linux  + base
+Linux  + dev-host
 ```
 
-The objective is **not to rebuild Oh My Zsh manually**.
+`base` is the default:
 
-Instead:
-
-* preserve useful UX;
-* preserve required functionality;
-* use explicit configuration;
-* remove unnecessary framework magic;
-* avoid restoring convenience features that are not actually needed.
-
----
-
-## Functionality already restored
-
-### Shell UX
-
-Verified:
-
-* Zsh
-* autocomplete
-* autosuggestions
-* syntax highlighting
-* fzf
-* zoxide
-
-### Node.js
-
-Verified:
-
-* nvm loads
-* Node.js works
-* npm works
-
-### Python
-
-Verified:
-
-* pyenv works
-* Python works
-* pyenv virtualenv works
-* virtual environments can be activated and deactivated
-
-### Docker
-
-Verified:
-
-* Docker CLI works
-* Docker completion works
-
-Docker CLI currently resolves through:
-
-```text
-~/.docker/bin/docker
+```bash
+./bootstrap.sh
 ```
 
-Docker completion is available through:
+Prerequisites for the entrypoint are `curl` and a usable Git checkout of this repository.
 
-```text
-~/.docker/completions
-```
+## Ownership boundaries
 
-### Local CLI paths
-
-Restored and verified where present:
-
-```text
-~/.local/bin
-~/.docker/bin
-JetBrains Toolbox scripts
-Sublime Text CLI
-```
-
-The old Obsidian CLI path no longer exists and is not restored.
-
----
-
-# Homebrew configuration
-
-## `Brewfile.common`
-
-Current macOS common packages include:
-
-```text
-chezmoi
-fzf
-gh
-git
-ripgrep
-zoxide
-zsh-autocomplete
-zsh-autosuggestions
-zsh-syntax-highlighting
-```
-
-Despite the name, `Brewfile.common` is still Homebrew-specific.
-
-It is therefore not the final definition of the cross-platform common layer.
-
-Linux will require its own installation mechanism while producing the same core UX.
-
----
-
-## `Brewfile.workstation`
-
-Current workstation-specific packages include:
-
-```text
-awscli
-kubernetes-cli
-pyenv
-pyenv-virtualenv
-```
-
-This is a curated desired-state file.
-
-It should not become a dump of everything that happens to be installed.
-
----
-
-# Snapshot policy
-
-A raw Homebrew snapshot from the original workstation is kept outside the Git repository:
-
-```text
-~/Brewfile.workstation.snapshot
-```
-
-It exists only as:
-
-* migration reference;
-* safety net;
-* inventory of previously installed software.
-
-It must not automatically become desired state.
-
-The repository should answer:
-
-> What should this machine have?
-
-not:
-
-> What happened to be installed at some point?
-
----
-
-# Runtime versions
-
-Dotfiles should generally install and configure runtime managers rather than snapshot every currently installed runtime version.
+### chezmoi owns `$HOME` state
 
 Examples:
 
 ```text
-nvm
-pyenv
+.zshrc
+.zprofile
+~/.config/zsh/**
+future Ghostty config
+future tmux config
+future Neovim config
+future Git UX config
+future SSH client config
 ```
 
-Project-specific runtime versions should normally live with projects:
+Machine-local exceptions should live in unmanaged local files such as:
 
 ```text
+~/.config/zsh/local.zsh
+```
+
+Secrets must not be committed to this repository.
+
+### mise owns bootstrap lifecycle
+
+`mise` owns declarative installation of host packages and shared external repositories used by the terminal environment.
+
+The repository intentionally avoids maintaining separate handwritten `apt`, Homebrew, curl-installer, and Git-clone orchestration paths for the same logical environment.
+
+### Projects own project runtime versions
+
+Project-specific versions should normally live with the project, for example:
+
+```text
+mise.toml
 .nvmrc
 .node-version
 .python-version
 ```
 
-Exact global versions should only be pinned intentionally.
+The dotfiles repository should not become a global snapshot of every runtime version ever installed on a machine.
 
----
+## Development runtime migration
 
-# Machine roles
+The existing workstation still supports `nvm` and `pyenv` when they are installed. This is intentional migration compatibility, not the target ownership model.
 
-The intended model combines **platform** and **role**.
+`mise` is activated last in the shell, so projects can adopt `mise` incrementally without requiring a big-bang migration of the current MacBook Pro.
 
-## MacBook Pro
-
-```text
-platform = macOS
-role     = workstation
-```
-
-Receives:
+Target direction:
 
 ```text
-common UX
-+
-macOS configuration
-+
-workstation configuration
+new/project-local runtime management -> mise
+existing nvm/pyenv setup              -> supported during migration
 ```
 
----
+Do not remove legacy runtime managers from the current workstation until the affected projects have been verified under `mise`.
 
-## MacBook Air
+## Zsh plugins
+
+Shared plugins are bootstrapped into one canonical location:
 
 ```text
-platform = macOS
-role     = client
+~/.local/share/zsh/plugins/
+├── zsh-autocomplete
+├── zsh-autosuggestions
+└── zsh-syntax-highlighting
 ```
 
-Receives:
+They are declared as `mise` bootstrap repositories rather than installed by custom shell code.
+
+The shell loader remains defensive: a missing plugin does not make the shell unusable.
+
+## UX invariant
+
+The following should remain consistent across local macOS sessions and Linux-over-SSH sessions:
 
 ```text
-common UX
-+
-macOS configuration
-+
-client configuration
+Zsh behavior
+history
+completion
+autocomplete
+autosuggestions
+syntax highlighting
+fzf
+zoxide
+keybindings
+Git aliases/workflow
+navigation
+prompt (when added)
+tmux UX (when added)
+Neovim UX (when added)
 ```
 
-It should remain lightweight.
-
----
-
-## Linux development server
+Terminal-emulator behavior and remote shell behavior are separate layers:
 
 ```text
-platform = Linux
-role     = server
+LOCAL CLIENT                      REMOTE HOST
+
+Ghostty / terminal rendering      Zsh
+font / keyboard / clipboard  SSH  prompt
+                           ─────► fzf / zoxide
+                                  tmux
+                                  nvim
+                                  CLI tools
 ```
 
-Receives:
-
-```text
-common UX
-+
-Linux configuration
-+
-server/development configuration
-```
-
-No macOS-specific assumptions should leak into this environment.
-
----
-
-# Bootstrap model
-
-The eventual bootstrap process should determine:
-
-```text
-What platform is this?
-What role does this machine have?
-```
-
-Conceptually:
-
-```text
-bootstrap
-    │
-    ├── detect platform
-    │     ├── macOS
-    │     └── Linux
-    │
-    ├── install common UX dependencies
-    │
-    ├── apply platform configuration
-    │
-    └── apply role configuration
-          ├── workstation
-          ├── client
-          └── server
-```
-
-The current `bootstrap.sh` is only an initial implementation.
-
-It does not yet represent the final architecture.
-
----
-
-# Portability rules
-
-## Common means genuinely common
-
-Common configuration must not assume:
-
-```text
-macOS
-Homebrew
-Apple Silicon
-/opt/homebrew
-a specific username
-$HOME
-Docker Desktop
-JetBrains
-Sublime Text
-```
-
-Platform-specific behavior must be conditional or separated.
-
----
-
-## Optional software must stay optional
-
-Missing optional applications must never break shell startup.
-
-Prefer guarded initialization such as:
-
-```zsh
-command -v tool >/dev/null 2>&1
-```
-
-or:
-
-```zsh
-[[ -d "$SOME_PATH" ]]
-```
-
----
-
-## No secrets in Git
-
-Never commit:
-
-```text
-SSH private keys
-API tokens
-cloud credentials
-passwords
-.env secrets
-private certificates
-```
-
-Dotfiles may configure access to secrets, but the secrets themselves remain outside the repository.
-
----
-
-# chezmoi
-
-`chezmoi` manages the actual dotfiles.
-
-Source directory:
-
-```text
-~/.local/share/chezmoi
-```
-
-Typical workflow:
-
-```bash
-chezmoi add ~/.zshrc
-chezmoi add ~/.config/zsh/example.zsh
-```
-
-Review managed differences:
-
-```bash
-chezmoi diff
-```
-
-Repository workflow:
-
-```bash
-cd ~/.local/share/chezmoi
-
-git status
-git diff
-```
-
-Apply configuration:
-
-```bash
-chezmoi apply
-```
-
----
-
-# Migration strategy
-
-The migration should happen conservatively.
-
-## 1. Preserve the MacBook Pro UX
-
-The current workstation is the working reference.
-
-Before aggressively restructuring configuration:
-
-* verify existing tools;
-* restore lost functionality;
-* avoid breaking the current environment.
-
----
-
-## 2. Audit the old configuration
-
-Determine what was actually useful from the previous setup.
-
-Do not blindly restore everything from Oh My Zsh or old shell files.
-
----
-
-## 3. Build the shared UX layer
-
-Extract the parts that should behave the same on:
-
-```text
-MacBook Pro
-MacBook Air
-Linux
-```
-
-This includes primarily shell behavior and terminal UX.
-
----
-
-## 4. Separate platform-specific configuration
-
-Create clean separation between:
-
-```text
-common
-macOS
-Linux
-```
-
-macOS-specific paths must not leak into Linux configuration.
-
----
-
-## 5. Separate machine roles
-
-Create clean separation between:
-
-```text
-workstation
-client
-server
-```
-
-Different roles do not need identical software.
-
----
-
-## 6. Configure the MacBook Air
-
-The MacBook Air should become a lightweight remote-development client with:
-
-```text
-Ghostty
-shared shell UX
-SSH
-remote development workflow
-```
-
-without duplicating the full workstation stack.
-
----
-
-## 7. Configure Linux remote development
-
-Linux should reproduce the shared shell UX while using its own package manager and server-specific tooling.
-
----
-
-## 8. Test a clean bootstrap
-
-The final proof is being able to configure a new or clean machine predictably from the repository.
-
----
-
-# Current priorities
-
-1. Preserve and audit the current MacBook Pro UX.
-2. Add a good portable prompt.
-3. Refactor shell configuration into common/platform/role layers.
-4. Make bootstrap platform-aware.
-5. Make bootstrap role-aware.
-6. Add Ghostty configuration.
-7. Build the MacBook Air client profile.
-8. Add Linux support.
-9. Test the same UX over SSH.
-10. Test clean-machine installation.
-
----
-
-# Definition of success
-
-The project is successful when:
-
-* the MacBook Pro remains a full development workstation;
-* the MacBook Air remains lightweight;
-* the MacBook Air works well as a remote-development client;
-* Linux servers can be configured predictably;
-* machine-specific software remains machine-specific;
-* common shell configuration works across macOS and Linux;
-* optional missing software never breaks shell startup;
-* secrets remain outside Git;
-* configuration is reproducible;
-* moving between local and remote machines does not destroy the familiar terminal UX.
-
-The central principle is:
-
-> **Different machines. Different roles. Same core terminal UX.**
+The core UX must therefore live primarily in portable shell/editor/multiplexer configuration, not only in a macOS terminal emulator.
+
+## Portability rules
+
+1. Common configuration must not assume macOS, Homebrew, Apple Silicon, Docker Desktop, a specific username, or a specific machine purpose.
+2. OS-specific behavior belongs in platform files or OS-specific `mise` bootstrap config.
+3. Optional software must be detected, not assumed.
+4. Provisioning profiles select installed capabilities; they do not become runtime machine identities.
+5. Secrets, credentials, SSH private keys, tokens, certificates, and private `.env` values stay outside Git.
+6. Desired state should be curated. Do not turn package configuration into a dump of everything that happened to be installed.
+
+## Definition of success
+
+The repository is successful when:
+
+- the current MacBook Pro remains fully usable for local development;
+- a personal MacBook Air can be bootstrapped as a lightweight client without duplicating the full workstation;
+- an Ubuntu development host can receive the same terminal UX predictably;
+- optional tools can appear or disappear without breaking shell startup;
+- moving between local and SSH sessions preserves muscle memory;
+- replacing a machine does not require reconstructing terminal behavior manually;
+- package/runtime lifecycle logic does not grow into a custom configuration-management framework.
