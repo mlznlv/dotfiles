@@ -4,14 +4,14 @@ Portable terminal UX for macOS and Linux.
 
 The goal is simple: different machines may run different workloads, but the terminal should feel familiar everywhere.
 
-- `chezmoi` manages portable `$HOME` configuration.
-- `mise` manages bootstrap dependencies and development runtimes.
-- Tailscale provides private remote network access.
-- SSH + tmux provide persistent remote development sessions.
+- [chezmoi](https://www.chezmoi.io/) manages portable `$HOME` configuration.
+- [mise](https://mise.jdx.dev/) manages bootstrap dependencies and development runtimes.
+- [Tailscale](https://tailscale.com/) provides private remote network access.
+- [OpenSSH](https://www.openssh.com/) + [tmux](https://github.com/tmux/tmux) provide persistent remote development sessions.
 
 ## Install
 
-Prerequisites: Git, `curl`, and access to this repository.
+Prerequisites: [Git](https://git-scm.com/), [curl](https://curl.se/), and access to this repository.
 
 Ubuntu/Debian:
 
@@ -62,7 +62,7 @@ sudo tailscale up
 
 3. Authorize the client's SSH public key for the Linux user.
 
-With MagicDNS enabled:
+With [MagicDNS](https://tailscale.com/kb/1081/magicdns) enabled:
 
 ```bash
 remote <user>@<host>
@@ -82,32 +82,28 @@ SSH keys, hostnames, IP addresses, Tailscale identity, and credentials are inten
 
 Base macOS:
 
-```text
-git
-gh
-jq
-fzf
-ripgrep
-zoxide
-```
+- [Git](https://git-scm.com/)
+- [GitHub CLI](https://cli.github.com/) (`gh`)
+- [jq](https://jqlang.org/)
+- [fzf](https://github.com/junegunn/fzf)
+- [ripgrep](https://github.com/BurntSushi/ripgrep)
+- [zoxide](https://github.com/ajeetdsouza/zoxide)
 
 Base Linux:
 
-```text
-zsh
-git
-curl
-jq
-fzf
-ripgrep
-zoxide
-```
+- [Zsh](https://www.zsh.org/)
+- [Git](https://git-scm.com/)
+- [curl](https://curl.se/)
+- [jq](https://jqlang.org/)
+- [fzf](https://github.com/junegunn/fzf)
+- [ripgrep](https://github.com/BurntSushi/ripgrep)
+- [zoxide](https://github.com/ajeetdsouza/zoxide)
 
 Profiles add only workload-specific software:
 
 - `mise.macos-remote-client.toml` — Tailscale client.
 - `mise.macos-local-dev.toml` — local-development tooling.
-- `mise.linux-dev-host.toml` — SSH server, tmux, build tools, and Tailscale.
+- `mise.linux-dev-host.toml` — OpenSSH server, tmux, build tools, and Tailscale.
 
 Do not import package-manager snapshots. Declare only direct tools that are intentionally part of the environment.
 
@@ -134,7 +130,7 @@ mise bootstrap packages use -e linux-dev-host apt:<package>
 
 To stop managing software, remove its declaration from the corresponding `mise.*.toml`. Operating-system package removal remains explicit.
 
-Project runtimes belong to the project and are managed by `mise`:
+Project runtimes belong to the project and are managed by mise:
 
 ```bash
 cd ~/src/project
@@ -142,7 +138,7 @@ mise use node@lts
 mise use python@latest
 ```
 
-Existing `.nvmrc` and `.python-version` files are supported by the managed global `mise` config. NVM and pyenv are not part of the target stack.
+Existing `.nvmrc` and `.python-version` files are supported by the managed global mise config. Separate NVM and pyenv installations are not part of the target stack.
 
 ## Update
 
