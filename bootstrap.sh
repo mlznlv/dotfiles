@@ -2,7 +2,6 @@
 set -euo pipefail
 
 SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-MISE_CONFIG_DIR="$SOURCE_DIR/mise"
 PROFILE="${1:-base}"
 
 case "$(uname -s)" in
@@ -53,9 +52,7 @@ fi
 
 (
   cd "$SOURCE_DIR"
-  MISE_CONFIG_DIR="$MISE_CONFIG_DIR" \
-    MISE_ENV="$MISE_ENV_VALUE" \
-    "$MISE_BIN" bootstrap --yes
+  MISE_ENV="$MISE_ENV_VALUE" "$MISE_BIN" bootstrap --yes
 )
 
 CHEZMOI_BIN="$(command -v chezmoi || true)"
