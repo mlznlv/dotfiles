@@ -1,4 +1,4 @@
-# Shared completion configuration.
+# Zsh completion subsystem. This loads early by design.
 
 # Docker Desktop exposes Zsh completions here on macOS. Add this before
 # zsh-autocomplete initializes Zsh's completion system.
@@ -6,8 +6,8 @@ if [[ -d "$HOME/.docker/completions" ]]; then
   fpath=("$HOME/.docker/completions" $fpath)
 fi
 
-# zsh-autocomplete owns compinit. It must be sourced early, after completion
-# directories are added to fpath and before integrations that may call compdef.
+# zsh-autocomplete owns compinit and must be sourced before integrations that
+# may register completions with compdef.
 ZSH_PLUGIN_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
 AUTOCOMPLETE_PLUGIN="$ZSH_PLUGIN_HOME/zsh-autocomplete/zsh-autocomplete.plugin.zsh"
 
