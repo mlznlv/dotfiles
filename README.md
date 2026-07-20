@@ -51,8 +51,6 @@ exec zsh -l
 
 ## Remote development
 
-The remote path is:
-
 ```text
 MacBook Air -> Tailscale -> SSH -> Minisforum -> tmux
 ```
@@ -68,7 +66,9 @@ First-time setup:
 sudo tailscale up
 ```
 
-With MagicDNS enabled, connect by the server name:
+3. For regular OpenSSH, make sure the Air's SSH public key is authorized for the Linux user on the Minisforum. SSH keys and Tailscale identity are intentionally not stored in this repository.
+
+With MagicDNS enabled:
 
 ```bash
 remote <user>@<server-name>
@@ -80,21 +80,13 @@ Example:
 remote emil@dev
 ```
 
-`remote` runs SSH and creates or reattaches the `main` tmux session. A named session is optional:
+`remote` creates or reattaches the `main` tmux session. A named session is optional:
 
 ```bash
 remote emil@dev backend
 ```
 
-Detach without stopping the remote work:
-
-```text
-Ctrl-b d
-```
-
-Run the same `remote ...` command later to reattach.
-
-The repository does not hardcode hostnames, IP addresses, SSH keys, or Tailscale identity.
+Detach without stopping remote work: `Ctrl-b d`. Run the same `remote ...` command later to reattach.
 
 ## Base stack
 
@@ -156,13 +148,15 @@ Then review the diff and run the matching bootstrap again.
 
 To stop managing a package, remove its declaration from the corresponding `mise.*.toml` file. Package removal from the operating system remains explicit.
 
-Project runtimes belong to the project:
+Project runtimes belong to the project and are managed by `mise`:
 
 ```bash
 cd ~/src/project
 mise use node@lts
 mise use python@latest
 ```
+
+Existing `.nvmrc` and `.python-version` files are supported by the managed global `mise` config; separate NVM and pyenv installations are not part of the target stack.
 
 ## Zsh layout
 
@@ -171,7 +165,7 @@ dot_config/zsh/
 ├── core.zsh         history and shell options
 ├── paths.zsh        PATH only
 ├── completion.zsh   completion/autocomplete; loads early
-├── runtimes.zsh     runtime manager activation
+├── runtimes.zsh     mise activation
 ├── remote.zsh       SSH + tmux remote entrypoint
 ├── aliases.zsh      explicit aliases
 ├── prompt.zsh       prompt
