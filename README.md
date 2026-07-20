@@ -5,7 +5,6 @@ Portable terminal, shell, and development-environment configuration managed with
 Repository:
 
 ```text
-git@github.com:example-user/dotfiles.git
 ```
 
 ## Goal
