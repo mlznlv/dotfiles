@@ -18,12 +18,12 @@ case "$(uname -s)" in
 esac
 
 case "$PLATFORM/$PROFILE" in
-  macos/base|macos/local-dev|linux/base|linux/dev-host)
+  macos/base|macos/local-dev|macos/remote-client|linux/base|linux/dev-host)
     ;;
   *)
     echo "Unsupported platform/profile combination: $PLATFORM/$PROFILE"
     echo "Supported profiles:"
-    echo "  macOS: base, local-dev"
+    echo "  macOS: base, local-dev, remote-client"
     echo "  Linux: base, dev-host"
     exit 1
     ;;
