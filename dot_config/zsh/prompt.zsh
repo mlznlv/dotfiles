@@ -1,2 +1,2 @@
-# Portable prompt using built-in Zsh expansion only.
+# Minimal native Zsh prompt.
 PROMPT='[%n@%m %1~] %# '
