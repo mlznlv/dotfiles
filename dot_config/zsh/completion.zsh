@@ -1,30 +1,27 @@
-# Zsh completion subsystem. This loads early by design.
+# Native Zsh completion subsystem. This loads early by design.
 
-# Docker Desktop exposes Zsh completions here on macOS. Add this before
-# zsh-autocomplete initializes Zsh's completion system.
+# Docker Desktop exposes Zsh completions here on macOS. Add this before compinit.
 if [[ -d "$HOME/.docker/completions" ]]; then
   fpath=("$HOME/.docker/completions" $fpath)
 fi
 
-# zsh-autocomplete owns compinit and must be sourced before integrations that
-# may register completions with compdef.
-ZSH_PLUGIN_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
-AUTOCOMPLETE_PLUGIN="$ZSH_PLUGIN_HOME/zsh-autocomplete/zsh-autocomplete.plugin.zsh"
+ZSH_COMPLETION_CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/zsh"
+mkdir -p "$ZSH_COMPLETION_CACHE"
 
-if [[ -r "$AUTOCOMPLETE_PLUGIN" ]]; then
-  source "$AUTOCOMPLETE_PLUGIN"
-elif command -v brew >/dev/null 2>&1; then
-  BREW_AUTOCOMPLETE="$(brew --prefix)/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh"
-  [[ -r "$BREW_AUTOCOMPLETE" ]] && source "$BREW_AUTOCOMPLETE"
-  unset BREW_AUTOCOMPLETE
-fi
+autoload -Uz compinit
+compinit -d "$ZSH_COMPLETION_CACHE/zcompdump"
 
-# zsh-autocomplete maps the arrow keys to its completion/history menus by
-# default. Keep terminal-native behavior instead: Up/Down navigate command
-# history immediately. Ctrl-R remains available for interactive history search.
-bindkey '^[OA'  .up-line-or-history
-bindkey '^[[A'  .up-line-or-history
-bindkey '^[OB'  .down-line-or-history
-bindkey '^[[B'  .down-line-or-history
+# Predictable completion: Tab completes/selects, Shift-Tab moves backward.
+zstyle ':completion:*' menu select
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
 
-unset AUTOCOMPLETE_PLUGIN ZSH_PLUGIN_HOME
+bindkey -e
+bindkey '^[[Z' reverse-menu-complete
+
+# Keep arrow keys as immediate command-history navigation.
+bindkey '^[OA' up-line-or-history
+bindkey '^[[A' up-line-or-history
+bindkey '^[OB' down-line-or-history
+bindkey '^[[B' down-line-or-history
+
+unset ZSH_COMPLETION_CACHE
