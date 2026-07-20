@@ -2,21 +2,21 @@
 
 Portable terminal and development environment for macOS and Linux.
 
-The design is intentionally split into three layers:
+The configuration has three layers:
 
 1. **Repository defaults** — portable shell UX, packages, and profile defaults.
-2. **Machine profile** — what kind of machine this is: `base`, `local-dev`, `remote-client`, or `dev-host`.
-3. **Machine/project overrides** — private machine-specific constraints and project-specific runtime versions.
+2. **Machine profile** — `base`, `local-dev`, `remote-client`, or `dev-host`.
+3. **Machine/project overrides** — private machine constraints and project runtime versions.
 
-The repository should stay generic and safe to publish. Credentials, company-specific configuration, hostnames, private network identity, and machine-only runtime constraints stay outside Git.
+The repository should stay generic and safe to publish. Credentials, private hostnames, company-specific settings, network identity, and machine-only constraints stay outside Git.
 
 Core tools:
 
-- [chezmoi](https://www.chezmoi.io/) manages portable `$HOME` configuration.
-- [mise](https://mise.jdx.dev/) manages bootstrap packages and development runtimes.
-- [Homebrew](https://brew.sh/) provides macOS system packages.
-- [Tailscale](https://tailscale.com/) provides private remote network access.
-- [OpenSSH](https://www.openssh.com/) + [tmux](https://github.com/tmux/tmux) provide persistent remote development sessions.
+- [chezmoi](https://www.chezmoi.io/) — portable `$HOME` configuration.
+- [mise](https://mise.jdx.dev/) — bootstrap packages, repositories, and development runtimes.
+- [Homebrew](https://brew.sh/) — macOS system packages.
+- [Tailscale](https://tailscale.com/) — private remote network access.
+- [OpenSSH](https://www.openssh.com/) + [tmux](https://github.com/tmux/tmux) — persistent remote development sessions.
 
 ## Quick start
 
@@ -28,7 +28,7 @@ macOS:
 xcode-select --install
 ```
 
-Finish the Command Line Tools installation before continuing. Homebrew is **not** a manual prerequisite: `bootstrap.sh` installs the real Homebrew CLI when it is missing.
+Finish the Command Line Tools installation before continuing. Homebrew is not a manual prerequisite; `bootstrap.sh` installs it when missing.
 
 Ubuntu/Debian:
 
@@ -37,7 +37,7 @@ sudo apt-get update
 sudo apt-get install -y git curl
 ```
 
-### 2. Clone the repository
+### 2. Clone
 
 ```bash
 mkdir -p ~/.local/share
@@ -51,54 +51,37 @@ cd ~/.local/share/chezmoi
 |---|---|---|---|
 | `base` | macOS/Linux | minimal shared terminal environment | `./bootstrap.sh base` |
 | `local-dev` | macOS | full local-development workstation | `./bootstrap.sh local-dev` |
-| `remote-client` | macOS | lightweight client for remote development | `./bootstrap.sh remote-client` |
+| `remote-client` | macOS | lightweight remote-development client | `./bootstrap.sh remote-client` |
 | `dev-host` | Linux | remote development host | `./bootstrap.sh dev-host` |
 
-Then restart the login shell:
-
-```bash
-exec zsh -l
-```
-
-For a normal development Mac, use:
+For a normal development Mac:
 
 ```bash
 ./bootstrap.sh local-dev
 exec zsh -l
 ```
 
-The bootstrap is intended to be repeatable. Running it again should converge the machine instead of reinstalling everything unnecessarily.
+Bootstrap is designed to be repeatable. Running it again converges the machine instead of reinstalling everything unnecessarily.
 
-## What bootstrap does
+## What bootstrap manages
 
-On macOS the high-level order is:
+On macOS the high-level flow is:
 
 ```text
 Homebrew -> mise -> declared packages/repos/runtimes -> chezmoi
 ```
 
-The bootstrap:
+It installs missing dependencies, applies the selected profile, installs Zsh plugin repositories, configures runtime defaults where applicable, and applies the chezmoi state.
 
-- validates the platform/profile combination;
-- installs Homebrew on macOS when missing;
-- installs mise when missing;
-- loads platform/profile-specific mise configuration;
-- installs declared system packages and Zsh plugin repositories;
-- installs profile runtime defaults where applicable;
-- installs chezmoi when missing;
-- applies the repository state to `$HOME`.
-
-Do not manually reproduce these steps unless debugging bootstrap itself.
+Do not manually reproduce those steps unless debugging bootstrap itself.
 
 ## Runtime model: Node and Python
 
-This is the most important part of the setup.
+### `local-dev` has usable defaults
 
-### `local-dev` has usable global defaults
+A full development Mac must be able to run CLIs, MCP servers, scripts, package managers, and ad-hoc commands outside project directories.
 
-A full local-development Mac must be able to run CLIs, MCP servers, scripts, package managers, and ad-hoc commands even when the current directory is not a project.
-
-The repository therefore provides these `local-dev` defaults:
+The portable `local-dev` defaults are:
 
 ```toml
 [tools]
@@ -106,19 +89,19 @@ node = "lts"
 python = "3.14"
 ```
 
-They come from:
+They are defined in:
 
 ```text
 mise/runtime.macos-local-dev.toml
 ```
 
-and are installed by bootstrap as the managed profile fragment:
+and bootstrap installs them as:
 
 ```text
 ~/.config/mise/conf.d/20-dotfiles-profile.toml
 ```
 
-After `./bootstrap.sh local-dev`, this should work from `$HOME`:
+After bootstrap this should work from `$HOME`:
 
 ```bash
 cd ~
@@ -128,11 +111,11 @@ npm --version
 python --version
 ```
 
-### Project versions override global defaults
+### Project versions override defaults
 
 Projects own their runtime requirements.
 
-Project-local mise configuration or supported version files override the global `local-dev` defaults. Existing repositories may use files such as:
+mise can use project configuration such as:
 
 ```text
 mise.toml
@@ -143,24 +126,18 @@ mise.toml
 Example:
 
 ```bash
-cd ~/src/project
+cd <project>
 mise install
 mise current
 node --version
 python --version
 ```
 
-A project with `.nvmrc` requesting Node 22 can use Node 22 while `$HOME` still uses the global `local-dev` Node LTS.
+`.nvmrc` is historically an NVM file; mise reads it for compatibility. NVM itself is not required. pyenv is also not part of the target stack.
 
-`.nvmrc` is historically an NVM file; mise reads it only for compatibility. NVM itself is not required.
+### `package.json.engines` is not a runtime selector
 
-Separate NVM and pyenv installations are **not** part of this stack.
-
-### `package.json.engines` does not select the Node version here
-
-This distinction is easy to miss.
-
-A project may declare compatibility like:
+A project may contain:
 
 ```json
 {
@@ -171,23 +148,11 @@ A project may declare compatibility like:
 }
 ```
 
-Treat `engines` as a **compatibility contract**, not as the runtime selector for this dotfiles setup.
+Treat this as a compatibility contract. In this setup it does not automatically switch the active Node version.
 
-If the repository has no project-specific runtime selector such as `.nvmrc` or `mise.toml`, mise keeps using the current global/machine default. Therefore:
+A project without `.nvmrc`, `mise.toml`, or another supported runtime selector keeps using the current global/machine default. Therefore `mise install` may report that everything is installed even when the active Node/npm combination is outside the project's `engines` range.
 
-```bash
-mise install
-```
-
-may correctly print:
-
-```text
-mise all tools are installed
-```
-
-while the active global Node version still does not satisfy that project's `engines` range.
-
-Always verify when entering an unfamiliar project:
+When entering an unfamiliar project, check:
 
 ```bash
 mise current
@@ -195,15 +160,15 @@ node --version
 npm --version
 ```
 
-If the project has `engine-strict=true` in `.npmrc`, an incompatible runtime may turn an engine mismatch into an install failure instead of only a warning.
+If `.npmrc` contains `engine-strict=true`, an incompatible runtime may cause installs to fail rather than only warn.
 
 ## Machine-local runtime overrides
 
-Do **not** weaken repository defaults just because one machine has special compatibility constraints.
+Do not weaken portable repository defaults because one machine has special constraints.
 
-Example: a work laptop may need Node 22 globally because most work repositories accept Node 20–24 but require npm 10, while a personal development Mac should continue following the normal `node = "lts"` policy.
+For example, a work laptop may need Node 22 globally while a personal Mac should continue following `node = "lts"`.
 
-Keep that constraint outside this repository:
+Keep that constraint outside the repository:
 
 ```bash
 mkdir -p ~/.config/mise/conf.d
@@ -227,7 +192,7 @@ npm --version
 python --version
 ```
 
-The intended precedence is conceptually:
+Conceptual precedence:
 
 ```text
 repository/profile default
@@ -237,40 +202,74 @@ machine-local override
 project-specific runtime configuration
 ```
 
-`90-machine-local.toml` is deliberately outside the chezmoi source tree. It must remain local to that machine and must not be copied into the public repository.
-
-The numeric prefix is a naming convention that makes the layers obvious:
+The numeric prefixes make the layers obvious:
 
 ```text
 20-dotfiles-profile.toml   managed by this repository
 90-machine-local.toml      private machine-specific override
 ```
 
-Use machine-local overrides for constraints such as:
+`90-machine-local.toml` must remain local to that machine and must not be committed.
 
-- a work environment pinned to a supported Node line;
-- private SDK/toolchain requirements;
-- machine-specific paths or environment behavior that should not affect other computers.
-
-Do not put credentials or tokens in mise config. Use the appropriate credential store or private local configuration instead.
-
-## Temporary runtime override
-
-For a one-off shell session, do not edit the repository or a project:
+For a temporary one-shell override:
 
 ```bash
 mise shell node@20
-node --version
 ```
 
-This is useful for testing an older project without changing persistent defaults.
+## Update an existing machine
 
-## First checks after bootstrap
+Use the same profile that provisioned the machine.
 
-Run:
+For a `local-dev` Mac:
+
+```bash
+cd ~/.local/share/chezmoi
+bash ./update.sh local-dev
+exec zsh -l
+```
+
+Other examples:
+
+```bash
+bash ./update.sh remote-client
+bash ./update.sh dev-host
+```
+
+`update.sh` performs the maintenance workflow in this order:
+
+```text
+git pull --ff-only
+        ↓
+mise self-update when supported
+        ↓
+bootstrap latest declarations
+        ↓
+upgrade managed system packages
+        ↓
+update managed Git repositories
+        ↓
+upgrade managed runtimes within configured ranges
+        ↓
+mise doctor + chezmoi convergence check
+```
+
+Important behavior:
+
+- it refuses to pull over local changes in the dotfiles repository;
+- it upgrades only system packages declared by the selected profile;
+- it does **not** run a blanket `brew upgrade` for every Homebrew package on the machine;
+- it does **not** run `brew autoremove` or broad destructive cleanup;
+- runtime upgrades stay within configured ranges unless the configuration itself changes;
+- machine-local overrides such as `node = "22"` remain local and continue to take precedence over portable defaults.
+
+Use `bootstrap.sh` when provisioning/converging. Use `update.sh` for routine maintenance.
+
+## First checks after bootstrap or update
 
 ```bash
 mise doctor
+mise current
 command -v brew mise git gh jq fzf rg zoxide
 chezmoi diff
 ```
@@ -279,14 +278,13 @@ Expected:
 
 ```text
 mise doctor -> No problems found
-chezmoi diff -> empty, unless there is an intentional local difference
+chezmoi diff -> empty unless an intentional local difference exists
 ```
 
-On `local-dev`, also verify global runtimes:
+On `local-dev` also verify:
 
 ```bash
 cd ~
-mise current
 node --version
 npm --version
 python --version
@@ -302,13 +300,11 @@ node --version
 python --version
 ```
 
-Do not assume the project version from memory. Compare the active versions with the repository's runtime files, CI configuration, Dockerfiles, and `package.json.engines` when relevant.
+Do not assume a project's runtime from memory. Check its runtime files, CI configuration, Dockerfiles, and `package.json.engines` when relevant.
 
-## Troubleshooting runtimes
+## Troubleshooting
 
 ### `node` or `python` is not found
-
-Check whether mise is active:
 
 ```bash
 type -a mise
@@ -316,20 +312,17 @@ mise doctor
 mise current
 ```
 
-On `local-dev`, `node` and `python` should normally exist even in `$HOME`.
+On `local-dev`, Node and Python should normally exist even in `$HOME`.
 
-If they do not, rerun:
+Reapply the profile when necessary:
 
 ```bash
 cd ~/.local/share/chezmoi
-git pull --ff-only
 ./bootstrap.sh local-dev
 exec zsh -l
 ```
 
 ### Wrong Node version inside a project
-
-Check what the project actually declares:
 
 ```bash
 ls -la .nvmrc .python-version mise.toml .tool-versions 2>/dev/null
@@ -338,21 +331,21 @@ node --version
 npm --version
 ```
 
-Important: `package.json.engines` alone does not cause this setup to switch Node versions.
+`package.json.engines` alone does not switch Node in this setup.
 
-For an immediate temporary fix:
+Temporary override:
 
 ```bash
 mise shell node@<version>
 ```
 
-For a persistent machine-wide compatibility constraint, use:
+Persistent machine-wide constraint:
 
 ```text
 ~/.config/mise/conf.d/90-machine-local.toml
 ```
 
-For a real project requirement that should apply to every developer and CI environment, the runtime selector belongs in the project itself and should be agreed with that project's maintainers.
+A project requirement that should apply to every developer and CI environment belongs in that project and should be agreed with its maintainers.
 
 ### `mise doctor` says `shims_on_path: no`
 
@@ -366,9 +359,9 @@ type -a mise
 mise current
 ```
 
-### Arrow Up shows a completion/history loading UI
+### Up Arrow shows a loading/history UI
 
-Expected terminal behavior in this repository is:
+Expected behavior:
 
 ```text
 Up Arrow     -> previous command immediately
@@ -376,51 +369,15 @@ Down Arrow   -> next command immediately
 Ctrl-R       -> interactive history search
 ```
 
-`zsh-autocomplete` can otherwise map arrow keys to its own menu. The repository explicitly restores normal Up/Down history navigation after loading the plugin.
+`zsh-autocomplete` can otherwise map arrow keys to its own menu. The repository restores normal Up/Down history navigation after loading the plugin.
 
-After updating dotfiles, restart the shell:
+After updating:
 
 ```bash
 exec zsh -l
 ```
 
-If the problem persists, confirm the repository is current and reapply the profile:
-
-```bash
-cd ~/.local/share/chezmoi
-git pull --ff-only
-./bootstrap.sh <profile>
-exec zsh -l
-```
-
-## Update an existing machine
-
-Use the same profile that was used to provision the machine:
-
-```bash
-cd ~/.local/share/chezmoi
-git pull --ff-only
-./bootstrap.sh <profile>
-exec zsh -l
-```
-
-Examples:
-
-```bash
-./bootstrap.sh local-dev
-./bootstrap.sh remote-client
-./bootstrap.sh dev-host
-```
-
-After a significant update:
-
-```bash
-mise doctor
-mise current
-chezmoi diff
-```
-
-## Add or remove software
+## Add or remove managed software
 
 All mise source configuration lives under `mise/`:
 
@@ -435,16 +392,6 @@ mise/
 ├── runtime.toml
 └── runtime.macos-local-dev.toml
 ```
-
-Responsibilities:
-
-- `mise/config.toml` — shared bootstrap state.
-- `mise/config.macos.toml` / `mise/config.linux.toml` — platform base packages.
-- `mise/config.macos-local-dev.toml` / `mise/config.macos-remote-client.toml` / `mise/config.linux-dev-host.toml` — profile additions.
-- `mise/runtime.toml` — shared runtime settings projected to `~/.config/mise/config.toml` by chezmoi.
-- `mise/runtime.macos-local-dev.toml` — default runtime toolset for a full local-development Mac.
-
-Declare only software that is intentionally part of the managed environment. Do not import raw package-manager snapshots.
 
 Add a macOS base CLI:
 
@@ -473,11 +420,9 @@ mise bootstrap packages use --path mise/config.linux-dev-host.toml apt:<package>
 
 Then rerun bootstrap for the relevant profile.
 
-Removing a declaration stops future management of that package. Operating-system package removal is intentionally explicit; do not blindly run broad cleanup/autoremove commands after changing this repository.
+Removing a declaration stops future management of that package. Operating-system removal remains explicit; do not blindly run broad cleanup/autoremove commands.
 
 ## Shell layout
-
-The managed Zsh configuration is intentionally small and domain-separated:
 
 ```text
 ~/.config/zsh/
@@ -492,9 +437,7 @@ The managed Zsh configuration is intentionally small and domain-separated:
 └── ux.zsh
 ```
 
-`~/.config/zsh/local.zsh` is reserved for machine-local shell configuration and is not part of the public source state.
-
-Do not recreate legacy layers such as platform/role dispatch files unless there is a concrete need. Platform and capability differences belong primarily in bootstrap/mise profiles; shell configuration should stay portable.
+`~/.config/zsh/local.zsh` is reserved for machine-local shell configuration and is not part of the portable source state.
 
 ## Remote development
 
@@ -503,8 +446,6 @@ Target topology:
 ```text
 remote client -> Tailscale -> SSH -> dev host -> tmux
 ```
-
-No public IP, DDNS, or router port forwarding is required.
 
 First-time setup:
 
@@ -517,72 +458,21 @@ sudo tailscale up
 
 3. Authorize the client's SSH public key for the Linux user.
 
-With [MagicDNS](https://tailscale.com/kb/1081/magicdns) enabled:
+With MagicDNS enabled:
 
 ```bash
 remote <user>@<host>
 ```
 
-A named tmux session is optional:
+Optional named tmux session:
 
 ```bash
 remote <user>@<host> backend
 ```
 
-Detach without stopping work with:
-
-```text
-Ctrl-b d
-```
-
-Run the same `remote` command later to reattach.
+Detach without stopping work with `Ctrl-b d`; run the same `remote` command later to reattach.
 
 SSH keys, hostnames, IP addresses, Tailscale identity, and credentials are intentionally not stored in this repository.
-
-## Managed stack
-
-Base macOS:
-
-- Homebrew
-- Git
-- GitHub CLI (`gh`)
-- jq
-- fzf
-- ripgrep
-- zoxide
-
-Base Linux:
-
-- Zsh
-- Git
-- curl
-- jq
-- fzf
-- ripgrep
-- zoxide
-
-Zsh plugins are managed as repositories by mise rather than duplicated Homebrew formulae:
-
-- zsh-autocomplete
-- zsh-autosuggestions
-- zsh-syntax-highlighting
-
-`local-dev` additionally provides development-oriented packages and global Node/Python defaults. `remote-client` and `dev-host` remain capability-specific rather than inheriting every workstation tool.
-
-## Edit dotfiles
-
-```bash
-cd ~/.local/share/chezmoi
-git status
-git diff
-
-# edit source files
-chezmoi diff
-chezmoi apply
-exec zsh -l
-```
-
-Before committing, check that no machine-specific or private material entered the repository.
 
 ## Privacy and public-repository rules
 
@@ -590,9 +480,9 @@ Never commit:
 
 - credentials, API tokens, private keys, certificates, or `.env` secrets;
 - corporate/private registry credentials;
-- private hostnames, IP addresses, Tailscale identities, or SSH target topology specific to a real environment;
+- private hostnames, IP addresses, Tailscale identities, or real SSH topology;
 - machine-local Git identity/credential configuration;
-- `~/.config/mise/conf.d/90-machine-local.toml` or equivalent machine-specific runtime constraints;
+- `~/.config/mise/conf.d/90-machine-local.toml` or equivalent machine-specific constraints;
 - raw Homebrew/apt package snapshots, caches, or generated state.
 
 Machine-local exceptions belong outside the portable repository, primarily in:
@@ -602,4 +492,4 @@ Machine-local exceptions belong outside the portable repository, primarily in:
 ~/.config/mise/conf.d/90-machine-local.toml
 ```
 
-The repository should describe **policy and reusable defaults**, not one person's current machine state.
+The repository should describe reusable policy and defaults, not one person's current machine state.
