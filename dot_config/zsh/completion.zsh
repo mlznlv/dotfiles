@@ -19,4 +19,12 @@ elif command -v brew >/dev/null 2>&1; then
   unset BREW_AUTOCOMPLETE
 fi
 
+# zsh-autocomplete maps the arrow keys to its completion/history menus by
+# default. Keep terminal-native behavior instead: Up/Down navigate command
+# history immediately. Ctrl-R remains available for interactive history search.
+bindkey '^[OA'  .up-line-or-history
+bindkey '^[[A'  .up-line-or-history
+bindkey '^[OB'  .down-line-or-history
+bindkey '^[[B'  .down-line-or-history
+
 unset AUTOCOMPLETE_PLUGIN ZSH_PLUGIN_HOME
