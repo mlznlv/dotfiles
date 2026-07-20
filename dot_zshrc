@@ -1,5 +1,11 @@
 # ~/.zshrc
 
+# Preserve Powerlevel10k instant prompt on machines where the existing prompt
+# configuration has been captured. Keep this near the top of the file.
+if [[ -r "$HOME/.p10k.zsh" && -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+fi
+
 ZSH_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
 
 source "$ZSH_CONFIG_HOME/core.zsh"
@@ -9,6 +15,7 @@ source "$ZSH_CONFIG_HOME/platform.zsh"
 source "$ZSH_CONFIG_HOME/tools.zsh"
 source "$ZSH_CONFIG_HOME/completion.zsh"
 source "$ZSH_CONFIG_HOME/aliases.zsh"
+source "$ZSH_CONFIG_HOME/prompt.zsh"
 source "$ZSH_CONFIG_HOME/plugins.zsh"
 
 unset ZSH_CONFIG_HOME
