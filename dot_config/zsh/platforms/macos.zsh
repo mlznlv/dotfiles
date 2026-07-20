@@ -1,0 +1,1 @@
+# macOS-specific shell configuration
