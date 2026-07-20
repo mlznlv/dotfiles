@@ -1,3 +1,11 @@
 [bootstrap.packages]
 "apt:build-essential" = "latest"
+"apt:openssh-server" = "latest"
 "apt:tmux" = "latest"
+
+[tasks.bootstrap]
+run = '''
+if ! command -v tailscale >/dev/null 2>&1; then
+  curl -fsSL https://tailscale.com/install.sh | sh
+fi
+'''
