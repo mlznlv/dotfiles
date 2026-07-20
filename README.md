@@ -99,36 +99,37 @@ Base Linux:
 - [ripgrep](https://github.com/BurntSushi/ripgrep)
 - [zoxide](https://github.com/ajeetdsouza/zoxide)
 
-Profiles add only workload-specific software:
+All mise source configuration lives under `mise/`:
 
-- `mise.macos-remote-client.toml` — Tailscale client.
-- `mise.macos-local-dev.toml` — local-development tooling.
-- `mise.linux-dev-host.toml` — OpenSSH server, tmux, build tools, and Tailscale.
+- `mise/config.toml` — shared bootstrap state.
+- `mise/config.macos.toml` / `mise/config.linux.toml` — platform base.
+- `mise/config.macos-remote-client.toml` / `mise/config.macos-local-dev.toml` / `mise/config.linux-dev-host.toml` — profile additions.
+- `mise/runtime.toml` — global runtime settings projected to `~/.config/mise/config.toml` by chezmoi.
 
 Do not import package-manager snapshots. Declare only direct tools that are intentionally part of the environment.
 
 ## Add or remove software
 
-Machine-global software belongs in `[bootstrap.packages]`.
+Machine-global software belongs in `[bootstrap.packages]` under `mise/`.
 
 ```bash
 # macOS base CLI
-mise bootstrap packages use -e macos brew:<package>
+mise bootstrap packages use --path mise -e macos brew:<package>
 
 # macOS remote-client app
-mise bootstrap packages use -e macos-remote-client brew-cask:<cask>
+mise bootstrap packages use --path mise -e macos-remote-client brew-cask:<cask>
 
 # macOS local-development CLI
-mise bootstrap packages use -e macos-local-dev brew:<package>
+mise bootstrap packages use --path mise -e macos-local-dev brew:<package>
 
 # Linux base package
-mise bootstrap packages use -e linux apt:<package>
+mise bootstrap packages use --path mise -e linux apt:<package>
 
 # Linux dev-host package
-mise bootstrap packages use -e linux-dev-host apt:<package>
+mise bootstrap packages use --path mise -e linux-dev-host apt:<package>
 ```
 
-To stop managing software, remove its declaration from the corresponding `mise.*.toml`. Operating-system package removal remains explicit.
+To stop managing software, remove its declaration from the corresponding `mise/config.*.toml`. Operating-system package removal remains explicit.
 
 Project runtimes belong to the project and are managed by mise:
 
@@ -147,13 +148,6 @@ cd ~/.local/share/chezmoi
 git pull --ff-only
 ./bootstrap.sh <profile>
 exec zsh -l
-```
-
-Check state:
-
-```bash
-chezmoi diff
-mise bootstrap status --missing
 ```
 
 ## Edit
