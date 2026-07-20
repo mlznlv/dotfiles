@@ -1,4 +1,0 @@
-brew "awscli"
-brew "kubernetes-cli"
-brew "pyenv"
-brew "pyenv-virtualenv"
