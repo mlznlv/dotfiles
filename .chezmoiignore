@@ -1,5 +1,3 @@
-Brewfile.common
-bootstrap.sh
-
-Brewfile.workstation
 README.md
+bootstrap.sh
+packages/**
