@@ -1,19 +1,9 @@
 # ~/.zprofile
 
-ZSH_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
-
-case "$OSTYPE" in
-  darwin*)
-    PROFILE_CONFIG="$ZSH_CONFIG_HOME/platforms/macos.profile.zsh"
-    ;;
-  linux*)
-    PROFILE_CONFIG="$ZSH_CONFIG_HOME/platforms/linux.profile.zsh"
-    ;;
-  *)
-    PROFILE_CONFIG=""
-    ;;
-esac
-
-[[ -n "$PROFILE_CONFIG" && -r "$PROFILE_CONFIG" ]] && source "$PROFILE_CONFIG"
-
-unset PROFILE_CONFIG ZSH_CONFIG_HOME
+# Homebrew belongs in the login shell environment. Guard both Apple Silicon and
+# Intel locations so the same file is safe across macOS hosts and harmless on Linux.
+if [[ -x /opt/homebrew/bin/brew ]]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+elif [[ -x /usr/local/bin/brew ]]; then
+  eval "$(/usr/local/bin/brew shellenv)"
+fi
