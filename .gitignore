@@ -9,8 +9,12 @@ dot_config/zsh/local.zsh
 *.key
 *.p12
 *.pfx
+*.crt
+*.cer
 *.kdbx
 *.agekey
+*.ovpn
+*.mobileconfig
 
 # Local/editor noise
 .DS_Store
