@@ -2,13 +2,12 @@
 
 Portable terminal UX for macOS and Linux.
 
-The goal: different machines may run different workloads, but the terminal should feel familiar everywhere.
+The goal is simple: different machines may run different workloads, but the terminal should feel familiar everywhere.
 
-- MacBook Pro — local development.
-- MacBook Air — lightweight remote-development client.
-- Linux / Minisforum — remote development host.
-
-`chezmoi` manages portable `$HOME` config. `mise` manages bootstrap dependencies and development runtimes. Tailscale provides private remote network access; SSH + tmux provide the persistent remote shell.
+- `chezmoi` manages portable `$HOME` configuration.
+- `mise` manages bootstrap dependencies and development runtimes.
+- Tailscale provides private remote network access.
+- SSH + tmux provide persistent remote development sessions.
 
 ## Install
 
@@ -25,23 +24,18 @@ Clone:
 
 ```bash
 mkdir -p ~/.local/share
-git clone git@github.com:mlznlv/dotfiles.git ~/.local/share/chezmoi
+git clone <repository-url> ~/.local/share/chezmoi
 cd ~/.local/share/chezmoi
 ```
 
-Bootstrap:
+Bootstrap a profile:
 
-| Machine | Command |
-|---|---|
-| MacBook Air | `./bootstrap.sh remote-client` |
-| MacBook Pro | `./bootstrap.sh local-dev` |
-| Linux / Minisforum | `./bootstrap.sh dev-host` |
-
-`base` is the minimal default:
-
-```bash
-./bootstrap.sh
-```
+| Profile | Purpose | Command |
+|---|---|---|
+| `base` | minimal shared environment | `./bootstrap.sh base` |
+| `remote-client` | macOS remote-development client | `./bootstrap.sh remote-client` |
+| `local-dev` | macOS local-development workstation | `./bootstrap.sh local-dev` |
+| `dev-host` | Linux remote-development host | `./bootstrap.sh dev-host` |
 
 Restart the shell:
 
@@ -52,47 +46,41 @@ exec zsh -l
 ## Remote development
 
 ```text
-MacBook Air -> Tailscale -> SSH -> Minisforum -> tmux
+remote client -> Tailscale -> SSH -> dev host -> tmux
 ```
 
 No public IP, DDNS, or router port forwarding is required.
 
 First-time setup:
 
-1. On the Air, open Tailscale and sign in to the tailnet.
-2. On the Minisforum, authenticate once:
+1. Sign both machines into the same Tailscale network.
+2. On the Linux host:
 
 ```bash
 sudo tailscale up
 ```
 
-3. For regular OpenSSH, make sure the Air's SSH public key is authorized for the Linux user on the Minisforum. SSH keys and Tailscale identity are intentionally not stored in this repository.
+3. Authorize the client's SSH public key for the Linux user.
 
 With MagicDNS enabled:
 
 ```bash
-remote <user>@<server-name>
+remote <user>@<host>
 ```
 
-Example:
+A named tmux session is optional:
 
 ```bash
-remote emil@dev
+remote <user>@<host> backend
 ```
 
-`remote` creates or reattaches the `main` tmux session. A named session is optional:
+Detach without stopping work with `Ctrl-b d`. Run the same `remote` command later to reattach.
 
-```bash
-remote emil@dev backend
-```
+SSH keys, hostnames, IP addresses, Tailscale identity, and credentials are intentionally not stored in this repository.
 
-Detach without stopping remote work: `Ctrl-b d`. Run the same `remote ...` command later to reattach.
+## Stack
 
-## Base stack
-
-Keep the base small and intentional.
-
-macOS:
+Base macOS:
 
 ```text
 git
@@ -103,7 +91,7 @@ ripgrep
 zoxide
 ```
 
-Linux:
+Base Linux:
 
 ```text
 zsh
@@ -121,7 +109,7 @@ Profiles add only workload-specific software:
 - `mise.macos-local-dev.toml` — local-development tooling.
 - `mise.linux-dev-host.toml` — SSH server, tmux, build tools, and Tailscale.
 
-Do not import a full `brew list`. Declare only direct tools you intentionally use; package-manager dependencies stay package-manager dependencies.
+Do not import package-manager snapshots. Declare only direct tools that are intentionally part of the environment.
 
 ## Add or remove software
 
@@ -144,9 +132,7 @@ mise bootstrap packages use -e linux apt:<package>
 mise bootstrap packages use -e linux-dev-host apt:<package>
 ```
 
-Then review the diff and run the matching bootstrap again.
-
-To stop managing a package, remove its declaration from the corresponding `mise.*.toml` file. Package removal from the operating system remains explicit.
+To stop managing software, remove its declaration from the corresponding `mise.*.toml`. Operating-system package removal remains explicit.
 
 Project runtimes belong to the project and are managed by `mise`:
 
@@ -156,23 +142,7 @@ mise use node@lts
 mise use python@latest
 ```
 
-Existing `.nvmrc` and `.python-version` files are supported by the managed global `mise` config; separate NVM and pyenv installations are not part of the target stack.
-
-## Zsh layout
-
-```text
-dot_config/zsh/
-├── core.zsh         history and shell options
-├── paths.zsh        PATH only
-├── completion.zsh   completion/autocomplete; loads early
-├── runtimes.zsh     mise activation
-├── remote.zsh       SSH + tmux remote entrypoint
-├── aliases.zsh      explicit aliases
-├── prompt.zsh       prompt
-└── ux.zsh           fzf, zoxide, autosuggestions, syntax highlighting
-```
-
-Add a new file only when a real domain has enough behavior to justify it.
+Existing `.nvmrc` and `.python-version` files are supported by the managed global `mise` config. NVM and pyenv are not part of the target stack.
 
 ## Update
 
