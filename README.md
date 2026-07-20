@@ -2,19 +2,17 @@
 
 Portable terminal UX for macOS and Linux.
 
-The goal is simple: different machines may run different workloads, but the shell should feel familiar everywhere.
+The goal: different machines may run different workloads, but the terminal should feel familiar everywhere.
 
-- Corporate MacBook Pro: local development workstation.
-- Personal MacBook Air: lightweight client, primarily for remote development.
-- Linux / Minisforum: remote development host.
+- MacBook Pro — local development.
+- MacBook Air — lightweight client / remote development.
+- Linux / Minisforum — remote development host.
 
-`chezmoi` manages portable `$HOME` configuration. `mise` manages bootstrap dependencies. Shell configuration detects optional tools instead of assuming a machine role.
+`chezmoi` manages portable `$HOME` config. `mise` manages bootstrap dependencies and development runtimes.
 
 ## Install
 
-### 1. Prerequisites
-
-A new machine needs Git, `curl`, and access to this repository.
+Prerequisites: Git, `curl`, and access to this repository.
 
 Ubuntu/Debian:
 
@@ -23,9 +21,7 @@ sudo apt-get update
 sudo apt-get install -y git curl
 ```
 
-On macOS, make sure Git / Apple Command Line Tools are available.
-
-### 2. Clone
+Clone:
 
 ```bash
 mkdir -p ~/.local/share
@@ -33,16 +29,13 @@ git clone git@github.com:mlznlv/dotfiles.git ~/.local/share/chezmoi
 cd ~/.local/share/chezmoi
 ```
 
-### 3. Bootstrap
+Bootstrap:
 
-Choose the install-time profile:
-
-| Machine | Profile | Command |
-|---|---|---|
-| MacBook Air | `base` | `./bootstrap.sh base` |
-| MacBook Pro | `local-dev` | `./bootstrap.sh local-dev` |
-| Linux / Minisforum | `dev-host` | `./bootstrap.sh dev-host` |
-| Minimal Linux host | `base` | `./bootstrap.sh base` |
+| Machine | Command |
+|---|---|
+| MacBook Air | `./bootstrap.sh base` |
+| MacBook Pro | `./bootstrap.sh local-dev` |
+| Linux / Minisforum | `./bootstrap.sh dev-host` |
 
 `base` is the default:
 
@@ -50,36 +43,130 @@ Choose the install-time profile:
 ./bootstrap.sh
 ```
 
-Then start a fresh login shell:
+Restart the shell:
 
 ```bash
 exec zsh -l
 ```
 
-## Verify
+## Base stack
 
-```bash
-command -v zsh
-command -v git
-command -v fzf
-command -v zoxide
-command -v mise
-chezmoi diff
+Keep the base small and intentional.
+
+macOS:
+
+```text
+git
+gh
+jq
+fzf
+ripgrep
+zoxide
 ```
 
-On the local-development Mac also verify Docker and existing Node/Python workflows.
+Linux:
 
-Interactively check:
+```text
+zsh
+git
+curl
+jq
+fzf
+ripgrep
+zoxide
+```
 
-- history;
-- autocomplete and autosuggestions;
-- syntax highlighting;
-- `fzf`;
-- `zoxide`;
-- Git aliases;
-- prompt behavior.
+Additional workload-specific packages live in profile files:
 
-## Update an existing machine
+- `mise.macos-local-dev.toml` — local development additions such as AWS/Kubernetes CLI tooling.
+- `mise.linux-dev-host.toml` — remote development additions such as build tools and tmux.
+
+Do not import a full `brew list`. Declare only direct tools you intentionally use; package-manager dependencies stay package-manager dependencies.
+
+## Add or remove software
+
+### System CLI or GUI app
+
+Put machine-global software in `[bootstrap.packages]`.
+
+Examples from the repository root:
+
+```bash
+# macOS base CLI
+mise bootstrap packages use -e macos brew:<package>
+
+# macOS local-development CLI
+mise bootstrap packages use -e macos-local-dev brew:<package>
+
+# macOS GUI app
+mise bootstrap packages use -e macos brew-cask:<cask>
+
+# Linux base package
+mise bootstrap packages use -e linux apt:<package>
+
+# Linux dev-host package
+mise bootstrap packages use -e linux-dev-host apt:<package>
+```
+
+Then review the diff and run the matching bootstrap again.
+
+To stop managing a package, remove its declaration from the corresponding `mise.*.toml` file.
+
+Homebrew formula cleanup can be previewed and applied explicitly:
+
+```bash
+mise bootstrap packages prune --manager brew --dry-run
+mise bootstrap packages prune --manager brew --yes
+```
+
+Do not run destructive prune commands blindly. Other system-package removal remains explicit/manual.
+
+### Development runtime
+
+Project runtimes belong to the project, not the machine profile.
+
+Example:
+
+```bash
+cd ~/src/project
+mise use node@lts
+mise use python@latest
+```
+
+This writes project-local runtime state and lets `mise` switch versions automatically when entering the project.
+
+### Node and NVM
+
+NVM is **not installed on new machines**.
+
+The current MacBook Pro still loads an existing `~/.nvm` installation for migration compatibility. New machines use `mise` as the Node version manager.
+
+Global mise config enables `.nvmrc` support, so existing projects can keep their `.nvmrc` while Node is provided by `mise`.
+
+When all current projects work through `mise`, the NVM compatibility block can be removed from `runtimes.zsh`.
+
+## Zsh layout
+
+```text
+dot_config/zsh/
+├── core.zsh         history and shell options
+├── paths.zsh        PATH only
+├── completion.zsh   completion/autocomplete subsystem; loads early
+├── runtimes.zsh     nvm/pyenv compatibility + mise activation
+├── aliases.zsh      explicit aliases
+├── prompt.zsh       prompt
+└── ux.zsh           fzf, zoxide, autosuggestions, syntax highlighting
+```
+
+The split is by responsibility:
+
+- `completion.zsh` exists separately because Zsh completion must initialize before integrations that register completions.
+- `runtimes.zsh` owns language/runtime version managers only.
+- `ux.zsh` owns interactive terminal behavior.
+
+Do not create empty platform/role placeholders. Add a new file only when a real domain has enough behavior to justify it.
+
+## Update
 
 ```bash
 cd ~/.local/share/chezmoi
@@ -88,70 +175,30 @@ git pull --ff-only
 exec zsh -l
 ```
 
-Examples:
+Check state:
 
 ```bash
-# MacBook Air
-./bootstrap.sh base
-
-# MacBook Pro
-./bootstrap.sh local-dev
-
-# Minisforum
-./bootstrap.sh dev-host
+chezmoi diff
+mise bootstrap status --missing
 ```
 
 ## Edit dotfiles
 
 ```bash
 cd ~/.local/share/chezmoi
-
 git status
 git diff
-chezmoi diff
 
 # edit source files
+chezmoi diff
 chezmoi apply
 exec zsh -l
 ```
 
-The repository is the source of truth for portable configuration.
-
-Machine-local exceptions that should not be shared belong in:
+Machine-local exceptions belong in:
 
 ```text
 ~/.config/zsh/local.zsh
 ```
 
 Never commit credentials, private keys, tokens, certificates, `.env` secrets, caches, or raw package-manager snapshots.
-
-## Layout
-
-```text
-bootstrap.sh                 bootstrap entrypoint
-mise.toml                    shared bootstrap resources
-mise.macos.toml              macOS base packages
-mise.macos-local-dev.toml    local-development additions
-mise.linux.toml              Linux base packages
-mise.linux-dev-host.toml     remote-development additions
-
-dot_zprofile                 login-shell environment
-dot_zshrc                    Zsh composition root
-
-dot_config/zsh/
-├── core.zsh                 history and shell options
-├── paths.zsh                portable/capability-based PATH
-├── completion.zsh           completion and autocomplete
-├── tools.zsh                tool/runtime integrations
-├── aliases.zsh              explicit aliases
-├── prompt.zsh               prompt
-└── interactive.zsh          autosuggestions and syntax highlighting
-```
-
-Keep the structure intentional:
-
-- do not create empty platform/role placeholders;
-- add abstractions only when there is actual divergent behavior;
-- add only direct, intentionally used packages to `mise*.toml`;
-- do not import the full output of `brew list` or another package-manager snapshot;
-- missing optional software must not break shell startup.
