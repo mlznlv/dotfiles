@@ -55,16 +55,13 @@ if [[ -z "$MISE_BIN" || ! -x "$MISE_BIN" ]]; then
   exit 1
 fi
 
-# Standalone mise installations support self-update. Package-manager installs do
-# not, so a self-update failure is non-fatal; the rest of the managed stack can
-# still be updated safely.
 echo "Updating mise..."
 if ! "$MISE_BIN" self-update --yes; then
   echo "mise self-update was unavailable or failed; continuing with the installed version."
 fi
 
-# Apply the latest declarations before upgrading so newly added packages,
-# repositories, runtime profile fragments, and dotfiles are present first.
+# Apply the newest declarations first. On macOS bootstrap uses the real Homebrew
+# CLI with --no-upgrade, so this step only installs newly declared dependencies.
 echo "Applying latest profile declarations..."
 bash "$SOURCE_DIR/bootstrap.sh" "$PROFILE"
 
@@ -73,11 +70,26 @@ if [[ "$PROFILE" != "base" ]]; then
   MISE_ENV_VALUE="$MISE_ENV_VALUE,$PLATFORM-$PROFILE"
 fi
 
-echo "Upgrading managed system packages..."
-(
-  cd "$SOURCE_DIR"
-  MISE_ENV="$MISE_ENV_VALUE" "$MISE_BIN" bootstrap packages upgrade --yes
-)
+if [[ "$PLATFORM" == "macos" ]]; then
+  echo "Updating Homebrew metadata..."
+  brew update
+
+  echo "Upgrading Homebrew base declarations..."
+  brew bundle upgrade --file="$SOURCE_DIR/homebrew/Brewfile"
+
+  HOMEBREW_PROFILE_FILE="$SOURCE_DIR/homebrew/Brewfile.$PROFILE"
+  if [[ -f "$HOMEBREW_PROFILE_FILE" ]]; then
+    echo "Upgrading Homebrew $PROFILE declarations..."
+    brew bundle upgrade --file="$HOMEBREW_PROFILE_FILE"
+  fi
+  unset HOMEBREW_PROFILE_FILE
+else
+  echo "Upgrading managed Linux system packages..."
+  (
+    cd "$SOURCE_DIR"
+    MISE_ENV="$MISE_ENV_VALUE" "$MISE_BIN" bootstrap packages upgrade --yes
+  )
+fi
 
 echo "Updating managed repositories..."
 (
@@ -93,6 +105,15 @@ echo "Upgrading managed runtimes within configured version ranges..."
 
 echo "Running health checks..."
 "$MISE_BIN" doctor
+
+if [[ "$PLATFORM" == "macos" ]]; then
+  brew bundle check --file="$SOURCE_DIR/homebrew/Brewfile"
+  HOMEBREW_PROFILE_FILE="$SOURCE_DIR/homebrew/Brewfile.$PROFILE"
+  if [[ -f "$HOMEBREW_PROFILE_FILE" ]]; then
+    brew bundle check --file="$HOMEBREW_PROFILE_FILE"
+  fi
+  unset HOMEBREW_PROFILE_FILE
+fi
 
 CHEZMOI_BIN="$(command -v chezmoi || true)"
 if [[ -n "$CHEZMOI_BIN" ]]; then
