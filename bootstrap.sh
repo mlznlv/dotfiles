@@ -92,6 +92,14 @@ case "$PLATFORM" in
     ;;
 esac
 
+case "$ROLE" in
+  workstation|server)
+    if [[ ! -d "$HOME/.nvm/.git" ]]; then
+      git clone --branch v0.39.7 --depth 1         https://github.com/nvm-sh/nvm.git "$HOME/.nvm"
+    fi
+    ;;
+esac
+
 mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
 printf '%s\n' "$ROLE" > "${XDG_CONFIG_HOME:-$HOME/.config}/zsh/role"
 
