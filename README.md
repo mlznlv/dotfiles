@@ -45,7 +45,7 @@ Bootstrap a profile:
 | `local-dev` | macOS local-development workstation | `./bootstrap.sh local-dev` |
 | `dev-host` | Linux remote-development host | `./bootstrap.sh dev-host` |
 
-On macOS the bootstrap order is Homebrew -> mise -> declared packages -> chezmoi.
+On macOS the bootstrap order is Homebrew -> mise -> declared packages/tools -> chezmoi.
 
 Restart the shell:
 
@@ -115,7 +115,8 @@ All mise source configuration lives under `mise/`:
 - `mise/config.toml` — shared bootstrap state.
 - `mise/config.macos.toml` / `mise/config.linux.toml` — platform base.
 - `mise/config.macos-remote-client.toml` / `mise/config.macos-local-dev.toml` / `mise/config.linux-dev-host.toml` — profile additions.
-- `mise/runtime.toml` — global runtime settings projected to `~/.config/mise/config.toml` by chezmoi.
+- `mise/runtime.toml` — shared runtime settings projected to `~/.config/mise/config.toml` by chezmoi.
+- `mise/runtime.macos-local-dev.toml` — default Node/Python toolset installed as a local-dev profile fragment under `~/.config/mise/conf.d/`.
 
 Do not import package-manager snapshots. Declare only direct tools that are intentionally part of the environment.
 
@@ -142,15 +143,23 @@ mise bootstrap packages use --path mise/config.linux-dev-host.toml apt:<package>
 
 To stop managing software, remove its declaration from the corresponding `mise/config.*.toml`. Operating-system package removal remains explicit.
 
-Project runtimes belong to the project and are managed by mise:
+The `local-dev` profile provides usable defaults outside projects:
+
+```toml
+[tools]
+node = "lts"
+python = "3.14"
+```
+
+Project runtimes still belong to the project. Project-local mise config, `.nvmrc`, and `.python-version` override the defaults:
 
 ```bash
 cd ~/src/project
-mise use node@lts
-mise use python@latest
+mise install
+mise current
 ```
 
-Existing `.nvmrc` and `.python-version` files are supported by the managed global mise config. Separate NVM and pyenv installations are not part of the target stack.
+Separate NVM and pyenv installations are not part of the target stack.
 
 ## Update
 
@@ -171,6 +180,15 @@ command -v brew mise git gh jq fzf rg zoxide
 chezmoi diff
 ```
 
+On `local-dev`, defaults should also work outside any project:
+
+```bash
+cd ~
+node --version
+npm --version
+python --version
+```
+
 Then verify at least one real project for each runtime it uses:
 
 ```bash
@@ -185,7 +203,7 @@ mise current
 python --version
 ```
 
-Expected state: `mise doctor` reports no problems, project runtimes resolve through mise, and `chezmoi diff` is empty or intentionally machine-local. The `local-dev` profile has been manually smoke-tested on macOS with this flow.
+Expected state: `mise doctor` reports no problems, default runtimes work on `local-dev`, project runtimes override them when configured, and `chezmoi diff` is empty or intentionally machine-local. The `local-dev` profile has been manually smoke-tested on macOS with this flow.
 
 ## Edit
 
