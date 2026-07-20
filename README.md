@@ -5,10 +5,10 @@ Portable terminal UX for macOS and Linux.
 The goal: different machines may run different workloads, but the terminal should feel familiar everywhere.
 
 - MacBook Pro — local development.
-- MacBook Air — lightweight client / remote development.
+- MacBook Air — lightweight remote-development client.
 - Linux / Minisforum — remote development host.
 
-`chezmoi` manages portable `$HOME` config. `mise` manages bootstrap dependencies and development runtimes.
+`chezmoi` manages portable `$HOME` config. `mise` manages bootstrap dependencies and development runtimes. Tailscale provides private remote network access; SSH + tmux provide the persistent remote shell.
 
 ## Install
 
@@ -33,11 +33,11 @@ Bootstrap:
 
 | Machine | Command |
 |---|---|
-| MacBook Air | `./bootstrap.sh base` |
+| MacBook Air | `./bootstrap.sh remote-client` |
 | MacBook Pro | `./bootstrap.sh local-dev` |
 | Linux / Minisforum | `./bootstrap.sh dev-host` |
 
-`base` is the default:
+`base` is the minimal default:
 
 ```bash
 ./bootstrap.sh
@@ -48,6 +48,53 @@ Restart the shell:
 ```bash
 exec zsh -l
 ```
+
+## Remote development
+
+The remote path is:
+
+```text
+MacBook Air -> Tailscale -> SSH -> Minisforum -> tmux
+```
+
+No public IP, DDNS, or router port forwarding is required.
+
+First-time setup:
+
+1. On the Air, open Tailscale and sign in to the tailnet.
+2. On the Minisforum, authenticate once:
+
+```bash
+sudo tailscale up
+```
+
+With MagicDNS enabled, connect by the server name:
+
+```bash
+remote <user>@<server-name>
+```
+
+Example:
+
+```bash
+remote emil@dev
+```
+
+`remote` runs SSH and creates or reattaches the `main` tmux session. A named session is optional:
+
+```bash
+remote emil@dev backend
+```
+
+Detach without stopping the remote work:
+
+```text
+Ctrl-b d
+```
+
+Run the same `remote ...` command later to reattach.
+
+The repository does not hardcode hostnames, IP addresses, SSH keys, or Tailscale identity.
 
 ## Base stack
 
@@ -76,30 +123,27 @@ ripgrep
 zoxide
 ```
 
-Additional workload-specific packages live in profile files:
+Profiles add only workload-specific software:
 
-- `mise.macos-local-dev.toml` — local development additions such as AWS/Kubernetes CLI tooling.
-- `mise.linux-dev-host.toml` — remote development additions such as build tools and tmux.
+- `mise.macos-remote-client.toml` — Tailscale client.
+- `mise.macos-local-dev.toml` — local-development tooling.
+- `mise.linux-dev-host.toml` — SSH server, tmux, build tools, and Tailscale.
 
 Do not import a full `brew list`. Declare only direct tools you intentionally use; package-manager dependencies stay package-manager dependencies.
 
 ## Add or remove software
 
-### System CLI or GUI app
-
-Put machine-global software in `[bootstrap.packages]`.
-
-Examples from the repository root:
+Machine-global software belongs in `[bootstrap.packages]`.
 
 ```bash
 # macOS base CLI
 mise bootstrap packages use -e macos brew:<package>
 
+# macOS remote-client app
+mise bootstrap packages use -e macos-remote-client brew-cask:<cask>
+
 # macOS local-development CLI
 mise bootstrap packages use -e macos-local-dev brew:<package>
-
-# macOS GUI app
-mise bootstrap packages use -e macos brew-cask:<cask>
 
 # Linux base package
 mise bootstrap packages use -e linux apt:<package>
@@ -110,22 +154,9 @@ mise bootstrap packages use -e linux-dev-host apt:<package>
 
 Then review the diff and run the matching bootstrap again.
 
-To stop managing a package, remove its declaration from the corresponding `mise.*.toml` file.
+To stop managing a package, remove its declaration from the corresponding `mise.*.toml` file. Package removal from the operating system remains explicit.
 
-Homebrew formula cleanup can be previewed and applied explicitly:
-
-```bash
-mise bootstrap packages prune --manager brew --dry-run
-mise bootstrap packages prune --manager brew --yes
-```
-
-Do not run destructive prune commands blindly. Other system-package removal remains explicit/manual.
-
-### Development runtime
-
-Project runtimes belong to the project, not the machine profile.
-
-Example:
+Project runtimes belong to the project:
 
 ```bash
 cd ~/src/project
@@ -133,38 +164,21 @@ mise use node@lts
 mise use python@latest
 ```
 
-This writes project-local runtime state and lets `mise` switch versions automatically when entering the project.
-
-### Node and NVM
-
-NVM is **not installed on new machines**.
-
-The current MacBook Pro still loads an existing `~/.nvm` installation for migration compatibility. New machines use `mise` as the Node version manager.
-
-Global mise config enables `.nvmrc` support, so existing projects can keep their `.nvmrc` while Node is provided by `mise`.
-
-When all current projects work through `mise`, the NVM compatibility block can be removed from `runtimes.zsh`.
-
 ## Zsh layout
 
 ```text
 dot_config/zsh/
 ├── core.zsh         history and shell options
 ├── paths.zsh        PATH only
-├── completion.zsh   completion/autocomplete subsystem; loads early
-├── runtimes.zsh     nvm/pyenv compatibility + mise activation
+├── completion.zsh   completion/autocomplete; loads early
+├── runtimes.zsh     runtime manager activation
+├── remote.zsh       SSH + tmux remote entrypoint
 ├── aliases.zsh      explicit aliases
 ├── prompt.zsh       prompt
 └── ux.zsh           fzf, zoxide, autosuggestions, syntax highlighting
 ```
 
-The split is by responsibility:
-
-- `completion.zsh` exists separately because Zsh completion must initialize before integrations that register completions.
-- `runtimes.zsh` owns language/runtime version managers only.
-- `ux.zsh` owns interactive terminal behavior.
-
-Do not create empty platform/role placeholders. Add a new file only when a real domain has enough behavior to justify it.
+Add a new file only when a real domain has enough behavior to justify it.
 
 ## Update
 
@@ -182,7 +196,7 @@ chezmoi diff
 mise bootstrap status --missing
 ```
 
-## Edit dotfiles
+## Edit
 
 ```bash
 cd ~/.local/share/chezmoi
@@ -195,10 +209,6 @@ chezmoi apply
 exec zsh -l
 ```
 
-Machine-local exceptions belong in:
+Machine-local exceptions belong in `~/.config/zsh/local.zsh`.
 
-```text
-~/.config/zsh/local.zsh
-```
-
-Never commit credentials, private keys, tokens, certificates, `.env` secrets, caches, or raw package-manager snapshots.
+Never commit credentials, private keys, tokens, certificates, `.env` secrets, caches, host-specific network identity, or raw package-manager snapshots.
