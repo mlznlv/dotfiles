@@ -95,15 +95,22 @@ else
   rm -f "$MISE_PROFILE_TARGET"
 fi
 
-MISE_ENV_VALUE="$PLATFORM"
-if [[ "$PROFILE" != "base" ]]; then
-  MISE_ENV_VALUE="$MISE_ENV_VALUE,$PLATFORM-$PROFILE"
-fi
+if [[ "$PLATFORM" == "linux" ]]; then
+  MISE_ENV_VALUE="linux"
+  if [[ "$PROFILE" != "base" ]]; then
+    MISE_ENV_VALUE="$MISE_ENV_VALUE,linux-$PROFILE"
+  fi
 
-(
-  cd "$SOURCE_DIR"
-  MISE_ENV="$MISE_ENV_VALUE" "$MISE_BIN" bootstrap --yes
-)
+  (
+    cd "$SOURCE_DIR"
+    MISE_ENV="$MISE_ENV_VALUE" "$MISE_BIN" bootstrap --yes
+  )
+else
+  (
+    cd "$SOURCE_DIR"
+    "$MISE_BIN" bootstrap --yes
+  )
+fi
 
 CHEZMOI_BIN="$(command -v chezmoi || true)"
 if [[ -z "$CHEZMOI_BIN" ]]; then
