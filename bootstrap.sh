@@ -73,6 +73,18 @@ if [[ ! -x "$MISE_BIN" ]]; then
   exit 1
 fi
 
+# Install a machine-profile runtime fragment into mise's global conf.d.
+# This keeps full development workstations useful outside project directories
+# without forcing heavyweight runtimes onto lightweight remote clients.
+MISE_PROFILE_SOURCE="$SOURCE_DIR/mise/runtime.$PLATFORM-$PROFILE.toml"
+MISE_PROFILE_TARGET="${XDG_CONFIG_HOME:-$HOME/.config}/mise/conf.d/20-dotfiles-profile.toml"
+mkdir -p "$(dirname "$MISE_PROFILE_TARGET")"
+if [[ -f "$MISE_PROFILE_SOURCE" ]]; then
+  cp "$MISE_PROFILE_SOURCE" "$MISE_PROFILE_TARGET"
+else
+  rm -f "$MISE_PROFILE_TARGET"
+fi
+
 MISE_ENV_VALUE="$PLATFORM"
 if [[ "$PROFILE" != "base" ]]; then
   MISE_ENV_VALUE="$MISE_ENV_VALUE,$PLATFORM-$PROFILE"
