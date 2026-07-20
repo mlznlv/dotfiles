@@ -1,5 +1,7 @@
 # Machine-local overrides
 dot_config/zsh/local.zsh
+mise/config.local.toml
+mise/config.*.local.toml
 
 # Secrets and private material
 .env
