@@ -1,10 +1,10 @@
 # Starship owns prompt rendering. Preset selection is machine-local and does not
 # modify the dotfiles repository.
 
- typeset -gr DOTFILES_STARSHIP_DEFAULT_PRESET='plain-text-symbols'
- typeset -gr DOTFILES_STARSHIP_STATE_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/starship"
- typeset -gr DOTFILES_STARSHIP_PRESET_FILE="$DOTFILES_STARSHIP_STATE_DIR/preset"
- typeset -gr DOTFILES_STARSHIP_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/starship/presets"
+typeset -gr DOTFILES_STARSHIP_DEFAULT_PRESET='plain-text-symbols'
+typeset -gr DOTFILES_STARSHIP_STATE_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/starship"
+typeset -gr DOTFILES_STARSHIP_PRESET_FILE="$DOTFILES_STARSHIP_STATE_DIR/preset"
+typeset -gr DOTFILES_STARSHIP_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/starship/presets"
 
 _dotfiles_starship_normalize_preset() {
   case "$1" in
