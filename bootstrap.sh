@@ -60,6 +60,16 @@ if [[ "$PLATFORM" == "macos" ]]; then
       fi
     fi
   fi
+
+  echo "Applying Homebrew base declarations..."
+  brew bundle install --no-upgrade --file="$SOURCE_DIR/homebrew/Brewfile"
+
+  HOMEBREW_PROFILE_FILE="$SOURCE_DIR/homebrew/Brewfile.$PROFILE"
+  if [[ -f "$HOMEBREW_PROFILE_FILE" ]]; then
+    echo "Applying Homebrew $PROFILE declarations..."
+    brew bundle install --no-upgrade --file="$HOMEBREW_PROFILE_FILE"
+  fi
+  unset HOMEBREW_PROFILE_FILE
 fi
 
 MISE_BIN="$(command -v mise || true)"
