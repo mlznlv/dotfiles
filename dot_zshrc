@@ -9,6 +9,6 @@ source "$ZSH_CONFIG_HOME/completion.zsh"
 source "$ZSH_CONFIG_HOME/tools.zsh"
 source "$ZSH_CONFIG_HOME/aliases.zsh"
 source "$ZSH_CONFIG_HOME/prompt.zsh"
-source "$ZSH_CONFIG_HOME/plugins.zsh"
+source "$ZSH_CONFIG_HOME/interactive.zsh"
 
 unset ZSH_CONFIG_HOME
