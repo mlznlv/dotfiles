@@ -2,48 +2,44 @@
 
 Portable terminal UX for macOS and Linux, managed with `chezmoi` and bootstrapped with `mise`.
 
-The repository does **not** try to clone one machine onto every other machine. Its purpose is to preserve the same terminal muscle memory while allowing each host to run a different workload.
+The goal is not to clone one machine onto every other machine. The goal is to keep the same shell muscle memory while allowing each host to run a different workload.
+
+```text
+                          shared terminal UX
+                                 │
+                   ┌─────────────┼─────────────┐
+                   │             │             │
+                   ▼             ▼             ▼
+             MacBook Pro    MacBook Air    Linux dev host
+                 macOS          macOS          Ubuntu
+                   │             │             │
+              local dev      remote-first    remote dev
+```
 
 ## Quick start
 
-The intended flow for a new machine is:
-
-```text
-prepare Git access
-      ↓
-clone this repository
-      ↓
-choose an install-time profile
-      ↓
-run bootstrap.sh
-      ↓
-mise installs declared dependencies
-      ↓
-chezmoi applies $HOME configuration
-      ↓
-open a fresh login shell
-```
-
-### Prerequisites
+### 1. Prerequisites
 
 A new machine needs:
 
-- `git`;
+- Git;
 - `curl`;
 - access to this private GitHub repository.
 
-On Ubuntu/Debian, install the prerequisites with:
+Ubuntu/Debian:
 
 ```bash
 sudo apt-get update
 sudo apt-get install -y git curl
 ```
 
-On macOS, make sure the Apple command-line developer tools / Git are available before cloning the repository.
+macOS: install/enable the Apple command-line developer tools so Git is available.
 
-### Clone
+Homebrew is **not** a bootstrap prerequisite. `mise` owns declared `brew:` / `brew-cask:` packages.
 
-The recommended checkout location is chezmoi's conventional source directory:
+### 2. Clone
+
+Recommended checkout location:
 
 ```bash
 mkdir -p ~/.local/share
@@ -51,11 +47,11 @@ git clone git@github.com:mlznlv/dotfiles.git ~/.local/share/chezmoi
 cd ~/.local/share/chezmoi
 ```
 
-Use another Git transport if SSH authentication has not been configured yet. The bootstrap script works from any checkout location; `~/.local/share/chezmoi` is only the recommended persistent location.
+Another checkout location also works; `bootstrap.sh` uses its own directory as the chezmoi source.
 
-### Choose a profile
+### 3. Choose an install-time profile
 
-Profiles affect **installation only**. They do not become a runtime machine identity.
+Profiles control **what gets installed**. They are not persisted as shell identities.
 
 | Machine / use case | Platform | Profile | Command |
 |---|---|---|---|
@@ -64,15 +60,13 @@ Profiles affect **installation only**. They do not become a runtime machine iden
 | Minisforum / Ubuntu remote development host | Linux | `dev-host` | `./bootstrap.sh dev-host` |
 | Generic minimal Linux host | Linux | `base` | `./bootstrap.sh base` |
 
-`base` is the default, so this is equivalent:
+`base` is the default:
 
 ```bash
 ./bootstrap.sh
 ```
 
-### Bootstrap a new machine
-
-From the repository root:
+### 4. Bootstrap
 
 ```bash
 ./bootstrap.sh <profile>
@@ -94,48 +88,125 @@ Examples:
 The script:
 
 1. detects macOS vs Linux;
-2. validates the selected profile;
+2. validates the requested profile;
 3. installs `mise` if necessary;
-4. runs the matching declarative `mise bootstrap` configuration;
+4. applies declarative `mise bootstrap` state;
 5. installs `chezmoi` if necessary;
 6. applies this repository as chezmoi source state.
 
-After bootstrap, start a fresh login shell:
+Then start a fresh login shell:
 
 ```bash
 exec zsh -l
 ```
 
-### Verify the installation
+Do not validate shell changes by repeatedly sourcing `.zshrc`; restart Zsh instead.
 
-Basic checks:
+## First migration of the existing MacBook Pro
+
+The old workstation is the reference implementation for the terminal UX. Migrate it conservatively before merging large shell changes.
+
+### Preserve the existing Powerlevel10k appearance
+
+The old `.zshrc` loaded `~/.p10k.zsh`, but that file has never been committed to this repository. The repository now preserves Powerlevel10k loading, but the exact visual configuration cannot be reproduced on another machine until the existing file is captured.
+
+On the current MacBook Pro:
 
 ```bash
-command -v zsh
+cd ~/.local/share/chezmoi
+chezmoi add ~/.p10k.zsh
+
+git status
+git diff --cached -- dot_p10k.zsh
+```
+
+Review the generated source file before committing it. It must contain prompt configuration only, not secrets or machine-specific credentials.
+
+Until `dot_p10k.zsh` is committed:
+
+- the current Mac can continue using its existing local `~/.p10k.zsh`;
+- a new machine will not invent or launch a new Powerlevel10k configuration automatically;
+- exact prompt appearance is not yet reproducible.
+
+### Workstation smoke test
+
+Before merging shell/bootstrap changes, verify on the current MacBook Pro:
+
+```bash
+bash -n bootstrap.sh
+./bootstrap.sh local-dev
+exec zsh -l
+```
+
+Then check:
+
+```bash
 command -v git
 command -v fzf
 command -v zoxide
 command -v mise
+command -v docker
+command -v node
+command -v npm
+command -v pyenv
+command -v python
 
 chezmoi diff
 ```
 
-Then verify interactively that:
+Interactively verify:
 
-- Zsh starts without errors;
-- history works;
-- autocomplete/autosuggestions/syntax highlighting work;
-- `fzf` integration works;
-- `zoxide` works;
-- Git aliases behave as expected.
+- the prompt looks the same;
+- history is preserved and shared across tabs;
+- autocomplete works;
+- autosuggestions work;
+- syntax highlighting works;
+- `fzf` keybindings/integration work;
+- `zoxide` navigation works;
+- Docker CLI and Docker completion work;
+- existing `nvm` projects still work;
+- existing `pyenv` / virtualenv workflows still work;
+- Git aliases used in daily work still exist.
 
-On a local-development Mac, also verify Docker and existing development runtimes.
+If an old Oh My Zsh alias/function is actually used, restore that behavior explicitly instead of reintroducing the entire framework/plugin bundle.
 
-On a remote development host, open a fresh SSH session and verify that the same shell UX is preserved remotely.
+## What was intentionally dropped from the old setup
+
+The migration is not a byte-for-byte copy of the previous `.zshrc`.
+
+Intentionally removed:
+
+- Oh My Zsh framework and implicit plugin bundle;
+- `Antigravity` PATH/configuration;
+- old Obsidian CLI PATH/configuration;
+- duplicated Docker completion initialization;
+- global `DOCKER_BUILDKIT=1` and `COMPOSE_DOCKER_CLI_BUILD=1` exports;
+- raw package-manager snapshots as desired state.
+
+Old Oh My Zsh plugins such as `git`, `macos`, `docker`, `brew`, `nvm`, `npm`, `virtualenv`, and `qrcode` are **not** automatically recreated. Only behavior that is actually useful should be restored explicitly.
+
+## Old `.zshrc` parity map
+
+| Old behavior | New owner |
+|---|---|
+| Powerlevel10k instant prompt | `dot_zshrc` |
+| Powerlevel10k theme/config loading | `~/.config/zsh/prompt.zsh` + managed `~/.p10k.zsh` |
+| `~/.local/bin` PATH | `paths.zsh` |
+| `~/.docker/bin` PATH | `paths.zsh`, capability-detected |
+| `~/.pyenv/bin` PATH | `paths.zsh`, capability-detected |
+| NVM | `tools.zsh`, migration compatibility |
+| pyenv | `tools.zsh`, migration compatibility |
+| Docker completion path | `completion.zsh` |
+| history options | `core.zsh` |
+| autocomplete | `completion.zsh` |
+| autosuggestions | `plugins.zsh` |
+| syntax highlighting | `plugins.zsh`, loaded last |
+| fzf | `tools.zsh` with modern + legacy fallback |
+| zoxide | `tools.zsh` |
+| Homebrew shellenv | `platforms/macos.profile.zsh`, only when Homebrew exists |
+| development runtime ownership | gradually moving to project-local `mise` |
 
 ## Updating an existing machine
-
-Pull the desired state and run the same profile again:
 
 ```bash
 cd ~/.local/share/chezmoi
@@ -147,27 +218,32 @@ exec zsh -l
 Examples:
 
 ```bash
-# MacBook Air
+# Air
 ./bootstrap.sh base
 
-# MacBook Pro
+# Pro
 ./bootstrap.sh local-dev
 
 # Minisforum
 ./bootstrap.sh dev-host
 ```
 
-The bootstrap process is intended to be repeatable. Re-running it should converge the machine toward the declared state rather than require a one-time installation sequence.
+The bootstrap is intended to be repeatable and converge toward declared state.
 
-Before or after applying dotfile changes, inspect managed differences with:
+Inspect dotfile changes before or after applying:
 
 ```bash
 chezmoi diff
 ```
 
-## Editing dotfiles
+Inspect bootstrap state:
 
-The repository is the source of truth for portable terminal UX.
+```bash
+mise bootstrap status
+mise bootstrap status --missing
+```
+
+## Editing dotfiles
 
 With the recommended checkout location:
 
@@ -182,79 +258,45 @@ git status
 git diff
 
 # edit source files
-
 chezmoi diff
 chezmoi apply
 
-# verify in a fresh shell
 exec zsh -l
 ```
 
-Commit only portable desired state. Do not commit credentials, private keys, tokens, machine-generated caches, or accidental snapshots of installed software.
-
-## Machine-local overrides
-
-Machine-specific exceptions that should not be shared belong in unmanaged local files.
-
-For Zsh:
-
-```text
-~/.config/zsh/local.zsh
-```
-
-The shared `.zshrc` loads this file when it exists.
-
-Use local overrides sparingly. A difference that is actually platform-wide or capability-wide should be expressed in the shared configuration instead of becoming per-machine drift.
-
-## Target topology
-
-```text
-                         shared terminal UX
-                                │
-                  ┌─────────────┼─────────────┐
-                  │             │             │
-                  ▼             ▼             ▼
-            MacBook Pro    MacBook Air    Linux dev host
-                macOS          macOS          Ubuntu
-                  │             │             │
-             local dev      remote-first    remote dev
-                  │             │             │
-                  └──────── SSH ┴─────────────┘
-```
-
-The important invariant is:
-
-> Different machines can have different software and responsibilities while the shell UX stays familiar.
+Commit only portable desired state. Never commit credentials, private keys, tokens, certificates, `.env` secrets, caches, or accidental package snapshots.
 
 ## Architecture
 
 There are two separate concerns.
 
-### 1. Runtime shell configuration
-
-The shell is composed from:
+### Runtime shell
 
 ```text
 common UX
 + platform adaptation
 + capability detection
-+ optional machine-local overrides
++ optional machine-local override
 ```
 
-It does not know whether a machine is a `workstation`, `client`, `server`, `work`, or `personal` machine.
+The runtime shell does not know whether a machine is a `workstation`, `client`, `server`, `work`, or `personal` machine.
 
-`~/.zshrc` is intentionally a thin composition root:
+`~/.zshrc` is a thin composition root:
 
 ```text
+instant prompt
 core.zsh
 paths.zsh
 platform.zsh
 local.zsh       (optional, unmanaged)
-tools.zsh
 completion.zsh
+tools.zsh
 aliases.zsh
+prompt.zsh
 plugins.zsh
 ```
+
+Optional software is detected instead of assumed. Missing Docker, pyenv, nvm, fzf, zoxide, mise, or a prompt config must not make the shell unusable.
 
 Platform-specific behavior lives under:
 
@@ -266,146 +308,56 @@ Platform-specific behavior lives under:
 └── linux.profile.zsh
 ```
 
-Optional integrations are capability-driven. For example, Docker-specific PATH/completion is enabled only when the corresponding Docker directories exist. Missing optional software must never break shell startup.
+### Provisioning
 
-### 2. Machine provisioning
-
-Provisioning is declarative and handled by `mise`.
+Provisioning is declarative and handled by `mise`:
 
 ```text
 mise.toml                  shared bootstrap resources
 mise.macos.toml            macOS base packages
 mise.linux.toml            Linux base packages
-mise.macos-local-dev.toml  optional local-dev capability set
-mise.linux-dev-host.toml   optional remote-dev-host capability set
+mise.macos-local-dev.toml  local-development additions
+mise.linux-dev-host.toml   remote-development-host additions
 ```
 
-Profiles exist only at **installation time**. They are not persisted into the shell and do not affect runtime configuration logic.
-
-## Current machine mapping
-
-### Corporate MacBook Pro
+Current mapping:
 
 ```text
-platform: macOS
-profile:  local-dev
+Corporate MacBook Pro
+  macOS + local-dev
+
+Personal MacBook Air
+  macOS + base
+
+Minisforum / Ubuntu
+  Linux + dev-host
 ```
 
-This is a full local development machine. Docker and other workstation applications may exist locally, but the shell discovers them by capability rather than by a persisted machine role.
-
-Bootstrap:
-
-```bash
-./bootstrap.sh local-dev
-```
-
-### Personal MacBook Air
-
-```text
-platform: macOS
-profile:  base
-```
-
-The Air is primarily a lightweight client for remote development but can gain additional local tooling later without changing the dotfiles architecture.
-
-Bootstrap:
-
-```bash
-./bootstrap.sh base
-```
-
-### Linux / Minisforum development host
-
-```text
-platform: Linux
-profile:  dev-host
-```
-
-The host provides remote compute, persistent terminal sessions, build tooling, containers, project runtimes, language servers, databases, and other development services as needed.
-
-Bootstrap:
-
-```bash
-./bootstrap.sh dev-host
-```
-
-## Bootstrap flow
-
-`bootstrap.sh` is deliberately small. It only:
-
-1. detects macOS vs Linux;
-2. selects the requested install-time capability profile;
-3. ensures `mise` is available;
-4. runs declarative `mise bootstrap` state;
-5. ensures `chezmoi` is available;
-6. applies the repository as chezmoi source state.
-
-Conceptually:
-
-```text
-bootstrap.sh
-    │
-    ├── detect OS
-    ├── select provisioning profile
-    │
-    ▼
-  mise bootstrap
-    │
-    ├── system packages
-    └── shared Zsh plugin repositories
-    │
-    ▼
-  chezmoi apply
-    │
-    ▼
-  consistent $HOME / terminal UX
-```
-
-Supported combinations:
-
-```text
-macOS  + base
-macOS  + local-dev
-Linux  + base
-Linux  + dev-host
-```
-
-`base` is the default:
-
-```bash
-./bootstrap.sh
-```
-
-Prerequisites for the entrypoint are `curl` and a usable Git checkout of this repository.
+Profiles exist only at installation time.
 
 ## Ownership boundaries
 
-### chezmoi owns `$HOME` state
+### chezmoi owns portable `$HOME` state
 
 Examples:
 
 ```text
 .zshrc
 .zprofile
+.p10k.zsh              once captured from the current workstation
 ~/.config/zsh/**
-future Ghostty config
-future tmux config
-future Neovim config
-future Git UX config
-future SSH client config
+future terminal/editor/multiplexer config
 ```
-
-Secrets must not be committed to this repository.
 
 ### mise owns bootstrap lifecycle
 
-`mise` owns declarative installation of host packages and shared external repositories used by the terminal environment.
+`mise` owns declared host packages and shared external repositories used by the terminal environment.
 
-The repository intentionally avoids maintaining separate handwritten `apt`, Homebrew, curl-installer, and Git-clone orchestration paths for the same logical environment.
+The repository should not maintain parallel handwritten Homebrew, APT, curl-installer, and Git-clone implementations for the same logical dependency.
 
 ### Projects own project runtime versions
 
-Project-specific versions should normally live with the project, for example:
+Prefer project-owned version declarations such as:
 
 ```text
 mise.toml
@@ -414,44 +366,46 @@ mise.toml
 .python-version
 ```
 
-The dotfiles repository should not become a global snapshot of every runtime version ever installed on a machine.
+Existing `nvm` and `pyenv` remain supported during migration. Do not remove them from the current workstation until affected projects have been verified under `mise`.
 
-## Development runtime migration
+## Shared Zsh dependencies
 
-The existing workstation still supports `nvm` and `pyenv` when they are installed. This is intentional migration compatibility, not the target ownership model.
-
-`mise` is activated last in the shell, so projects can adopt `mise` incrementally without requiring a big-bang migration of the current MacBook Pro.
-
-Target direction:
-
-```text
-new/project-local runtime management -> mise
-existing nvm/pyenv setup              -> supported during migration
-```
-
-Do not remove legacy runtime managers from the current workstation until the affected projects have been verified under `mise`.
-
-## Zsh plugins
-
-Shared plugins are bootstrapped into one canonical location:
+Bootstrapped into:
 
 ```text
 ~/.local/share/zsh/plugins/
+├── powerlevel10k
 ├── zsh-autocomplete
 ├── zsh-autosuggestions
 └── zsh-syntax-highlighting
 ```
 
-They are declared as `mise` bootstrap repositories rather than installed by custom shell code.
+Important load-order rules:
 
-The shell loader remains defensive: a missing plugin does not make the shell unusable.
+- Docker completion directories are added to `fpath` before completion initialization;
+- `zsh-autocomplete` initializes completion early;
+- tool integrations load after completion initialization;
+- `zsh-syntax-highlighting` remains the last late-loaded Zsh plugin.
+
+## Machine-local overrides
+
+Use:
+
+```text
+~/.config/zsh/local.zsh
+```
+
+for genuine per-machine exceptions that must not be shared.
+
+Use this sparingly. A difference that is actually platform-wide or capability-wide belongs in shared configuration.
 
 ## UX invariant
 
-The following should remain consistent across local macOS sessions and Linux-over-SSH sessions:
+These should remain familiar across local macOS and Linux-over-SSH sessions:
 
 ```text
 Zsh behavior
+prompt
 history
 completion
 autocomplete
@@ -460,45 +414,40 @@ syntax highlighting
 fzf
 zoxide
 keybindings
-Git aliases/workflow
+Git workflow
 navigation
-prompt (when added)
-tmux UX (when added)
-Neovim UX (when added)
 ```
 
-Terminal-emulator behavior and remote shell behavior are separate layers:
+Terminal rendering and remote shell behavior are separate layers:
 
 ```text
 LOCAL CLIENT                      REMOTE HOST
 
-Ghostty / terminal rendering      Zsh
+terminal emulator / rendering     Zsh
 font / keyboard / clipboard  SSH  prompt
-                           ─────► fzf / zoxide
-                                  tmux
-                                  nvim
-                                  CLI tools
+                            ─────► fzf / zoxide
+                                   tmux
+                                   editor
+                                   CLI tools
 ```
-
-The core UX must therefore live primarily in portable shell/editor/multiplexer configuration, not only in a macOS terminal emulator.
 
 ## Portability rules
 
-1. Common configuration must not assume macOS, Homebrew, Apple Silicon, Docker Desktop, a specific username, or a specific machine purpose.
-2. OS-specific behavior belongs in platform files or OS-specific `mise` bootstrap config.
+1. Common config must not assume macOS, Homebrew, Apple Silicon, Docker Desktop, a username, or a machine purpose.
+2. OS-specific behavior belongs in platform config or OS-specific `mise` files.
 3. Optional software must be detected, not assumed.
 4. Provisioning profiles select installed capabilities; they do not become runtime machine identities.
-5. Secrets, credentials, SSH private keys, tokens, certificates, and private `.env` values stay outside Git.
-6. Desired state should be curated. Do not turn package configuration into a dump of everything that happened to be installed.
+5. Secrets stay outside Git.
+6. Desired state is curated; do not import everything that happened to be installed.
+7. Do not rebuild framework magic unless a concrete missing behavior justifies it.
 
 ## Definition of success
 
 The repository is successful when:
 
 - the current MacBook Pro remains fully usable for local development;
-- a personal MacBook Air can be bootstrapped as a lightweight client without duplicating the full workstation;
-- an Ubuntu development host can receive the same terminal UX predictably;
-- optional tools can appear or disappear without breaking shell startup;
-- moving between local and SSH sessions preserves muscle memory;
+- the Air can be bootstrapped as a lightweight client;
+- Ubuntu/Minisforum can reproduce the same terminal UX over SSH;
+- optional tools can appear/disappear without breaking shell startup;
 - replacing a machine does not require reconstructing terminal behavior manually;
-- package/runtime lifecycle logic does not grow into a custom configuration-management framework.
+- package/runtime lifecycle does not grow into a custom configuration-management framework.
