@@ -1,0 +1,3 @@
+[bootstrap.packages]
+"brew:awscli" = "latest"
+"brew:kubernetes-cli" = "latest"
