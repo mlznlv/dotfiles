@@ -61,14 +61,9 @@ if ! "$MISE_BIN" self-update --yes; then
 fi
 
 # Apply the newest declarations first. On macOS bootstrap uses the real Homebrew
-# CLI with --no-upgrade, so this step only installs newly declared dependencies.
+# CLI with --no-upgrade, so this only installs newly declared dependencies.
 echo "Applying latest profile declarations..."
 bash "$SOURCE_DIR/bootstrap.sh" "$PROFILE"
-
-MISE_ENV_VALUE="$PLATFORM"
-if [[ "$PROFILE" != "base" ]]; then
-  MISE_ENV_VALUE="$MISE_ENV_VALUE,$PLATFORM-$PROFILE"
-fi
 
 if [[ "$PLATFORM" == "macos" ]]; then
   echo "Updating Homebrew metadata..."
@@ -83,25 +78,42 @@ if [[ "$PLATFORM" == "macos" ]]; then
     brew bundle upgrade --file="$HOMEBREW_PROFILE_FILE"
   fi
   unset HOMEBREW_PROFILE_FILE
+
+  echo "Updating managed repositories..."
+  (
+    cd "$SOURCE_DIR"
+    "$MISE_BIN" bootstrap repos update --yes
+  )
+
+  echo "Upgrading managed runtimes within configured version ranges..."
+  (
+    cd "$SOURCE_DIR"
+    "$MISE_BIN" upgrade
+  )
 else
+  MISE_ENV_VALUE="linux"
+  if [[ "$PROFILE" != "base" ]]; then
+    MISE_ENV_VALUE="$MISE_ENV_VALUE,linux-$PROFILE"
+  fi
+
   echo "Upgrading managed Linux system packages..."
   (
     cd "$SOURCE_DIR"
     MISE_ENV="$MISE_ENV_VALUE" "$MISE_BIN" bootstrap packages upgrade --yes
   )
+
+  echo "Updating managed repositories..."
+  (
+    cd "$SOURCE_DIR"
+    MISE_ENV="$MISE_ENV_VALUE" "$MISE_BIN" bootstrap repos update --yes
+  )
+
+  echo "Upgrading managed runtimes within configured version ranges..."
+  (
+    cd "$SOURCE_DIR"
+    MISE_ENV="$MISE_ENV_VALUE" "$MISE_BIN" upgrade
+  )
 fi
-
-echo "Updating managed repositories..."
-(
-  cd "$SOURCE_DIR"
-  MISE_ENV="$MISE_ENV_VALUE" "$MISE_BIN" bootstrap repos update --yes
-)
-
-echo "Upgrading managed runtimes within configured version ranges..."
-(
-  cd "$SOURCE_DIR"
-  MISE_ENV="$MISE_ENV_VALUE" "$MISE_BIN" upgrade
-)
 
 echo "Running health checks..."
 "$MISE_BIN" doctor
