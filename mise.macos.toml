@@ -1,0 +1,6 @@
+[bootstrap.packages]
+"brew:fzf" = "latest"
+"brew:gh" = "latest"
+"brew:git" = "latest"
+"brew:ripgrep" = "latest"
+"brew:zoxide" = "latest"
