@@ -1,0 +1,19 @@
+# Machine-local overrides
+dot_config/zsh/local.zsh
+
+# Secrets and private material
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.kdbx
+*.agekey
+
+# Local/editor noise
+.DS_Store
+*.swp
+*.swo
+*~
