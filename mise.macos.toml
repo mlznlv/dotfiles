@@ -2,5 +2,6 @@
 "brew:fzf" = "latest"
 "brew:gh" = "latest"
 "brew:git" = "latest"
+"brew:jq" = "latest"
 "brew:ripgrep" = "latest"
 "brew:zoxide" = "latest"
