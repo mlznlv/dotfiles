@@ -13,6 +13,14 @@ The goal is simple: different machines may run different workloads, but the term
 
 Prerequisites: [Git](https://git-scm.com/), [curl](https://curl.se/), and access to this repository.
 
+macOS:
+
+```bash
+xcode-select --install
+```
+
+Complete the Command Line Tools installation before cloning the repository. Homebrew is not a prerequisite.
+
 Ubuntu/Debian:
 
 ```bash
