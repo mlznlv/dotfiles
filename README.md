@@ -161,6 +161,32 @@ git pull --ff-only
 exec zsh -l
 ```
 
+## Smoke test
+
+After bootstrap, verify the shell and managed state:
+
+```bash
+mise doctor
+command -v brew mise git gh jq fzf rg zoxide
+chezmoi diff
+```
+
+Then verify at least one real project for each runtime it uses:
+
+```bash
+cd <node-project-with-.nvmrc>
+mise install
+mise current
+node --version
+
+cd <python-project-with-.python-version>
+mise install
+mise current
+python --version
+```
+
+Expected state: `mise doctor` reports no problems, project runtimes resolve through mise, and `chezmoi diff` is empty or intentionally machine-local. The `local-dev` profile has been manually smoke-tested on macOS with this flow.
+
 ## Edit
 
 ```bash
