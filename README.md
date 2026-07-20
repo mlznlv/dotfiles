@@ -145,7 +145,7 @@ dot_config/zsh/
 ├── tools.zsh                tool/runtime integrations
 ├── aliases.zsh              explicit aliases
 ├── prompt.zsh               prompt
-└── plugins.zsh              interactive Zsh plugins
+└── interactive.zsh          autosuggestions and syntax highlighting
 ```
 
 Keep the structure intentional:
