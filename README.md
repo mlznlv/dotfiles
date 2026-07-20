@@ -19,7 +19,7 @@ macOS:
 xcode-select --install
 ```
 
-Complete the Command Line Tools installation before cloning the repository. Homebrew is not a prerequisite.
+Complete the Command Line Tools installation before cloning the repository. [Homebrew](https://brew.sh/) is not a manual prerequisite: `bootstrap.sh` installs the real Homebrew CLI when it is missing. The first installation may request confirmation or administrator credentials.
 
 Ubuntu/Debian:
 
@@ -44,6 +44,8 @@ Bootstrap a profile:
 | `remote-client` | macOS remote-development client | `./bootstrap.sh remote-client` |
 | `local-dev` | macOS local-development workstation | `./bootstrap.sh local-dev` |
 | `dev-host` | Linux remote-development host | `./bootstrap.sh dev-host` |
+
+On macOS the bootstrap order is Homebrew -> mise -> declared packages -> chezmoi.
 
 Restart the shell:
 
@@ -90,6 +92,7 @@ SSH keys, hostnames, IP addresses, Tailscale identity, and credentials are inten
 
 Base macOS:
 
+- [Homebrew](https://brew.sh/)
 - [Git](https://git-scm.com/)
 - [GitHub CLI](https://cli.github.com/) (`gh`)
 - [jq](https://jqlang.org/)
