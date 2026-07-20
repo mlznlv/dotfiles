@@ -6,6 +6,7 @@ source "$ZSH_CONFIG_HOME/core.zsh"
 source "$ZSH_CONFIG_HOME/paths.zsh"
 source "$ZSH_CONFIG_HOME/tools.zsh"
 source "$ZSH_CONFIG_HOME/completion.zsh"
+source "$ZSH_CONFIG_HOME/aliases.zsh"
 source "$ZSH_CONFIG_HOME/plugins.zsh"
 
 unset ZSH_CONFIG_HOME
