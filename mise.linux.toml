@@ -3,5 +3,6 @@
 "apt:git" = "latest"
 "apt:curl" = "latest"
 "apt:fzf" = "latest"
+"apt:jq" = "latest"
 "apt:ripgrep" = "latest"
 "apt:zoxide" = "latest"
