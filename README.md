@@ -1,10 +1,10 @@
 # dotfiles
 
-Portable terminal and development environment for macOS and Linux.
+Portable terminal and development environment for macOS and Ubuntu/Debian.
 
 ```text
 Homebrew  -> macOS packages/apps
-mise      -> runtimes + Linux packages + managed repos
+mise      -> runtimes/versioned tools + Linux packages + managed repos
 chezmoi   -> home/shell config
 Starship  -> prompt
 Ghostty   -> macOS terminal UI
@@ -48,10 +48,12 @@ exec zsh -l
 
 | Profile | Platform | Purpose |
 |---|---|---|
-| `base` | macOS/Linux | minimal shared terminal environment |
+| `base` | macOS/Ubuntu/Debian | minimal shared terminal environment |
 | `local-dev` | macOS | full local-development workstation |
 | `remote-client` | macOS | lightweight remote-development client |
-| `dev-host` | Linux | remote development host |
+| `dev-host` | Ubuntu/Debian | remote development host |
+
+A profile is always explicit; there is no implicit fallback.
 
 Bootstrap/reconverge:
 
@@ -69,7 +71,7 @@ exec zsh -l
 ## Daily commands
 
 ```bash
-# Runtime state
+# Runtime/tool state
 mise current
 mise doctor
 
@@ -94,7 +96,7 @@ Default Starship preset: `plain-text-symbols`.
 
 - [Architecture and ownership](docs/architecture.md)
 - [Shell, Starship, and Ghostty](docs/shell-and-terminal.md)
-- [Node/Python runtimes with mise](docs/runtimes.md)
+- [Runtimes and versioned tools with mise](docs/runtimes.md)
 - [Remote development](docs/remote-development.md)
 - [Updates, verification, and troubleshooting](docs/maintenance.md)
 
@@ -102,7 +104,7 @@ Default Starship preset: `plain-text-symbols`.
 
 ```text
 homebrew/     macOS Brewfiles
-mise/         bootstrap/runtime declarations
+mise/         bootstrap/runtime/tool declarations
 dot_config/   chezmoi-managed XDG config
 docs/         operational documentation
 bootstrap.sh  provisioning/convergence
@@ -121,3 +123,5 @@ Common machine-local state:
 ~/.config/starship/preset
 ~/.config/starship/modules
 ```
+
+See [architecture.md](docs/architecture.md) before publishing an existing repository history.
