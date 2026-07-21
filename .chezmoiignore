@@ -1,11 +1,11 @@
 README.md
 bootstrap.sh
 update.sh
-homebrew/**
-mise/**
-docs/**
-scripts/**
+homebrew
+mise
+docs
+scripts
 
 {{ if ne .chezmoi.os "darwin" }}
-.config/ghostty/**
+.config/ghostty
 {{ end }}
