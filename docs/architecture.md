@@ -7,7 +7,7 @@ Each domain has one owner:
 ```text
 macOS packages/apps        -> native Homebrew + Brewfiles
 Linux system packages      -> mise bootstrap.packages + apt
-versioned runtimes/CLI     -> mise
+runtime/version-selected tools -> mise
 home/shell config           -> chezmoi
 prompt rendering            -> Starship
 terminal UI on macOS        -> Ghostty
@@ -18,7 +18,7 @@ Do not mix managers for the same filesystem prefix. `/opt/homebrew` belongs to n
 
 `mise` and `chezmoi` are bootstrap substrate. An existing executable is reused; when missing, bootstrap installs the official standalone binary under `~/.local/bin`. Routine update attempts their supported self-update/upgrade path instead of declaring a second package-manager owner.
 
-Starship follows platform ownership: Homebrew installs it on macOS; the Linux platform mise layer installs and activates it as a versioned CLI tool.
+Starship follows platform ownership: Homebrew installs it on macOS; the Linux platform mise layer installs and activates it as a version-selected CLI tool.
 
 ## Supported platforms and profiles
 
