@@ -1,0 +1,6 @@
+# Default runtimes for a full local-development workstation.
+# Project-local .nvmrc, .python-version, and mise configs override these.
+
+[tools]
+node = "lts"
+python = "3.14"

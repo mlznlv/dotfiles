@@ -1,0 +1,11 @@
+[bootstrap.packages]
+"apt:zsh" = "latest"
+"apt:git" = "latest"
+"apt:curl" = "latest"
+"apt:fzf" = "latest"
+"apt:jq" = "latest"
+"apt:ripgrep" = "latest"
+"apt:zoxide" = "latest"
+
+[bootstrap.user]
+login_shell = "/bin/zsh"

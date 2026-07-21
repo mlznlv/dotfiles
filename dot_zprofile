@@ -1,19 +1,11 @@
 # ~/.zprofile
 
-ZSH_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
-
-case "$OSTYPE" in
-  darwin*)
-    PROFILE_CONFIG="$ZSH_CONFIG_HOME/platforms/macos.profile.zsh"
-    ;;
-  linux*)
-    PROFILE_CONFIG="$ZSH_CONFIG_HOME/platforms/linux.profile.zsh"
-    ;;
-  *)
-    PROFILE_CONFIG=""
-    ;;
-esac
-
-[[ -n "$PROFILE_CONFIG" && -r "$PROFILE_CONFIG" ]] && source "$PROFILE_CONFIG"
-
-unset PROFILE_CONFIG ZSH_CONFIG_HOME
+# Homebrew is a macOS-only owner in this repository. Do not activate a stray
+# Homebrew installation on Linux where system packages belong to apt/mise.
+if [[ "$OSTYPE" == darwin* ]]; then
+  if [[ -x /opt/homebrew/bin/brew ]]; then
+    eval "$(/opt/homebrew/bin/brew shellenv)"
+  elif [[ -x /usr/local/bin/brew ]]; then
+    eval "$(/usr/local/bin/brew shellenv)"
+  fi
+fi

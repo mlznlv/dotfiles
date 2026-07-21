@@ -1,1 +1,0 @@
-# Linux login-shell configuration

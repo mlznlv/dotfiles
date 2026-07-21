@@ -1,0 +1,19 @@
+[bootstrap.packages]
+"apt:build-essential" = "latest"
+"apt:openssh-server" = "latest"
+"apt:tmux" = "latest"
+
+[tasks.bootstrap]
+run = '''
+set -eu
+
+if ! command -v tailscale >/dev/null 2>&1; then
+  installer="$(mktemp)"
+  trap 'rm -f "$installer"' EXIT HUP INT TERM
+  curl -fsSL https://tailscale.com/install.sh -o "$installer"
+  sh "$installer"
+  command -v tailscale >/dev/null 2>&1
+  rm -f "$installer"
+  trap - EXIT HUP INT TERM
+fi
+'''

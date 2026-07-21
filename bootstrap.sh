@@ -2,107 +2,135 @@
 set -euo pipefail
 
 SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROLE="${1:-}"
+# shellcheck source=scripts/lib.sh
+source "$SOURCE_DIR/scripts/lib.sh"
 
-case "$(uname -s)" in
-  Darwin)
-    PLATFORM="macos"
-    ;;
-  Linux)
-    PLATFORM="linux"
-    ;;
-  *)
-    echo "Unsupported platform."
-    exit 1
-    ;;
-esac
+if [[ $# -ne 1 ]]; then
+  dotfiles_print_profile_usage './bootstrap.sh'
+  exit 2
+fi
 
-case "$PLATFORM/$ROLE" in
-  macos/workstation|macos/client|linux/server)
-    ;;
-  macos/|linux/)
-    echo "Usage: ./bootstrap.sh <role>"
-    echo "macOS roles: workstation, client"
-    echo "Linux roles: server"
-    exit 1
-    ;;
-  *)
-    echo "Unsupported platform/role combination: $PLATFORM/$ROLE"
-    exit 1
-    ;;
-esac
+PROFILE="$1"
+if ! PLATFORM="$(dotfiles_detect_platform)"; then
+  echo "Unsupported platform."
+  exit 1
+fi
 
-case "$PLATFORM" in
-  macos)
-    if ! command -v brew >/dev/null 2>&1; then
-      echo "Homebrew is not installed."
-      exit 1
-    fi
+if ! dotfiles_validate_profile "$PLATFORM" "$PROFILE"; then
+  dotfiles_print_profile_usage './bootstrap.sh' >&2
+  exit 1
+fi
 
-    brew bundle --file="$SOURCE_DIR/packages/macos/Brewfile.common"
+dotfiles_require_supported_os "$PLATFORM"
+MISE_ENV_VALUE="$(dotfiles_mise_env "$PLATFORM" "$PROFILE")"
 
-    ROLE_BREWFILE="$SOURCE_DIR/packages/macos/Brewfile.$ROLE"
-    if [[ -f "$ROLE_BREWFILE" ]]; then
-      brew bundle --file="$ROLE_BREWFILE"
-    fi
-    ;;
-  linux)
-    if ! command -v apt-get >/dev/null 2>&1; then
-      echo "Unsupported Linux package manager."
-      exit 1
-    fi
+if ! command -v curl >/dev/null 2>&1; then
+  echo "curl is required to bootstrap the environment."
+  exit 1
+fi
 
-    sudo apt-get update
-    xargs sudo apt-get install -y < "$SOURCE_DIR/packages/linux/apt.common"
-
-    ROLE_APT="$SOURCE_DIR/packages/linux/apt.$ROLE"
-    if [[ -s "$ROLE_APT" ]]; then
-      xargs sudo apt-get install -y < "$ROLE_APT"
-    fi
-
-    if ! command -v chezmoi >/dev/null 2>&1; then
-      mkdir -p "$HOME/.local/bin"
-      sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin"
-      export PATH="$HOME/.local/bin:$PATH"
-    fi
-
-    if ! command -v zoxide >/dev/null 2>&1; then
-      curl -sSfL https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/install.sh | sh
-      export PATH="$HOME/.local/bin:$PATH"
-    fi
-
-    ZSH_PLUGIN_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
-    mkdir -p "$ZSH_PLUGIN_HOME"
-
-    install_zsh_plugin() {
-      local repository="$1"
-      local name="$2"
-
-      if [[ ! -d "$ZSH_PLUGIN_HOME/$name/.git" ]]; then
-        git clone --depth 1 "https://github.com/$repository.git" "$ZSH_PLUGIN_HOME/$name"
+if [[ "$PLATFORM" == "macos" ]]; then
+  if ! command -v brew >/dev/null 2>&1; then
+    if [[ -x /opt/homebrew/bin/brew ]]; then
+      eval "$(/opt/homebrew/bin/brew shellenv)"
+    elif [[ -x /usr/local/bin/brew ]]; then
+      eval "$(/usr/local/bin/brew shellenv)"
+    else
+      if ! xcode-select -p >/dev/null 2>&1; then
+        echo "Apple Command Line Tools are required before Homebrew can be installed."
+        echo "Run: xcode-select --install"
+        exit 1
       fi
-    }
 
-    install_zsh_plugin "marlonrichert/zsh-autocomplete" "zsh-autocomplete"
-    install_zsh_plugin "zsh-users/zsh-autosuggestions" "zsh-autosuggestions"
-    install_zsh_plugin "zsh-users/zsh-syntax-highlighting" "zsh-syntax-highlighting"
+      echo "Installing Homebrew..."
+      /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-    unset -f install_zsh_plugin
-    unset ZSH_PLUGIN_HOME
-    ;;
-esac
-
-case "$ROLE" in
-  workstation|server)
-    if [[ ! -d "$HOME/.nvm/.git" ]]; then
-      git clone --branch v0.39.7 --depth 1         https://github.com/nvm-sh/nvm.git "$HOME/.nvm"
+      if [[ -x /opt/homebrew/bin/brew ]]; then
+        eval "$(/opt/homebrew/bin/brew shellenv)"
+      elif [[ -x /usr/local/bin/brew ]]; then
+        eval "$(/usr/local/bin/brew shellenv)"
+      else
+        echo "Homebrew installation failed: brew executable was not found."
+        exit 1
+      fi
     fi
-    ;;
-esac
+  fi
 
-mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
-printf '%s\n' "$ROLE" > "${XDG_CONFIG_HOME:-$HOME/.config}/zsh/role"
+  echo "Applying Homebrew base declarations..."
+  brew bundle install --no-upgrade --file="$SOURCE_DIR/homebrew/Brewfile"
 
-chezmoi apply
+  HOMEBREW_PROFILE_FILE="$SOURCE_DIR/homebrew/Brewfile.$PROFILE"
+  if [[ -f "$HOMEBREW_PROFILE_FILE" ]]; then
+    echo "Applying Homebrew $PROFILE declarations..."
+    brew bundle install --no-upgrade --file="$HOMEBREW_PROFILE_FILE"
+  fi
+  unset HOMEBREW_PROFILE_FILE
+fi
 
-echo "Dotfiles applied successfully for $PLATFORM/$ROLE."
+MISE_BIN="$(dotfiles_find_executable mise || true)"
+if [[ -z "$MISE_BIN" ]]; then
+  curl -fsSL https://mise.run | sh
+  MISE_BIN="$(dotfiles_find_executable mise || true)"
+fi
+
+if [[ -z "$MISE_BIN" || ! -x "$MISE_BIN" ]]; then
+  echo "mise installation failed: executable was not found."
+  exit 1
+fi
+
+# Project portable platform/profile tool defaults into mise's global conf.d.
+# Numeric prefixes make precedence explicit: platform -> profile -> machine-local.
+MISE_CONF_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/mise/conf.d"
+mkdir -p "$MISE_CONF_DIR"
+
+sync_mise_fragment() {
+  local source="$1"
+  local target="$2"
+
+  if [[ -f "$source" ]]; then
+    cp "$source" "$target"
+  else
+    rm -f "$target"
+  fi
+}
+
+sync_mise_fragment \
+  "$SOURCE_DIR/mise/runtime.$PLATFORM.toml" \
+  "$MISE_CONF_DIR/10-dotfiles-platform.toml"
+sync_mise_fragment \
+  "$SOURCE_DIR/mise/runtime.$PLATFORM-$PROFILE.toml" \
+  "$MISE_CONF_DIR/20-dotfiles-profile.toml"
+
+unset -f sync_mise_fragment
+unset MISE_CONF_DIR
+
+if [[ "$PLATFORM" == "linux" ]]; then
+  (
+    cd "$SOURCE_DIR"
+    MISE_ENV="$MISE_ENV_VALUE" "$MISE_BIN" bootstrap packages apply --yes --update
+    MISE_ENV="$MISE_ENV_VALUE" "$MISE_BIN" bootstrap --yes --skip packages
+  )
+else
+  (
+    cd "$SOURCE_DIR"
+    "$MISE_BIN" bootstrap --yes
+  )
+fi
+
+bash "$SOURCE_DIR/scripts/migrate-legacy.sh"
+
+CHEZMOI_BIN="$(dotfiles_find_executable chezmoi || true)"
+if [[ -z "$CHEZMOI_BIN" ]]; then
+  mkdir -p "$HOME/.local/bin"
+  sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin"
+  CHEZMOI_BIN="$(dotfiles_find_executable chezmoi || true)"
+fi
+
+if [[ -z "$CHEZMOI_BIN" || ! -x "$CHEZMOI_BIN" ]]; then
+  echo "chezmoi installation failed: executable was not found."
+  exit 1
+fi
+
+"$CHEZMOI_BIN" --source "$SOURCE_DIR" apply
+
+echo "Dotfiles applied successfully for $PLATFORM with profile $PROFILE."
