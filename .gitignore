@@ -1,12 +1,31 @@
-# Machine-local overrides
+# Machine-local overrides and generated state
 dot_config/zsh/local.zsh
+dot_config/mise/conf.d/90-machine-local.toml
+dot_config/starship/preset
+dot_config/starship/modules
 mise/config.local.toml
 mise/config.*.local.toml
+
+# Identity and credential-bearing home config stays local
+dot_ssh/**
+dot_aws/**
+dot_kube/**
+dot_config/gcloud/**
+dot_config/gh/hosts.yml
+dot_docker/config.json
+dot_gitconfig
+dot_git-credentials
+dot_netrc
+dot_npmrc
+dot_pypirc
+dot_zsh_history
 
 # Secrets and private material
 .env
 .env.*
 !.env.example
+.envrc
+.direnv/
 *.pem
 *.key
 *.p12
