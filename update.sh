@@ -21,7 +21,7 @@ if ! dotfiles_validate_profile "$PLATFORM" "$PROFILE"; then
   exit 1
 fi
 
-dotfiles_require_supported_linux "$PLATFORM"
+dotfiles_require_supported_os "$PLATFORM"
 MISE_ENV_VALUE="$(dotfiles_mise_env "$PLATFORM" "$PROFILE")"
 
 # Pull first, then restart this script so the remainder always runs the newest
