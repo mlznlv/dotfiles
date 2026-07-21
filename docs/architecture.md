@@ -16,6 +16,8 @@ remote access               -> Tailscale + OpenSSH + tmux
 
 Do not mix managers for the same filesystem prefix. `/opt/homebrew` belongs to native Homebrew; mise must not pour or link Homebrew bottles there.
 
+`mise` and `chezmoi` are bootstrap substrate. An existing executable is reused; when missing, bootstrap installs the official standalone binary under `~/.local/bin`. Routine update attempts their supported self-update/upgrade path instead of declaring a second package-manager owner.
+
 Starship follows platform ownership: Homebrew installs it on macOS; the Linux platform mise layer installs and activates it as a versioned CLI tool.
 
 ## Supported platforms and profiles
