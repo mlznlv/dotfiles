@@ -44,7 +44,7 @@ Run after changing repository code/config:
 bash scripts/check.sh
 ```
 
-It validates Bash syntax, Zsh syntax when Zsh is available, whole-tree whitespace/conflict markers, tracked files that violate `.gitignore` policy, and high-signal secret material in the current tree. Secret matches report filenames only, not matched values.
+It validates required repository structure, Bash/Zsh syntax, whole-tree whitespace and conflict markers, package/profile ownership, chezmoi projection boundaries, tracked files that violate `.gitignore`, and high-signal secret material in the current tree. Secret matches report filenames only, not matched values.
 
 The same check runs in GitHub Actions on macOS and Ubuntu for pull requests and on pushes to `master`.
 
