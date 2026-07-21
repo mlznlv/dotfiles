@@ -18,13 +18,15 @@ Do not mix managers for the same filesystem prefix. `/opt/homebrew` belongs to n
 
 Starship follows platform ownership: Homebrew installs it on macOS; the Linux platform mise layer installs and activates it as a versioned CLI tool.
 
-## Profiles
+## Supported platforms and profiles
+
+Supported OS families are intentionally explicit: macOS 13+ and Ubuntu/Debian Linux.
 
 | Profile | Platform | Purpose |
 |---|---|---|
-| `base` | macOS/Linux | minimal shared terminal environment |
-| `local-dev` | macOS | full local-development workstation |
-| `remote-client` | macOS | lightweight remote-development client |
+| `base` | macOS 13+/Ubuntu/Debian | minimal shared terminal environment |
+| `local-dev` | macOS 13+ | full local-development workstation |
+| `remote-client` | macOS 13+ | lightweight remote-development client |
 | `dev-host` | Ubuntu/Debian | remote development host |
 
 Profiles are always explicit:
