@@ -2,8 +2,6 @@
 
 ## Zsh UX
 
-The interactive shell stack is:
-
 ```text
 Zsh
 ├── native completion
@@ -17,15 +15,15 @@ Zsh
 Expected keys:
 
 ```text
-Up/Down   command history
-Ctrl-R    fuzzy history
-Ctrl-T    fuzzy file search
-Alt-C     fuzzy directory search
-Tab       completion
-Shift-Tab previous completion item
+Up/Down    command history
+Ctrl-R     fuzzy history
+Ctrl-T     fuzzy file search
+Alt-C      fuzzy directory search
+Tab        completion
+Shift-Tab  previous completion item
 ```
 
-`zsh-autocomplete`, Oh My Zsh, and Powerlevel10k are not part of the target stack.
+The two Zsh plugin repositories are owned only by `mise bootstrap.repos`. Missing plugins produce a startup warning instead of silently changing shell behavior. `zsh-autocomplete`, Oh My Zsh, and Powerlevel10k are not part of the stack.
 
 ## Starship presets
 
@@ -35,7 +33,7 @@ Default preset:
 plain-text-symbols
 ```
 
-Show or change the selected preset:
+Manage the machine-local selection:
 
 ```bash
 prompt-preset
@@ -44,17 +42,13 @@ prompt-preset default
 exec zsh -l
 ```
 
-`plain-text` is accepted as an alias for `plain-text-symbols`.
+`plain-text` is an alias for `plain-text-symbols`. Selection is stored in `~/.config/starship/preset`; generated configs live under the Starship cache and are not committed.
 
-Preset selection is machine-local:
-
-```text
-~/.config/starship/preset
-```
+If selected/default preset generation or Starship initialization fails, the shell falls back to a minimal native Zsh prompt rather than an uncontrolled Starship config.
 
 ## Starship modules
 
-These modules default to disabled to avoid noisy or sensitive context in the prompt:
+These modules default to disabled:
 
 ```text
 package
@@ -74,43 +68,27 @@ prompt-module reset
 exec zsh -l
 ```
 
-State is stored in:
-
-```text
-~/.config/starship/modules
-```
+State is stored in `~/.config/starship/modules` and stays outside Git.
 
 ## Ghostty
 
-Ghostty is the macOS terminal UI layer. It owns terminal rendering, windows/tabs/splits, theme, spacing, cursor behavior, clipboard behavior, and terminal-level keybindings.
+Ghostty is the macOS terminal UI layer; Zsh/Starship/mise/SSH/tmux remain independent.
 
-It does not own Zsh, Starship, mise, SSH, or tmux.
-
-The macOS base Brewfile installs Ghostty. Chezmoi manages:
+Chezmoi manages `~/.config/ghostty/config.ghostty` on macOS only. Portable defaults are intentionally small:
 
 ```text
-~/.config/ghostty/config.ghostty
+dark theme   Catppuccin Mocha
+light theme  Catppuccin Latte
+font size    14.5 pt
+padding      balanced, 8 x 6
+cursor       non-blinking block
 ```
 
-The committed configuration intentionally stays small:
+Font family, tabs, splits, and most keybindings use Ghostty defaults. Automatic Zsh shell integration remains enabled.
 
-- separate Catppuccin light/dark themes following system appearance;
-- Ghostty's bundled default font;
-- modest balanced window padding;
-- a non-blinking block cursor outside shell-controlled contexts.
-
-Tabs, splits, and most keybindings use Ghostty defaults. Automatic Zsh shell integration remains enabled.
-
-Reload configuration on macOS:
-
-```text
-Cmd-Shift-,
-```
-
-Useful diagnostics:
+Useful commands:
 
 ```bash
 ghostty +show-config
-ghostty +show-config --default --docs
 ghostty +list-themes
 ```
