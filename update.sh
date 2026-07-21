@@ -41,11 +41,11 @@ fi
 echo "Checking repository before applying changes..."
 bash "$SOURCE_DIR/scripts/check.sh"
 
-MISE_BIN="$(command -v mise || true)"
+MISE_BIN="$(dotfiles_find_executable mise || true)"
 if [[ -z "$MISE_BIN" ]]; then
   echo "mise is missing; bootstrapping the selected profile first..."
   bash "$SOURCE_DIR/bootstrap.sh" "$PROFILE"
-  MISE_BIN="$(command -v mise || true)"
+  MISE_BIN="$(dotfiles_find_executable mise || true)"
 fi
 
 if [[ -z "$MISE_BIN" || ! -x "$MISE_BIN" ]]; then
@@ -62,6 +62,17 @@ fi
 # CLI with --no-upgrade, so this only installs newly declared dependencies.
 echo "Applying latest profile declarations..."
 bash "$SOURCE_DIR/bootstrap.sh" "$PROFILE"
+
+CHEZMOI_BIN="$(dotfiles_find_executable chezmoi || true)"
+if [[ -z "$CHEZMOI_BIN" || ! -x "$CHEZMOI_BIN" ]]; then
+  echo "chezmoi is unavailable after bootstrap."
+  exit 1
+fi
+
+echo "Updating chezmoi..."
+if ! "$CHEZMOI_BIN" upgrade; then
+  echo "chezmoi upgrade was unavailable or failed; continuing with the installed version."
+fi
 
 if [[ "$PLATFORM" == "macos" ]]; then
   echo "Updating Homebrew metadata..."
@@ -128,12 +139,6 @@ else
     brew bundle check --file="$HOMEBREW_PROFILE_FILE"
   fi
   unset HOMEBREW_PROFILE_FILE
-fi
-
-CHEZMOI_BIN="$(command -v chezmoi || true)"
-if [[ -z "$CHEZMOI_BIN" || ! -x "$CHEZMOI_BIN" ]]; then
-  echo "chezmoi is unavailable after bootstrap."
-  exit 1
 fi
 
 CHEZMOI_DIFF="$("$CHEZMOI_BIN" --source "$SOURCE_DIR" diff)"
