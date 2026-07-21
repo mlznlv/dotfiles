@@ -50,7 +50,7 @@ If selected/default preset generation or Starship initialization fails, the shel
 
 ## Starship context modules
 
-Portable policy hides context that is noisy or can expose machine/infrastructure identity, regardless of the selected official preset:
+Portable policy hides noisy or infrastructure-specific context regardless of the selected official preset:
 
 ```text
 package
@@ -61,6 +61,12 @@ kubernetes
 openstack
 docker_context
 localip
+nats
+pulumi
+terraform
+netns
+container
+singularity
 ```
 
 Enable only what is useful on a specific machine:
