@@ -28,12 +28,22 @@ if [[ -n "$IGNORED_TRACKED" ]]; then
 fi
 unset IGNORED_TRACKED
 
-if git grep -n -I -E -- \
-  '-----BEGIN (OPENSSH|RSA|DSA|EC|PGP) PRIVATE KEY-----' \
-  -- . \
-  ':(exclude)scripts/check.sh'; then
-  printf '%s\n' 'check: private-key material detected in the current tree.' >&2
-  exit 1
-fi
+scan_for_secret_pattern() {
+  local description="$1"
+  local pattern="$2"
 
+  if git grep -n -I -E -- "$pattern" -- . ':(exclude)scripts/check.sh'; then
+    printf 'check: %s detected in the current tree.\n' "$description" >&2
+    return 1
+  fi
+}
+
+scan_for_secret_pattern \
+  'private-key material' \
+  '-----BEGIN (((OPENSSH|RSA|DSA|EC|ENCRYPTED) )?PRIVATE KEY|PGP PRIVATE KEY BLOCK)-----'
+scan_for_secret_pattern 'age secret key' 'AGE-SECRET-KEY-[A-Z0-9-]+'
+scan_for_secret_pattern 'AWS access-key ID' '(AKIA|ASIA)[0-9A-Z]{16}'
+scan_for_secret_pattern 'GitHub token' '(gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})'
+
+unset -f scan_for_secret_pattern
 printf '%s\n' 'check: static and current-tree safety checks passed.'
