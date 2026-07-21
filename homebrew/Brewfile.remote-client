@@ -1,1 +1,2 @@
+cask "ghostty"
 cask "tailscale-app"
