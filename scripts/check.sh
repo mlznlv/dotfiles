@@ -31,11 +31,27 @@ unset IGNORED_TRACKED
 scan_for_secret_pattern() {
   local description="$1"
   local pattern="$2"
+  local matches status
 
-  if git grep -n -I -E -- "$pattern" -- . ':(exclude)scripts/check.sh'; then
-    printf 'check: %s detected in the current tree.\n' "$description" >&2
-    return 1
-  fi
+  set +e
+  matches="$(git grep -l -I -E -- "$pattern" -- . ':(exclude)scripts/check.sh')"
+  status=$?
+  set -e
+
+  case "$status" in
+    0)
+      printf 'check: %s detected in tracked file(s):\n' "$description" >&2
+      printf '%s\n' "$matches" >&2
+      return 1
+      ;;
+    1)
+      return 0
+      ;;
+    *)
+      printf 'check: secret scan failed while checking %s.\n' "$description" >&2
+      return "$status"
+      ;;
+  esac
 }
 
 scan_for_secret_pattern \
