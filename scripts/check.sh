@@ -4,10 +4,14 @@ set -euo pipefail
 SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$SOURCE_DIR"
 
-bash -n bootstrap.sh update.sh scripts/*.sh
+for file in bootstrap.sh update.sh scripts/*.sh; do
+  bash -n "$file"
+done
 
 if command -v zsh >/dev/null 2>&1; then
-  zsh -n dot_zprofile dot_zshrc dot_config/zsh/*.zsh
+  for file in dot_zprofile dot_zshrc dot_config/zsh/*.zsh; do
+    zsh -n "$file"
+  done
 else
   printf '%s\n' 'check: zsh not found; skipped Zsh syntax validation.' >&2
 fi
