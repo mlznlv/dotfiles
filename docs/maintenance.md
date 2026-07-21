@@ -23,7 +23,10 @@ bash ./update.sh dev-host
 
 ```text
 git pull --ff-only
+-> repository static/safety checks
+-> self-update mise when supported
 -> apply latest declarations
+-> upgrade chezmoi when supported
 -> macOS: native Homebrew upgrades
 -> Ubuntu/Debian: managed apt upgrades
 -> update managed Zsh repositories
@@ -41,7 +44,7 @@ Run after changing repository code/config:
 bash scripts/check.sh
 ```
 
-It validates Bash syntax, Zsh syntax when Zsh is available, `git diff --check`, forbidden tracked credential/identity paths, and private-key material in the current tree.
+It validates Bash syntax, Zsh syntax when Zsh is available, `git diff --check`, tracked files that violate `.gitignore` policy, and high-signal secret material in the current tree. Secret matches report filenames only, not matched values.
 
 This is a guardrail, not a full secret/history scanner. Before publishing an existing repository, inspect the full Git history separately.
 
