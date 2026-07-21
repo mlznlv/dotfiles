@@ -88,9 +88,7 @@ remote <user>@<host> [session]
 chezmoi diff
 ```
 
-Default Starship preset: `plain-text-symbols`.
-
-`package`, `aws`, and `gcloud` prompt modules default to disabled and can be enabled per machine with `prompt-module`.
+Default Starship preset: `plain-text-symbols`. Infrastructure/context modules are hidden by portable policy and can be enabled per machine with `prompt-module`.
 
 ## Documentation
 
