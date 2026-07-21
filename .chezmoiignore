@@ -1,4 +1,5 @@
 README.md
+.gitignore
 bootstrap.sh
 update.sh
 homebrew
