@@ -1,0 +1,14 @@
+# Portable visual defaults only. Shell, prompt, runtimes, and remote sessions are
+# owned by Zsh/Starship/mise/tmux respectively.
+
+theme = dark:Catppuccin Frappe,light:Catppuccin Latte
+
+# Keep Ghostty's bundled default font. Only tune terminal spacing here.
+window-padding-x = 8
+window-padding-y = 6
+window-padding-balance = true
+
+# Shell integration may switch the cursor at the prompt; this is the terminal
+# default for other contexts.
+cursor-style = block
+cursor-style-blink = false
