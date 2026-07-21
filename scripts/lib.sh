@@ -63,6 +63,24 @@ dotfiles_require_supported_os() {
   esac
 }
 
+dotfiles_find_executable() {
+  local name="$1"
+  local resolved
+
+  resolved="$(command -v "$name" 2>/dev/null || true)"
+  if [[ -n "$resolved" && -x "$resolved" ]]; then
+    printf '%s\n' "$resolved"
+    return 0
+  fi
+
+  if [[ -x "$HOME/.local/bin/$name" ]]; then
+    printf '%s\n' "$HOME/.local/bin/$name"
+    return 0
+  fi
+
+  return 1
+}
+
 dotfiles_mise_env() {
   local platform="$1"
   local profile="$2"
