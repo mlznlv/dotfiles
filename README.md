@@ -1,6 +1,6 @@
 # dotfiles
 
-Portable terminal and development environment for macOS and Ubuntu/Debian.
+Portable terminal and development environment for macOS 13+ and Ubuntu/Debian.
 
 ```text
 Homebrew  -> macOS packages/apps
@@ -13,7 +13,7 @@ Tailscale + OpenSSH + tmux -> remote development
 
 ## Quick start
 
-### macOS
+### macOS 13+
 
 Install Apple Command Line Tools first:
 
@@ -48,9 +48,9 @@ exec zsh -l
 
 | Profile | Platform | Purpose |
 |---|---|---|
-| `base` | macOS/Ubuntu/Debian | minimal shared terminal environment |
-| `local-dev` | macOS | full local-development workstation |
-| `remote-client` | macOS | lightweight remote-development client |
+| `base` | macOS 13+/Ubuntu/Debian | minimal shared terminal environment |
+| `local-dev` | macOS 13+ | full local-development workstation |
+| `remote-client` | macOS 13+ | lightweight remote-development client |
 | `dev-host` | Ubuntu/Debian | remote development host |
 
 A profile is always explicit; there is no implicit fallback.
