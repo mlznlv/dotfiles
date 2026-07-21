@@ -107,7 +107,8 @@ unset MISE_CONF_DIR
 if [[ "$PLATFORM" == "linux" ]]; then
   (
     cd "$SOURCE_DIR"
-    MISE_ENV="$MISE_ENV_VALUE" "$MISE_BIN" bootstrap --yes
+    MISE_ENV="$MISE_ENV_VALUE" "$MISE_BIN" bootstrap packages apply --yes --update
+    MISE_ENV="$MISE_ENV_VALUE" "$MISE_BIN" bootstrap --yes --skip packages
   )
 else
   (
