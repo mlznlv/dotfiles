@@ -105,6 +105,7 @@ homebrew/     macOS Brewfiles
 mise/         bootstrap/runtime/tool declarations
 dot_config/   chezmoi-managed XDG config
 docs/         operational documentation
+scripts/      repo-only checks, helpers, migrations
 bootstrap.sh  provisioning/convergence
 update.sh     routine updates
 ```
