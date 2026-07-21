@@ -141,23 +141,28 @@ else
 fi
 
 # One-time conservative cleanup for a repository that this dotfiles setup used
-# to manage. Never delete a mismatched or locally modified checkout.
+# to manage. Never delete a mismatched, modified, or unreadable checkout.
 LEGACY_AUTOCOMPLETE_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins/zsh-autocomplete"
 if [[ -d "$LEGACY_AUTOCOMPLETE_DIR/.git" ]]; then
   LEGACY_AUTOCOMPLETE_ORIGIN="$(git -C "$LEGACY_AUTOCOMPLETE_DIR" config --get remote.origin.url 2>/dev/null || true)"
   case "$LEGACY_AUTOCOMPLETE_ORIGIN" in
     https://github.com/marlonrichert/zsh-autocomplete|https://github.com/marlonrichert/zsh-autocomplete.git|git@github.com:marlonrichert/zsh-autocomplete.git|ssh://git@github.com/marlonrichert/zsh-autocomplete.git)
-      if [[ -z "$(git -C "$LEGACY_AUTOCOMPLETE_DIR" status --porcelain 2>/dev/null)" ]]; then
-        echo "Removing obsolete zsh-autocomplete checkout..."
-        rm -rf "$LEGACY_AUTOCOMPLETE_DIR"
+      if LEGACY_AUTOCOMPLETE_STATUS="$(git -C "$LEGACY_AUTOCOMPLETE_DIR" status --porcelain 2>/dev/null)"; then
+        if [[ -z "$LEGACY_AUTOCOMPLETE_STATUS" ]]; then
+          echo "Removing obsolete zsh-autocomplete checkout..."
+          rm -rf "$LEGACY_AUTOCOMPLETE_DIR"
+        else
+          echo "Leaving obsolete zsh-autocomplete checkout because it has local changes:"
+          echo "  $LEGACY_AUTOCOMPLETE_DIR"
+        fi
       else
-        echo "Leaving obsolete zsh-autocomplete checkout because it has local changes:"
+        echo "Leaving obsolete zsh-autocomplete checkout because its Git state could not be verified:"
         echo "  $LEGACY_AUTOCOMPLETE_DIR"
       fi
       ;;
   esac
 fi
-unset LEGACY_AUTOCOMPLETE_DIR LEGACY_AUTOCOMPLETE_ORIGIN
+unset LEGACY_AUTOCOMPLETE_DIR LEGACY_AUTOCOMPLETE_ORIGIN LEGACY_AUTOCOMPLETE_STATUS
 
 CHEZMOI_BIN="$(command -v chezmoi || true)"
 if [[ -z "$CHEZMOI_BIN" ]]; then
