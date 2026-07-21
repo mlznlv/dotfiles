@@ -5,3 +5,5 @@ brew "jq"
 brew "ripgrep"
 brew "starship"
 brew "zoxide"
+
+cask "ghostty"
