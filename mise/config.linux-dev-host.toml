@@ -5,6 +5,8 @@
 
 [tasks.bootstrap]
 run = '''
+set -eu
+
 if ! command -v tailscale >/dev/null 2>&1; then
   installer="$(mktemp)"
   trap 'rm -f "$installer"' EXIT HUP INT TERM
