@@ -44,7 +44,9 @@ Run after changing repository code/config:
 bash scripts/check.sh
 ```
 
-It validates Bash syntax, Zsh syntax when Zsh is available, `git diff --check`, tracked files that violate `.gitignore` policy, and high-signal secret material in the current tree. Secret matches report filenames only, not matched values.
+It validates Bash syntax, Zsh syntax when Zsh is available, whole-tree whitespace/conflict markers, tracked files that violate `.gitignore` policy, and high-signal secret material in the current tree. Secret matches report filenames only, not matched values.
+
+The same check runs in GitHub Actions on macOS and Ubuntu for pull requests and on pushes to `master`.
 
 This is a guardrail, not a full secret/history scanner. Before publishing an existing repository, inspect the full Git history separately.
 
