@@ -8,8 +8,9 @@ fi
 ZSH_COMPLETION_CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/zsh"
 mkdir -p "$ZSH_COMPLETION_CACHE"
 
+# Keep completion dumps isolated across Zsh upgrades.
 autoload -Uz compinit
-compinit -d "$ZSH_COMPLETION_CACHE/zcompdump"
+compinit -d "$ZSH_COMPLETION_CACHE/zcompdump-$ZSH_VERSION"
 
 # Predictable completion: Tab completes/selects, Shift-Tab moves backward.
 zstyle ':completion:*' menu select
