@@ -25,7 +25,7 @@ Shift-Tab  previous completion item
 
 The two Zsh plugin repositories are owned only by `mise bootstrap.repos`. Missing plugins produce a startup warning instead of silently changing shell behavior. `zsh-autocomplete`, Oh My Zsh, and Powerlevel10k are not part of the stack.
 
-Prefix a one-off command with a space to keep it out of Zsh history (`HIST_IGNORE_SPACE`). This is a convenience, not a substitute for proper secret handling.
+Zsh history is stored at `~/.zsh_history` with mode `0600`. Prefix a one-off command with a space to keep it out of history (`HIST_IGNORE_SPACE`). This is a convenience, not a substitute for proper secret handling.
 
 ## Starship presets
 
@@ -86,7 +86,9 @@ State is stored in `~/.config/starship/modules` and stays outside Git. Generated
 
 Ghostty is the macOS terminal UI layer; Zsh/Starship/mise/SSH/tmux remain independent.
 
-Chezmoi manages `~/.config/ghostty/config.ghostty` on macOS only. Portable defaults are intentionally small:
+The `local-dev` and `remote-client` Brewfiles install Ghostty. The minimal macOS `base` profile remains CLI-only. Chezmoi manages `~/.config/ghostty/config.ghostty` on macOS so the same visual policy is ready whenever Ghostty is installed.
+
+Portable defaults are intentionally small:
 
 ```text
 dark theme   Catppuccin Mocha
