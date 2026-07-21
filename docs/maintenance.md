@@ -2,7 +2,7 @@
 
 ## Routine update
 
-Use the same profile that provisioned the machine:
+Always pass the profile that provisioned the machine:
 
 ```bash
 cd ~/.local/share/chezmoi
@@ -10,12 +10,14 @@ bash ./update.sh local-dev
 exec zsh -l
 ```
 
-Other profiles:
+Other examples:
 
 ```bash
 bash ./update.sh remote-client
 bash ./update.sh dev-host
 ```
+
+`bootstrap.sh` and `update.sh` intentionally refuse to run without an explicit profile.
 
 `update.sh` performs:
 
@@ -23,10 +25,10 @@ bash ./update.sh dev-host
 git pull --ff-only
 -> apply latest declarations
 -> macOS: native Homebrew upgrades
--> Linux: managed apt upgrades
+-> Ubuntu/Debian: managed apt upgrades
 -> update managed Zsh repositories
--> upgrade mise runtimes within configured ranges
--> health/convergence checks
+-> upgrade mise runtimes/versioned tools within configured ranges
+-> mise + package + chezmoi convergence checks
 ```
 
 It does not run blanket `brew autoremove`, destructive cleanup, or mise's Homebrew backend on macOS.
@@ -36,10 +38,14 @@ It does not run blanket `brew autoremove`, destructive cleanup, or mise's Homebr
 After bootstrap/update:
 
 ```bash
+mise config ls
 mise doctor
 mise current
+mise bootstrap status --missing
 chezmoi diff
 ```
+
+`mise bootstrap status --missing` and `chezmoi diff` should normally produce no missing/unapplied state.
 
 On macOS:
 
@@ -47,21 +53,26 @@ On macOS:
 brew bundle check --file="$HOME/.local/share/chezmoi/homebrew/Brewfile"
 ```
 
-On `local-dev`:
+On `local-dev` also check:
 
 ```bash
 brew bundle check --file="$HOME/.local/share/chezmoi/homebrew/Brewfile.local-dev"
 ```
 
-`chezmoi diff` should normally be empty.
-
-## Prompt diagnostics
+## Shell/prompt diagnostics
 
 ```bash
 starship --version
 prompt-preset
 prompt-module status
 printf '%s\n' "$STARSHIP_CONFIG"
+```
+
+Check interactive plugins:
+
+```bash
+whence -w _zsh_highlight
+whence -w _zsh_autosuggest_start
 ```
 
 Reset prompt state:
@@ -87,12 +98,11 @@ brew bundle check --file="$HOME/.local/share/chezmoi/homebrew/Brewfile"
 
 Avoid `brew link --overwrite`, broad `brew autoremove`, and destructive cleanup unless the exact ownership problem has been established first.
 
-## Reapply configuration
+## Static checks after repository changes
 
 ```bash
-cd ~/.local/share/chezmoi
-./bootstrap.sh <profile>
-exec zsh -l
+bash -n bootstrap.sh update.sh
+zsh -n dot_zprofile dot_zshrc dot_config/zsh/*.zsh
 ```
 
-Use `bootstrap.sh` for provisioning/convergence and `update.sh` for routine maintenance.
+Then run the real profile convergence path on at least one supported machine. Static syntax checks do not replace bootstrap/update smoke tests.
