@@ -131,7 +131,7 @@ if [[ "$PLATFORM" == "linux" ]]; then
 
   (
     cd "$SOURCE_DIR"
-    MISE_ENV="$MISE_ENV_VALUE" "$MISE_BIN" bootstrap --yes
+    MISE_ENV="$MISE_ENV_VALUE" "$MISE_BIN" bootstrap --yes --update
   )
 else
   (
