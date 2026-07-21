@@ -1,9 +1,9 @@
 # Machine-local overrides and generated state.
-# Leading globs cover chezmoi source attributes such as private_.
-*dot_config/*zsh/local.zsh
-*dot_config/*mise/*conf.d/90-machine-local.toml
-*dot_config/*starship/preset
-*dot_config/*starship/modules
+# Leading globs cover chezmoi source attributes such as private_ or encrypted_.
+*dot_config/*zsh/*local.zsh
+*dot_config/*mise/*conf.d/*90-machine-local.toml
+*dot_config/*starship/*preset
+*dot_config/*starship/*modules
 mise/config.local.toml
 mise/config.*.local.toml
 
@@ -14,11 +14,11 @@ mise/config.*.local.toml
 *dot_azure/**
 *dot_gnupg/**
 *dot_config/*gcloud/**
-*dot_config/*gh/hosts.yml
-*dot_config/*containers/auth.json
-*dot_docker/config.json
-*dot_terraform.d/credentials.tfrc.json
-*dot_config/*terraform.d/credentials.tfrc.json
+*dot_config/*gh/**
+*dot_config/*containers/**
+*dot_docker/**
+*dot_terraform.d/*credentials.tfrc.json
+*dot_config/*terraform.d/*credentials.tfrc.json
 *dot_gitconfig
 *dot_git-credentials
 *dot_netrc
@@ -27,18 +27,24 @@ mise/config.*.local.toml
 *dot_zsh_history
 
 # Common credential-bearing registry/build-tool configuration.
-*dot_config/*pip/pip.conf
-*dot_pip/pip.conf
-*dot_m2/settings.xml
-*dot_gradle/gradle.properties
-*dot_cargo/credentials.toml
+*dot_config/*pip/*pip.conf
+*dot_pip/*pip.conf
+*dot_m2/*settings.xml
+*dot_gradle/*gradle.properties
+*dot_cargo/*credentials.toml
 
-# Secrets and private material
+# Environment/secret files in normal repos and chezmoi source-state naming.
 .env
 .env.*
 !.env.example
 .envrc
 .direnv/
+*dot_env
+*dot_env.*
+!dot_env.example
+*dot_envrc
+
+# Private material
 *.pem
 *.key
 *.p12
