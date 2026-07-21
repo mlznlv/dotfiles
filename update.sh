@@ -38,6 +38,9 @@ if [[ "${DOTFILES_UPDATE_AFTER_PULL:-0}" != "1" ]]; then
   exec env DOTFILES_UPDATE_AFTER_PULL=1 bash "$SOURCE_DIR/update.sh" "$PROFILE"
 fi
 
+echo "Checking repository before applying changes..."
+bash "$SOURCE_DIR/scripts/check.sh"
+
 MISE_BIN="$(command -v mise || true)"
 if [[ -z "$MISE_BIN" ]]; then
   echo "mise is missing; bootstrapping the selected profile first..."
