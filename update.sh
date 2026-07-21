@@ -2,53 +2,27 @@
 set -euo pipefail
 
 SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=scripts/lib.sh
+source "$SOURCE_DIR/scripts/lib.sh"
 
 if [[ $# -ne 1 ]]; then
-  echo "Usage: bash ./update.sh <profile>"
-  echo "  macOS: base, local-dev, remote-client"
-  echo "  Linux (Ubuntu/Debian): base, dev-host"
+  dotfiles_print_profile_usage 'bash ./update.sh'
   exit 2
 fi
 
 PROFILE="$1"
-
-case "$(uname -s)" in
-  Darwin)
-    PLATFORM="macos"
-    ;;
-  Linux)
-    PLATFORM="linux"
-    ;;
-  *)
-    echo "Unsupported platform."
-    exit 1
-    ;;
-esac
-
-case "$PLATFORM/$PROFILE" in
-  macos/base|macos/local-dev|macos/remote-client|linux/base|linux/dev-host)
-    ;;
-  *)
-    echo "Unsupported platform/profile combination: $PLATFORM/$PROFILE"
-    echo "Supported profiles:"
-    echo "  macOS: base, local-dev, remote-client"
-    echo "  Linux (Ubuntu/Debian): base, dev-host"
-    exit 1
-    ;;
-esac
-
-if [[ "$PLATFORM" == "linux" ]] && ! command -v apt-get >/dev/null 2>&1; then
-  echo "Unsupported Linux distribution: apt-get is required."
+if ! PLATFORM="$(dotfiles_detect_platform)"; then
+  echo "Unsupported platform."
   exit 1
 fi
 
-MISE_ENV_VALUE=""
-if [[ "$PLATFORM" == "linux" ]]; then
-  MISE_ENV_VALUE="linux"
-  if [[ "$PROFILE" != "base" ]]; then
-    MISE_ENV_VALUE="$MISE_ENV_VALUE,linux-$PROFILE"
-  fi
+if ! dotfiles_validate_profile "$PLATFORM" "$PROFILE"; then
+  dotfiles_print_profile_usage 'bash ./update.sh' >&2
+  exit 1
 fi
+
+dotfiles_require_supported_linux "$PLATFORM"
+MISE_ENV_VALUE="$(dotfiles_mise_env "$PLATFORM" "$PROFILE")"
 
 # Pull first, then restart this script so the remainder always runs the newest
 # update logic from the repository.
