@@ -2,6 +2,7 @@
 # modify the dotfiles repository.
 
 typeset -gr DOTFILES_STARSHIP_DEFAULT_PRESET='plain-text-symbols'
+typeset -gr DOTFILES_STARSHIP_POLICY_REV='1'
 typeset -gr DOTFILES_STARSHIP_STATE_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/starship"
 typeset -gr DOTFILES_STARSHIP_PRESET_FILE="$DOTFILES_STARSHIP_STATE_DIR/preset"
 typeset -gr DOTFILES_STARSHIP_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/starship/presets"
@@ -43,20 +44,93 @@ _dotfiles_starship_selected_preset() {
   _dotfiles_starship_normalize_preset "$preset"
 }
 
+# Apply repository-wide prompt policy to any official Starship preset. This
+# preserves the preset's layout/colors while removing context that is too noisy
+# or potentially sensitive for a default prompt.
+_dotfiles_starship_apply_policy() {
+  local source="$1"
+  local target="$2"
+
+  awk '
+    function flush_section() {
+      if (section != "" && !disabled_written[section]) {
+        print "disabled = true"
+        disabled_written[section] = 1
+      }
+    }
+
+    function append_disabled_section(name) {
+      if (!seen[name]) {
+        print ""
+        print "[" name "]"
+        print "disabled = true"
+      }
+    }
+
+    {
+      line = $0
+
+      # Any TOML table header ends the previous simple module table. Only exact
+      # [package], [aws], and [gcloud] tables are modified; nested tables such as
+      # [aws.region_aliases] are preserved untouched.
+      if (line ~ /^[[:space:]]*\[/) {
+        flush_section()
+        section = ""
+        compact = line
+        gsub(/[[:space:]]/, "", compact)
+
+        if (compact == "[package]") section = "package"
+        else if (compact == "[aws]") section = "aws"
+        else if (compact == "[gcloud]") section = "gcloud"
+
+        if (section != "") seen[section] = 1
+        print line
+        next
+      }
+
+      if (section != "" && line ~ /^[[:space:]]*disabled[[:space:]]*=/) {
+        if (!disabled_written[section]) print "disabled = true"
+        disabled_written[section] = 1
+        next
+      }
+
+      print line
+    }
+
+    END {
+      flush_section()
+      append_disabled_section("package")
+      append_disabled_section("aws")
+      append_disabled_section("gcloud")
+    }
+  ' "$source" > "$target"
+}
+
 _dotfiles_starship_config_for() {
-  local preset version target
+  local preset version target raw temporary
   preset="$(_dotfiles_starship_normalize_preset "$1")"
   _dotfiles_starship_safe_preset_name "$preset" || return 1
 
   version="$(_dotfiles_starship_version)" || version='unknown'
-  target="$DOTFILES_STARSHIP_CACHE_DIR/$version/$preset.toml"
+  target="$DOTFILES_STARSHIP_CACHE_DIR/$version/policy-v$DOTFILES_STARSHIP_POLICY_REV/$preset.toml"
 
   if [[ ! -r "$target" ]]; then
     mkdir -p "${target:h}"
-    if ! starship preset "$preset" -o "$target" >/dev/null; then
-      rm -f "$target"
+    raw="${target}.preset.$$"
+    temporary="${target}.tmp.$$"
+
+    if ! starship preset "$preset" -o "$raw" >/dev/null; then
+      rm -f "$raw" "$temporary"
       return 1
     fi
+
+    if ! _dotfiles_starship_apply_policy "$raw" "$temporary"; then
+      rm -f "$raw" "$temporary"
+      return 1
+    fi
+
+    mv "$temporary" "$target"
+    rm -f "$raw"
   fi
 
   print -r -- "$target"
@@ -81,6 +155,7 @@ prompt-preset() {
   if [[ -z "$requested" ]]; then
     print -r -- "Current preset: $(_dotfiles_starship_selected_preset)"
     print -r -- "Default preset: $DOTFILES_STARSHIP_DEFAULT_PRESET"
+    print -r -- 'Portable policy: package, aws, and gcloud modules are disabled'
     print -r -- 'Usage: prompt-preset <preset> | prompt-preset default'
     return 0
   fi
