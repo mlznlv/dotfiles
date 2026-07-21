@@ -1,21 +1,22 @@
-# Starship owns prompt rendering. Preset and module selection are machine-local
-# and do not modify the dotfiles repository.
+# Starship owns prompt rendering. Preset and module selection are machine-local.
 
 typeset -gr DOTFILES_STARSHIP_DEFAULT_PRESET='plain-text-symbols'
-typeset -gr DOTFILES_STARSHIP_POLICY_REV='2'
+typeset -gr DOTFILES_STARSHIP_POLICY_REV='3'
 typeset -gr DOTFILES_STARSHIP_STATE_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/starship"
 typeset -gr DOTFILES_STARSHIP_PRESET_FILE="$DOTFILES_STARSHIP_STATE_DIR/preset"
 typeset -gr DOTFILES_STARSHIP_MODULES_FILE="$DOTFILES_STARSHIP_STATE_DIR/modules"
 typeset -gr DOTFILES_STARSHIP_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/starship/presets"
 
+_dotfiles_starship_native_prompt() {
+  unset STARSHIP_CONFIG
+  PROMPT='[%n@%m %1~] %# '
+  RPROMPT=''
+}
+
 _dotfiles_starship_normalize_preset() {
   case "$1" in
-    plain-text)
-      print -r -- 'plain-text-symbols'
-      ;;
-    *)
-      print -r -- "$1"
-      ;;
+    plain-text) print -r -- 'plain-text-symbols' ;;
+    *) print -r -- "$1" ;;
   esac
 }
 
@@ -85,10 +86,9 @@ _dotfiles_starship_write_module_state() {
   local package_state="$1"
   local aws_state="$2"
   local gcloud_state="$3"
-  local temporary
+  local temporary="$DOTFILES_STARSHIP_MODULES_FILE.tmp.$$"
 
   mkdir -p "$DOTFILES_STARSHIP_STATE_DIR"
-  temporary="$DOTFILES_STARSHIP_MODULES_FILE.tmp.$$"
 
   {
     print -r -- "package=$package_state"
@@ -102,9 +102,7 @@ _dotfiles_starship_write_module_state() {
   mv "$temporary" "$DOTFILES_STARSHIP_MODULES_FILE"
 }
 
-# Apply machine-local module policy to any official Starship preset. The preset
-# keeps its layout/colors, while package/cloud context defaults to hidden and can
-# be explicitly enabled per machine with `prompt-module enable <module>`.
+# Apply the same machine-local visibility policy to every official preset.
 _dotfiles_starship_apply_policy() {
   local source="$1"
   local target="$2"
@@ -144,9 +142,6 @@ _dotfiles_starship_apply_policy() {
     {
       line = $0
 
-      # Any TOML table header ends the previous simple module table. Only exact
-      # [package], [aws], and [gcloud] tables are modified; nested tables remain
-      # untouched.
       if (line ~ /^[[:space:]]*\[/) {
         flush_section()
         section = ""
@@ -185,7 +180,7 @@ _dotfiles_starship_config_for() {
   preset="$(_dotfiles_starship_normalize_preset "$1")"
   _dotfiles_starship_safe_preset_name "$preset" || return 1
 
-  version="$(_dotfiles_starship_version)" || version='unknown'
+  version="$(_dotfiles_starship_version)" || return 1
   signature="$(_dotfiles_starship_module_signature)"
   target="$DOTFILES_STARSHIP_CACHE_DIR/$version/policy-v$DOTFILES_STARSHIP_POLICY_REV/$signature/$preset.toml"
 
@@ -194,7 +189,7 @@ _dotfiles_starship_config_for() {
     raw="${target}.preset.$$"
     temporary="${target}.tmp.$$"
 
-    if ! starship preset "$preset" -o "$raw" >/dev/null; then
+    if ! starship preset "$preset" -o "$raw" >/dev/null 2>&1; then
       rm -f "$raw" "$temporary"
       return 1
     fi
@@ -204,15 +199,17 @@ _dotfiles_starship_config_for() {
       return 1
     fi
 
-    mv "$temporary" "$target"
+    mv "$temporary" "$target" || {
+      rm -f "$raw" "$temporary"
+      return 1
+    }
     rm -f "$raw"
   fi
 
+  [[ -r "$target" ]] || return 1
   print -r -- "$target"
 }
 
-# Switch official Starship presets without creating chezmoi/git differences.
-# `plain-text` is a convenience alias for Starship's `plain-text-symbols` preset.
 prompt-preset() {
   local requested="${1:-}"
   local preset target
@@ -236,8 +233,12 @@ prompt-preset() {
 
   case "$requested" in
     default|reset)
-      rm -f "$DOTFILES_STARSHIP_PRESET_FILE"
       preset="$DOTFILES_STARSHIP_DEFAULT_PRESET"
+      target="$(_dotfiles_starship_config_for "$preset")" || {
+        print -u2 -- "Default Starship preset is unavailable: $preset"
+        return 1
+      }
+      rm -f "$DOTFILES_STARSHIP_PRESET_FILE"
       ;;
     *)
       preset="$(_dotfiles_starship_normalize_preset "$requested")"
@@ -260,14 +261,13 @@ prompt-preset() {
   print -r -- 'Restart the shell to apply it: exec zsh -l'
 }
 
-# Control noisy or potentially sensitive prompt modules per machine. Defaults are
-# all disabled. State remains outside chezmoi/Git.
 prompt-module() {
   local action="${1:-status}"
   local module="${2:-}"
   local package_state='disabled'
   local aws_state='disabled'
   local gcloud_state='disabled'
+  local next_state
 
   _dotfiles_starship_module_enabled package && package_state='enabled'
   _dotfiles_starship_module_enabled aws && aws_state='enabled'
@@ -304,6 +304,7 @@ prompt-module() {
         print -u2 -- 'Supported modules: package, aws, gcloud'
         return 2
       fi
+      [[ "$action" == 'enable' ]] && next_state='enabled' || next_state='disabled'
       ;;
     *)
       print -u2 -- 'Usage: prompt-module status | reset | <enable|disable> <package|aws|gcloud>'
@@ -312,9 +313,9 @@ prompt-module() {
   esac
 
   case "$module" in
-    package) package_state="${action/enable/enabled}"; package_state="${package_state/disable/disabled}" ;;
-    aws) aws_state="${action/enable/enabled}"; aws_state="${aws_state/disable/disabled}" ;;
-    gcloud) gcloud_state="${action/enable/enabled}"; gcloud_state="${gcloud_state/disable/disabled}" ;;
+    package) package_state="$next_state" ;;
+    aws) aws_state="$next_state" ;;
+    gcloud) gcloud_state="$next_state" ;;
   esac
 
   _dotfiles_starship_write_module_state "$package_state" "$aws_state" "$gcloud_state" || {
@@ -322,28 +323,47 @@ prompt-module() {
     return 1
   }
 
-  print -r -- "Starship module '$module' ${action}d."
+  print -r -- "Starship module '$module' is now $next_state."
   print -r -- 'Restart the shell to apply it: exec zsh -l'
 }
 
-if command -v starship >/dev/null 2>&1; then
-  _DOTFILES_STARSHIP_PRESET="$(_dotfiles_starship_selected_preset)"
+_dotfiles_starship_init() {
+  local preset config init_script
 
-  if ! _dotfiles_starship_safe_preset_name "$_DOTFILES_STARSHIP_PRESET"; then
-    print -u2 -- "Ignoring invalid Starship preset name: $_DOTFILES_STARSHIP_PRESET"
-    _DOTFILES_STARSHIP_PRESET="$DOTFILES_STARSHIP_DEFAULT_PRESET"
+  if ! command -v starship >/dev/null 2>&1; then
+    _dotfiles_starship_native_prompt
+    return
   fi
 
-  if ! STARSHIP_CONFIG="$(_dotfiles_starship_config_for "$_DOTFILES_STARSHIP_PRESET")"; then
-    print -u2 -- "Could not load Starship preset '$_DOTFILES_STARSHIP_PRESET'; falling back to '$DOTFILES_STARSHIP_DEFAULT_PRESET'."
-    _DOTFILES_STARSHIP_PRESET="$DOTFILES_STARSHIP_DEFAULT_PRESET"
-    STARSHIP_CONFIG="$(_dotfiles_starship_config_for "$_DOTFILES_STARSHIP_PRESET")"
+  preset="$(_dotfiles_starship_selected_preset)"
+  if ! _dotfiles_starship_safe_preset_name "$preset"; then
+    print -u2 -- "dotfiles: ignoring invalid Starship preset name: $preset"
+    preset="$DOTFILES_STARSHIP_DEFAULT_PRESET"
   fi
 
-  export STARSHIP_CONFIG
-  eval "$(starship init zsh)"
-  unset _DOTFILES_STARSHIP_PRESET
-else
-  # Keep a usable prompt on machines where Starship has not been provisioned yet.
-  PROMPT='[%n@%m %1~] %# '
-fi
+  if ! config="$(_dotfiles_starship_config_for "$preset")"; then
+    if [[ "$preset" != "$DOTFILES_STARSHIP_DEFAULT_PRESET" ]]; then
+      print -u2 -- "dotfiles: could not load Starship preset '$preset'; trying '$DOTFILES_STARSHIP_DEFAULT_PRESET'."
+      preset="$DOTFILES_STARSHIP_DEFAULT_PRESET"
+      config="$(_dotfiles_starship_config_for "$preset")" || config=''
+    else
+      config=''
+    fi
+  fi
+
+  if [[ -z "$config" || ! -r "$config" ]]; then
+    print -u2 -- 'dotfiles: Starship config generation failed; using the native Zsh prompt.'
+    _dotfiles_starship_native_prompt
+    return
+  fi
+
+  export STARSHIP_CONFIG="$config"
+  init_script="$(starship init zsh 2>/dev/null)" || init_script=''
+  if [[ -z "$init_script" ]] || ! eval "$init_script"; then
+    print -u2 -- 'dotfiles: Starship initialization failed; using the native Zsh prompt.'
+    _dotfiles_starship_native_prompt
+  fi
+}
+
+_dotfiles_starship_init
+unset -f _dotfiles_starship_init
