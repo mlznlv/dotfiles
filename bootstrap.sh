@@ -67,14 +67,14 @@ if [[ "$PLATFORM" == "macos" ]]; then
   unset HOMEBREW_PROFILE_FILE
 fi
 
-MISE_BIN="$(command -v mise || true)"
+MISE_BIN="$(dotfiles_find_executable mise || true)"
 if [[ -z "$MISE_BIN" ]]; then
   curl -fsSL https://mise.run | sh
-  MISE_BIN="$HOME/.local/bin/mise"
+  MISE_BIN="$(dotfiles_find_executable mise || true)"
 fi
 
-if [[ ! -x "$MISE_BIN" ]]; then
-  echo "mise installation failed: $MISE_BIN is not executable."
+if [[ -z "$MISE_BIN" || ! -x "$MISE_BIN" ]]; then
+  echo "mise installation failed: executable was not found."
   exit 1
 fi
 
@@ -118,15 +118,15 @@ fi
 
 bash "$SOURCE_DIR/scripts/migrate-legacy.sh"
 
-CHEZMOI_BIN="$(command -v chezmoi || true)"
+CHEZMOI_BIN="$(dotfiles_find_executable chezmoi || true)"
 if [[ -z "$CHEZMOI_BIN" ]]; then
   mkdir -p "$HOME/.local/bin"
   sh -c "$(curl -fsLS https://get.chezmoi.io)" -- -b "$HOME/.local/bin"
-  CHEZMOI_BIN="$HOME/.local/bin/chezmoi"
+  CHEZMOI_BIN="$(dotfiles_find_executable chezmoi || true)"
 fi
 
-if [[ ! -x "$CHEZMOI_BIN" ]]; then
-  echo "chezmoi installation failed: $CHEZMOI_BIN is not executable."
+if [[ -z "$CHEZMOI_BIN" || ! -x "$CHEZMOI_BIN" ]]; then
+  echo "chezmoi installation failed: executable was not found."
   exit 1
 fi
 
