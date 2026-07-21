@@ -2,7 +2,15 @@
 set -euo pipefail
 
 SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROFILE="${1:-base}"
+
+if [[ $# -ne 1 ]]; then
+  echo "Usage: bash ./update.sh <profile>"
+  echo "  macOS: base, local-dev, remote-client"
+  echo "  Linux (Ubuntu/Debian): base, dev-host"
+  exit 2
+fi
+
+PROFILE="$1"
 
 case "$(uname -s)" in
   Darwin)
@@ -24,10 +32,23 @@ case "$PLATFORM/$PROFILE" in
     echo "Unsupported platform/profile combination: $PLATFORM/$PROFILE"
     echo "Supported profiles:"
     echo "  macOS: base, local-dev, remote-client"
-    echo "  Linux: base, dev-host"
+    echo "  Linux (Ubuntu/Debian): base, dev-host"
     exit 1
     ;;
 esac
+
+if [[ "$PLATFORM" == "linux" ]] && ! command -v apt-get >/dev/null 2>&1; then
+  echo "Unsupported Linux distribution: apt-get is required."
+  exit 1
+fi
+
+MISE_ENV_VALUE=""
+if [[ "$PLATFORM" == "linux" ]]; then
+  MISE_ENV_VALUE="linux"
+  if [[ "$PROFILE" != "base" ]]; then
+    MISE_ENV_VALUE="$MISE_ENV_VALUE,linux-$PROFILE"
+  fi
+fi
 
 # Pull first, then restart this script so the remainder always runs the newest
 # update logic from the repository.
@@ -85,17 +106,12 @@ if [[ "$PLATFORM" == "macos" ]]; then
     "$MISE_BIN" bootstrap repos update --yes
   )
 
-  echo "Upgrading managed runtimes within configured version ranges..."
+  echo "Upgrading managed runtimes/tools within configured version ranges..."
   (
     cd "$SOURCE_DIR"
     "$MISE_BIN" upgrade
   )
 else
-  MISE_ENV_VALUE="linux"
-  if [[ "$PROFILE" != "base" ]]; then
-    MISE_ENV_VALUE="$MISE_ENV_VALUE,linux-$PROFILE"
-  fi
-
   echo "Upgrading managed Linux system packages..."
   (
     cd "$SOURCE_DIR"
@@ -108,7 +124,7 @@ else
     MISE_ENV="$MISE_ENV_VALUE" "$MISE_BIN" bootstrap repos update --yes
   )
 
-  echo "Upgrading managed runtimes within configured version ranges..."
+  echo "Upgrading managed runtimes/tools within configured version ranges..."
   (
     cd "$SOURCE_DIR"
     MISE_ENV="$MISE_ENV_VALUE" "$MISE_BIN" upgrade
@@ -116,9 +132,19 @@ else
 fi
 
 echo "Running health checks..."
-"$MISE_BIN" doctor
+if [[ "$PLATFORM" == "linux" ]]; then
+  (
+    cd "$SOURCE_DIR"
+    MISE_ENV="$MISE_ENV_VALUE" "$MISE_BIN" doctor
+    MISE_ENV="$MISE_ENV_VALUE" "$MISE_BIN" bootstrap status --missing
+  )
+else
+  (
+    cd "$SOURCE_DIR"
+    "$MISE_BIN" doctor
+    "$MISE_BIN" bootstrap status --missing
+  )
 
-if [[ "$PLATFORM" == "macos" ]]; then
   brew bundle check --file="$SOURCE_DIR/homebrew/Brewfile"
   HOMEBREW_PROFILE_FILE="$SOURCE_DIR/homebrew/Brewfile.$PROFILE"
   if [[ -f "$HOMEBREW_PROFILE_FILE" ]]; then
@@ -128,13 +154,18 @@ if [[ "$PLATFORM" == "macos" ]]; then
 fi
 
 CHEZMOI_BIN="$(command -v chezmoi || true)"
-if [[ -n "$CHEZMOI_BIN" ]]; then
-  if [[ -n "$("$CHEZMOI_BIN" --source "$SOURCE_DIR" diff)" ]]; then
-    echo "chezmoi reports unapplied differences:"
-    "$CHEZMOI_BIN" --source "$SOURCE_DIR" diff
-    exit 1
-  fi
+if [[ -z "$CHEZMOI_BIN" || ! -x "$CHEZMOI_BIN" ]]; then
+  echo "chezmoi is unavailable after bootstrap."
+  exit 1
 fi
+
+CHEZMOI_DIFF="$($CHEZMOI_BIN --source "$SOURCE_DIR" diff)"
+if [[ -n "$CHEZMOI_DIFF" ]]; then
+  echo "chezmoi reports unapplied differences:"
+  printf '%s\n' "$CHEZMOI_DIFF"
+  exit 1
+fi
+unset CHEZMOI_DIFF
 
 echo "Update completed successfully for $PLATFORM with profile $PROFILE."
 echo "Restart the shell to pick up any runtime or shell changes: exec zsh -l"
