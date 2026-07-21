@@ -1,7 +1,7 @@
 # Starship owns prompt rendering. Preset and module selection are machine-local.
 
 typeset -g DOTFILES_STARSHIP_DEFAULT_PRESET='plain-text-symbols'
-typeset -g DOTFILES_STARSHIP_POLICY_REV='4'
+typeset -g DOTFILES_STARSHIP_POLICY_REV='5'
 typeset -g DOTFILES_STARSHIP_STATE_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/starship"
 typeset -g DOTFILES_STARSHIP_PRESET_FILE="$DOTFILES_STARSHIP_STATE_DIR/preset"
 typeset -g DOTFILES_STARSHIP_MODULES_FILE="$DOTFILES_STARSHIP_STATE_DIR/modules"
@@ -15,6 +15,12 @@ typeset -ga DOTFILES_STARSHIP_POLICY_MODULES=(
   openstack
   docker_context
   localip
+  nats
+  pulumi
+  terraform
+  netns
+  container
+  singularity
 )
 
 _dotfiles_starship_native_prompt() {
