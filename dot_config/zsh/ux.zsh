@@ -1,24 +1,6 @@
 # Interactive shell UX loaded after completion and runtime integrations.
 
-# Fuzzy search and navigation.
-if command -v fzf >/dev/null 2>&1; then
-  FZF_ZSH_INIT="$(fzf --zsh 2>/dev/null || true)"
-  if [[ -n "$FZF_ZSH_INIT" ]]; then
-    eval "$FZF_ZSH_INIT"
-  elif [[ -r "$HOME/.fzf.zsh" ]]; then
-    source "$HOME/.fzf.zsh"
-  fi
-  unset FZF_ZSH_INIT
-elif [[ -r "$HOME/.fzf.zsh" ]]; then
-  source "$HOME/.fzf.zsh"
-fi
-
-command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init zsh)"
-
-# Interactive feedback plugins.
-ZSH_PLUGIN_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
-
-_source_zsh_plugin() {
+_source_first_readable() {
   local candidate
 
   for candidate in "$@"; do
@@ -30,19 +12,38 @@ _source_zsh_plugin() {
   return 1
 }
 
-BREW_SHARE=""
-if command -v brew >/dev/null 2>&1; then
-  BREW_SHARE="$(brew --prefix)/share"
+# Prefer fzf's self-contained Zsh init on recent versions. Debian/Ubuntu may ship
+# an older fzf, so fall back to the packaged key-binding script when necessary.
+if command -v fzf >/dev/null 2>&1; then
+  FZF_ZSH_INIT="$(fzf --zsh 2>/dev/null || true)"
+  if [[ -n "$FZF_ZSH_INIT" ]]; then
+    eval "$FZF_ZSH_INIT"
+  else
+    _source_first_readable \
+      "$HOME/.fzf.zsh" \
+      "/usr/share/doc/fzf/examples/key-bindings.zsh" \
+      "/usr/share/fzf/key-bindings.zsh" \
+      "/usr/share/fzf/shell/key-bindings.zsh" \
+      >/dev/null 2>&1 || true
+  fi
+  unset FZF_ZSH_INIT
 fi
 
-_source_zsh_plugin \
-  "$ZSH_PLUGIN_HOME/zsh-autosuggestions/zsh-autosuggestions.zsh" \
-  "${BREW_SHARE:+$BREW_SHARE/zsh-autosuggestions/zsh-autosuggestions.zsh}"
+command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init zsh)"
 
-# Keep syntax highlighting last so it sees all ZLE widgets/hooks.
-_source_zsh_plugin \
-  "$ZSH_PLUGIN_HOME/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" \
-  "${BREW_SHARE:+$BREW_SHARE/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh}"
+# Zsh plugins are owned only by mise bootstrap.repos.
+ZSH_PLUGIN_HOME="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins"
 
-unset -f _source_zsh_plugin
-unset ZSH_PLUGIN_HOME BREW_SHARE
+if ! _source_first_readable \
+  "$ZSH_PLUGIN_HOME/zsh-autosuggestions/zsh-autosuggestions.zsh"; then
+  print -u2 -- "dotfiles: zsh-autosuggestions is missing; rerun bootstrap for this machine profile."
+fi
+
+# Keep syntax highlighting after all other ZLE integrations.
+if ! _source_first_readable \
+  "$ZSH_PLUGIN_HOME/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"; then
+  print -u2 -- "dotfiles: zsh-syntax-highlighting is missing; rerun bootstrap for this machine profile."
+fi
+
+unset -f _source_first_readable
+unset ZSH_PLUGIN_HOME
