@@ -16,7 +16,9 @@ else
   printf '%s\n' 'check: zsh not found; skipped Zsh syntax validation.' >&2
 fi
 
-git diff --check
+EMPTY_TREE="$(git hash-object -t tree /dev/null)"
+git diff --check "$EMPTY_TREE" HEAD -- .
+unset EMPTY_TREE
 
 # `.gitignore` is the single path-policy source of truth. A tracked file that
 # matches it was likely force-added or became forbidden after it was committed.
