@@ -1,7 +1,7 @@
 # Portable visual defaults only. Shell, prompt, runtimes, and remote sessions are
 # owned by Zsh/Starship/mise/tmux respectively.
 
-theme = dark:Catppuccin Frappe,light:Catppuccin Latte
+theme = dark:Catppuccin Mocha,light:Catppuccin Latte
 
 # Keep Ghostty's bundled default font family; use a slightly larger portable size.
 font-size = 14.5
