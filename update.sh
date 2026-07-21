@@ -159,7 +159,7 @@ if [[ -z "$CHEZMOI_BIN" || ! -x "$CHEZMOI_BIN" ]]; then
   exit 1
 fi
 
-CHEZMOI_DIFF="$($CHEZMOI_BIN --source "$SOURCE_DIR" diff)"
+CHEZMOI_DIFF="$("$CHEZMOI_BIN" --source "$SOURCE_DIR" diff)"
 if [[ -n "$CHEZMOI_DIFF" ]]; then
   echo "chezmoi reports unapplied differences:"
   printf '%s\n' "$CHEZMOI_DIFF"
