@@ -1,10 +1,11 @@
-# Starship owns prompt rendering. Preset selection is machine-local and does not
-# modify the dotfiles repository.
+# Starship owns prompt rendering. Preset and module selection are machine-local
+# and do not modify the dotfiles repository.
 
 typeset -gr DOTFILES_STARSHIP_DEFAULT_PRESET='plain-text-symbols'
-typeset -gr DOTFILES_STARSHIP_POLICY_REV='1'
+typeset -gr DOTFILES_STARSHIP_POLICY_REV='2'
 typeset -gr DOTFILES_STARSHIP_STATE_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/starship"
 typeset -gr DOTFILES_STARSHIP_PRESET_FILE="$DOTFILES_STARSHIP_STATE_DIR/preset"
+typeset -gr DOTFILES_STARSHIP_MODULES_FILE="$DOTFILES_STARSHIP_STATE_DIR/modules"
 typeset -gr DOTFILES_STARSHIP_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/starship/presets"
 
 _dotfiles_starship_normalize_preset() {
@@ -22,6 +23,13 @@ _dotfiles_starship_safe_preset_name() {
   case "$1" in
     ''|*[!A-Za-z0-9_-]*) return 1 ;;
     *) return 0 ;;
+  esac
+}
+
+_dotfiles_starship_supported_module() {
+  case "$1" in
+    package|aws|gcloud) return 0 ;;
+    *) return 1 ;;
   esac
 }
 
@@ -44,26 +52,92 @@ _dotfiles_starship_selected_preset() {
   _dotfiles_starship_normalize_preset "$preset"
 }
 
-# Apply repository-wide prompt policy to any official Starship preset. This
-# preserves the preset's layout/colors while removing context that is too noisy
-# or potentially sensitive for a default prompt.
+_dotfiles_starship_module_enabled() {
+  local requested="$1"
+  local name state
+
+  [[ -r "$DOTFILES_STARSHIP_MODULES_FILE" ]] || return 1
+
+  while IFS='=' read -r name state; do
+    [[ "$name" == "$requested" ]] || continue
+    [[ "$state" == 'enabled' ]]
+    return
+  done < "$DOTFILES_STARSHIP_MODULES_FILE"
+
+  return 1
+}
+
+_dotfiles_starship_module_signature() {
+  local module signature=''
+
+  for module in package aws gcloud; do
+    if _dotfiles_starship_module_enabled "$module"; then
+      signature+="${module}-on_"
+    else
+      signature+="${module}-off_"
+    fi
+  done
+
+  print -r -- "${signature%_}"
+}
+
+_dotfiles_starship_write_module_state() {
+  local package_state="$1"
+  local aws_state="$2"
+  local gcloud_state="$3"
+  local temporary
+
+  mkdir -p "$DOTFILES_STARSHIP_STATE_DIR"
+  temporary="$DOTFILES_STARSHIP_MODULES_FILE.tmp.$$"
+
+  {
+    print -r -- "package=$package_state"
+    print -r -- "aws=$aws_state"
+    print -r -- "gcloud=$gcloud_state"
+  } > "$temporary" || {
+    rm -f "$temporary"
+    return 1
+  }
+
+  mv "$temporary" "$DOTFILES_STARSHIP_MODULES_FILE"
+}
+
+# Apply machine-local module policy to any official Starship preset. The preset
+# keeps its layout/colors, while package/cloud context defaults to hidden and can
+# be explicitly enabled per machine with `prompt-module enable <module>`.
 _dotfiles_starship_apply_policy() {
   local source="$1"
   local target="$2"
+  local package_disabled='true'
+  local aws_disabled='true'
+  local gcloud_disabled='true'
 
-  awk '
+  _dotfiles_starship_module_enabled package && package_disabled='false'
+  _dotfiles_starship_module_enabled aws && aws_disabled='false'
+  _dotfiles_starship_module_enabled gcloud && gcloud_disabled='false'
+
+  awk \
+    -v package_disabled="$package_disabled" \
+    -v aws_disabled="$aws_disabled" \
+    -v gcloud_disabled="$gcloud_disabled" '
+    BEGIN {
+      desired["package"] = package_disabled
+      desired["aws"] = aws_disabled
+      desired["gcloud"] = gcloud_disabled
+    }
+
     function flush_section() {
       if (section != "" && !disabled_written[section]) {
-        print "disabled = true"
+        print "disabled = " desired[section]
         disabled_written[section] = 1
       }
     }
 
-    function append_disabled_section(name) {
+    function append_section(name) {
       if (!seen[name]) {
         print ""
         print "[" name "]"
-        print "disabled = true"
+        print "disabled = " desired[name]
       }
     }
 
@@ -71,8 +145,8 @@ _dotfiles_starship_apply_policy() {
       line = $0
 
       # Any TOML table header ends the previous simple module table. Only exact
-      # [package], [aws], and [gcloud] tables are modified; nested tables such as
-      # [aws.region_aliases] are preserved untouched.
+      # [package], [aws], and [gcloud] tables are modified; nested tables remain
+      # untouched.
       if (line ~ /^[[:space:]]*\[/) {
         flush_section()
         section = ""
@@ -89,7 +163,7 @@ _dotfiles_starship_apply_policy() {
       }
 
       if (section != "" && line ~ /^[[:space:]]*disabled[[:space:]]*=/) {
-        if (!disabled_written[section]) print "disabled = true"
+        if (!disabled_written[section]) print "disabled = " desired[section]
         disabled_written[section] = 1
         next
       }
@@ -99,20 +173,21 @@ _dotfiles_starship_apply_policy() {
 
     END {
       flush_section()
-      append_disabled_section("package")
-      append_disabled_section("aws")
-      append_disabled_section("gcloud")
+      append_section("package")
+      append_section("aws")
+      append_section("gcloud")
     }
   ' "$source" > "$target"
 }
 
 _dotfiles_starship_config_for() {
-  local preset version target raw temporary
+  local preset version signature target raw temporary
   preset="$(_dotfiles_starship_normalize_preset "$1")"
   _dotfiles_starship_safe_preset_name "$preset" || return 1
 
   version="$(_dotfiles_starship_version)" || version='unknown'
-  target="$DOTFILES_STARSHIP_CACHE_DIR/$version/policy-v$DOTFILES_STARSHIP_POLICY_REV/$preset.toml"
+  signature="$(_dotfiles_starship_module_signature)"
+  target="$DOTFILES_STARSHIP_CACHE_DIR/$version/policy-v$DOTFILES_STARSHIP_POLICY_REV/$signature/$preset.toml"
 
   if [[ ! -r "$target" ]]; then
     mkdir -p "${target:h}"
@@ -155,7 +230,6 @@ prompt-preset() {
   if [[ -z "$requested" ]]; then
     print -r -- "Current preset: $(_dotfiles_starship_selected_preset)"
     print -r -- "Default preset: $DOTFILES_STARSHIP_DEFAULT_PRESET"
-    print -r -- 'Portable policy: package, aws, and gcloud modules are disabled'
     print -r -- 'Usage: prompt-preset <preset> | prompt-preset default'
     return 0
   fi
@@ -183,6 +257,72 @@ prompt-preset() {
   esac
 
   print -r -- "Starship preset selected: $preset"
+  print -r -- 'Restart the shell to apply it: exec zsh -l'
+}
+
+# Control noisy or potentially sensitive prompt modules per machine. Defaults are
+# all disabled. State remains outside chezmoi/Git.
+prompt-module() {
+  local action="${1:-status}"
+  local module="${2:-}"
+  local package_state='disabled'
+  local aws_state='disabled'
+  local gcloud_state='disabled'
+
+  _dotfiles_starship_module_enabled package && package_state='enabled'
+  _dotfiles_starship_module_enabled aws && aws_state='enabled'
+  _dotfiles_starship_module_enabled gcloud && gcloud_state='enabled'
+
+  case "$action" in
+    status)
+      if (( $# > 1 )); then
+        print -u2 -- 'Usage: prompt-module status'
+        return 2
+      fi
+      print -r -- "package  $package_state"
+      print -r -- "aws      $aws_state"
+      print -r -- "gcloud   $gcloud_state"
+      return 0
+      ;;
+    reset)
+      if (( $# > 1 )); then
+        print -u2 -- 'Usage: prompt-module reset'
+        return 2
+      fi
+      rm -f "$DOTFILES_STARSHIP_MODULES_FILE"
+      print -r -- 'Starship prompt modules reset to defaults: package/aws/gcloud disabled.'
+      print -r -- 'Restart the shell to apply it: exec zsh -l'
+      return 0
+      ;;
+    enable|disable)
+      if (( $# != 2 )); then
+        print -u2 -- 'Usage: prompt-module <enable|disable> <package|aws|gcloud>'
+        return 2
+      fi
+      if ! _dotfiles_starship_supported_module "$module"; then
+        print -u2 -- "Unsupported prompt module: $module"
+        print -u2 -- 'Supported modules: package, aws, gcloud'
+        return 2
+      fi
+      ;;
+    *)
+      print -u2 -- 'Usage: prompt-module status | reset | <enable|disable> <package|aws|gcloud>'
+      return 2
+      ;;
+  esac
+
+  case "$module" in
+    package) package_state="${action/enable/enabled}"; package_state="${package_state/disable/disabled}" ;;
+    aws) aws_state="${action/enable/enabled}"; aws_state="${aws_state/disable/disabled}" ;;
+    gcloud) gcloud_state="${action/enable/enabled}"; gcloud_state="${gcloud_state/disable/disabled}" ;;
+  esac
+
+  _dotfiles_starship_write_module_state "$package_state" "$aws_state" "$gcloud_state" || {
+    print -u2 -- 'Could not update Starship module state.'
+    return 1
+  }
+
+  print -r -- "Starship module '$module' ${action}d."
   print -r -- 'Restart the shell to apply it: exec zsh -l'
 }
 
