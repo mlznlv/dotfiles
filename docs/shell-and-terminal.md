@@ -25,6 +25,8 @@ Shift-Tab  previous completion item
 
 The two Zsh plugin repositories are owned only by `mise bootstrap.repos`. Missing plugins produce a startup warning instead of silently changing shell behavior. `zsh-autocomplete`, Oh My Zsh, and Powerlevel10k are not part of the stack.
 
+Prefix a one-off command with a space to keep it out of Zsh history (`HIST_IGNORE_SPACE`). This is a convenience, not a substitute for proper secret handling.
+
 ## Starship presets
 
 Default preset:
@@ -46,29 +48,33 @@ exec zsh -l
 
 If selected/default preset generation or Starship initialization fails, the shell falls back to a minimal native Zsh prompt rather than an uncontrolled Starship config.
 
-## Starship modules
+## Starship context modules
 
-These modules default to disabled:
+Portable policy hides context that is noisy or can expose machine/infrastructure identity, regardless of the selected official preset:
 
 ```text
 package
 aws
 gcloud
+azure
+kubernetes
+openstack
+docker_context
+localip
 ```
 
-Manage them per machine:
+Enable only what is useful on a specific machine:
 
 ```bash
 prompt-module status
 prompt-module enable aws
 prompt-module disable aws
-prompt-module enable gcloud
-prompt-module enable package
+prompt-module enable kubernetes
 prompt-module reset
 exec zsh -l
 ```
 
-State is stored in `~/.config/starship/modules` and stays outside Git.
+State is stored in `~/.config/starship/modules` and stays outside Git. Generated preset configs are validated by Starship before activation.
 
 ## Ghostty
 
