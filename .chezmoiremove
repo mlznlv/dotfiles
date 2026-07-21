@@ -1,0 +1,12 @@
+.config/zsh/features/dev-runtimes.zsh
+.config/zsh/platform.zsh
+.config/zsh/platforms/linux.profile.zsh
+.config/zsh/platforms/linux.zsh
+.config/zsh/platforms/macos.profile.zsh
+.config/zsh/platforms/macos.zsh
+.config/zsh/plugins.zsh
+.config/zsh/role.zsh
+.config/zsh/roles/client.zsh
+.config/zsh/roles/server.zsh
+.config/zsh/roles/workstation.zsh
+.config/zsh/tools.zsh
