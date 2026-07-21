@@ -41,6 +41,12 @@ Detach without stopping remote work:
 Ctrl-b d
 ```
 
+## Security boundary
+
+The `dev-host` profile installs standard OpenSSH Server and Tailscale, but it does not rewrite `sshd_config`, firewall rules, cloud security groups, or SSH authentication policy.
+
+Do not assume that installing Tailscale automatically prevents direct access to TCP/22 on another interface. Before exposing a real host, verify the host firewall/network policy and decide the SSH authentication policy explicitly. The intended client path is over Tailscale, with no router port-forwarding requirement.
+
 ## Machine-specific data
 
 Do not commit:
