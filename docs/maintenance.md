@@ -33,6 +33,18 @@ git pull --ff-only
 
 It does not run blanket `brew autoremove`, destructive cleanup, or mise's Homebrew backend on macOS.
 
+## Repository checks
+
+Run after changing repository code/config:
+
+```bash
+bash scripts/check.sh
+```
+
+It validates Bash syntax, Zsh syntax when Zsh is available, `git diff --check`, forbidden tracked credential/identity paths, and private-key material in the current tree.
+
+This is a guardrail, not a full secret/history scanner. Before publishing an existing repository, inspect the full Git history separately.
+
 ## Verification
 
 After bootstrap/update:
@@ -98,11 +110,4 @@ brew bundle check --file="$HOME/.local/share/chezmoi/homebrew/Brewfile"
 
 Avoid `brew link --overwrite`, broad `brew autoremove`, and destructive cleanup unless the exact ownership problem has been established first.
 
-## Static checks after repository changes
-
-```bash
-bash -n bootstrap.sh update.sh
-zsh -n dot_zprofile dot_zshrc dot_config/zsh/*.zsh
-```
-
-Then run the real profile convergence path on at least one supported machine. Static syntax checks do not replace bootstrap/update smoke tests.
+Static checks do not replace a real bootstrap/update smoke test on each supported platform/profile before release.
