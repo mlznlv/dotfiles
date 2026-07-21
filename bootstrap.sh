@@ -2,7 +2,15 @@
 set -euo pipefail
 
 SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROFILE="${1:-base}"
+
+if [[ $# -ne 1 ]]; then
+  echo "Usage: ./bootstrap.sh <profile>"
+  echo "  macOS: base, local-dev, remote-client"
+  echo "  Linux (Ubuntu/Debian): base, dev-host"
+  exit 2
+fi
+
+PROFILE="$1"
 
 case "$(uname -s)" in
   Darwin)
@@ -24,13 +32,19 @@ case "$PLATFORM/$PROFILE" in
     echo "Unsupported platform/profile combination: $PLATFORM/$PROFILE"
     echo "Supported profiles:"
     echo "  macOS: base, local-dev, remote-client"
-    echo "  Linux: base, dev-host"
+    echo "  Linux (Ubuntu/Debian): base, dev-host"
     exit 1
     ;;
 esac
 
 if ! command -v curl >/dev/null 2>&1; then
   echo "curl is required to bootstrap the environment."
+  exit 1
+fi
+
+if [[ "$PLATFORM" == "linux" ]] && ! command -v apt-get >/dev/null 2>&1; then
+  echo "Unsupported Linux distribution: apt-get is required."
+  echo "This repository currently supports Ubuntu/Debian Linux hosts."
   exit 1
 fi
 
@@ -83,17 +97,31 @@ if [[ ! -x "$MISE_BIN" ]]; then
   exit 1
 fi
 
-# Install a machine-profile runtime fragment into mise's global conf.d.
-# This keeps full development workstations useful outside project directories
-# without forcing heavyweight runtimes onto lightweight remote clients.
-MISE_PROFILE_SOURCE="$SOURCE_DIR/mise/runtime.$PLATFORM-$PROFILE.toml"
-MISE_PROFILE_TARGET="${XDG_CONFIG_HOME:-$HOME/.config}/mise/conf.d/20-dotfiles-profile.toml"
-mkdir -p "$(dirname "$MISE_PROFILE_TARGET")"
-if [[ -f "$MISE_PROFILE_SOURCE" ]]; then
-  cp "$MISE_PROFILE_SOURCE" "$MISE_PROFILE_TARGET"
-else
-  rm -f "$MISE_PROFILE_TARGET"
-fi
+# Project portable platform/profile tool defaults into mise's global conf.d.
+# Numeric prefixes make precedence explicit: platform -> profile -> machine-local.
+MISE_CONF_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/mise/conf.d"
+mkdir -p "$MISE_CONF_DIR"
+
+sync_mise_fragment() {
+  local source="$1"
+  local target="$2"
+
+  if [[ -f "$source" ]]; then
+    cp "$source" "$target"
+  else
+    rm -f "$target"
+  fi
+}
+
+sync_mise_fragment \
+  "$SOURCE_DIR/mise/runtime.$PLATFORM.toml" \
+  "$MISE_CONF_DIR/10-dotfiles-platform.toml"
+sync_mise_fragment \
+  "$SOURCE_DIR/mise/runtime.$PLATFORM-$PROFILE.toml" \
+  "$MISE_CONF_DIR/20-dotfiles-profile.toml"
+
+unset -f sync_mise_fragment
+unset MISE_CONF_DIR
 
 if [[ "$PLATFORM" == "linux" ]]; then
   MISE_ENV_VALUE="linux"
@@ -111,6 +139,25 @@ else
     "$MISE_BIN" bootstrap --yes
   )
 fi
+
+# One-time conservative cleanup for a repository that this dotfiles setup used
+# to manage. Never delete a mismatched or locally modified checkout.
+LEGACY_AUTOCOMPLETE_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/zsh/plugins/zsh-autocomplete"
+if [[ -d "$LEGACY_AUTOCOMPLETE_DIR/.git" ]]; then
+  LEGACY_AUTOCOMPLETE_ORIGIN="$(git -C "$LEGACY_AUTOCOMPLETE_DIR" config --get remote.origin.url 2>/dev/null || true)"
+  case "$LEGACY_AUTOCOMPLETE_ORIGIN" in
+    https://github.com/marlonrichert/zsh-autocomplete|https://github.com/marlonrichert/zsh-autocomplete.git|git@github.com:marlonrichert/zsh-autocomplete.git|ssh://git@github.com/marlonrichert/zsh-autocomplete.git)
+      if [[ -z "$(git -C "$LEGACY_AUTOCOMPLETE_DIR" status --porcelain 2>/dev/null)" ]]; then
+        echo "Removing obsolete zsh-autocomplete checkout..."
+        rm -rf "$LEGACY_AUTOCOMPLETE_DIR"
+      else
+        echo "Leaving obsolete zsh-autocomplete checkout because it has local changes:"
+        echo "  $LEGACY_AUTOCOMPLETE_DIR"
+      fi
+      ;;
+  esac
+fi
+unset LEGACY_AUTOCOMPLETE_DIR LEGACY_AUTOCOMPLETE_ORIGIN
 
 CHEZMOI_BIN="$(command -v chezmoi || true)"
 if [[ -z "$CHEZMOI_BIN" ]]; then
