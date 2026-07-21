@@ -6,19 +6,24 @@ dot_config/starship/modules
 mise/config.local.toml
 mise/config.*.local.toml
 
-# Identity and credential-bearing home config stays local
-dot_ssh/**
-dot_aws/**
-dot_kube/**
-dot_config/gcloud/**
-dot_config/gh/hosts.yml
-dot_docker/config.json
-dot_gitconfig
-dot_git-credentials
-dot_netrc
-dot_npmrc
-dot_pypirc
-dot_zsh_history
+# Identity and credential-bearing home config stays local.
+# Leading globs also cover chezmoi source attributes such as private_.
+*dot_ssh/**
+*dot_aws/**
+*dot_kube/**
+*dot_azure/**
+*dot_config/*gcloud/**
+*dot_config/*gh/hosts.yml
+*dot_config/*containers/auth.json
+*dot_docker/config.json
+*dot_terraform.d/credentials.tfrc.json
+*dot_config/*terraform.d/credentials.tfrc.json
+*dot_gitconfig
+*dot_git-credentials
+*dot_netrc
+*dot_npmrc
+*dot_pypirc
+*dot_zsh_history
 
 # Secrets and private material
 .env
