@@ -29,18 +29,44 @@ Zsh history is stored at `~/.zsh_history` with mode `0600`. Prefix a one-off com
 
 ## Vim
 
-Vim is the lightweight terminal/SSH fallback editor and is installed explicitly on macOS and Ubuntu/Debian instead of relying on an OS-bundled version.
+Vim is the lightweight terminal/SSH fallback editor for quick changes to configs, scripts, prompts, and documentation. It is installed explicitly on macOS and Ubuntu/Debian instead of relying on an OS-bundled version.
 
-Chezmoi manages `~/.vimrc` with syntax highlighting, filetype plugins, and indentation enabled. The portable language set covers:
+Chezmoi manages `~/.vimrc`. Native Vim filetype detection and syntax runtime are enabled automatically, covering the common working set without per-extension hacks:
 
 ```text
 Bash / sh
 JavaScript
 TypeScript / TSX
 Python
+Markdown
+JSON
 ```
 
-No Vim plugin manager or IDE layer is part of the base environment.
+The default UX stays intentionally small:
+
+```text
+Ctrl-N / Ctrl-P  insert completion
+Space-f          fuzzy files
+Space-b          fuzzy buffers
+Space-g          ripgrep project search
+:Files           fuzzy files
+:Buffers         fuzzy buffers
+:Rg              ripgrep project search
+```
+
+The statusline always shows the file, detected filetype, cursor position, and progress. Native `wildmenu`, incremental/smart-case search, line numbers, and a stable sign column are enabled.
+
+Vim plugins are loaded through Vim's native `pack/*/start` mechanism and their Git repositories are owned by `mise bootstrap.repos`:
+
+```text
+fzf + fzf.vim   fuzzy files/buffers/search
+vim-surround    edit quotes/brackets/tags
+vim-repeat      repeat plugin actions with .
+vim-sleuth      infer indentation from the project
+vim-gitgutter   show Git changes in the sign column
+```
+
+There is no Vim plugin manager, LSP client, completion daemon, file-tree plugin, or IDE distribution in the base environment.
 
 ## Starship presets
 
