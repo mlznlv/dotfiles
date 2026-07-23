@@ -27,6 +27,21 @@ The two Zsh plugin repositories are owned only by `mise bootstrap.repos`. Missin
 
 Zsh history is stored at `~/.zsh_history` with mode `0600`. Prefix a one-off command with a space to keep it out of history (`HIST_IGNORE_SPACE`). This is a convenience, not a substitute for proper secret handling.
 
+## Vim
+
+Vim is the lightweight terminal/SSH fallback editor and is installed explicitly on macOS and Ubuntu/Debian instead of relying on an OS-bundled version.
+
+Chezmoi manages `~/.vimrc` with syntax highlighting, filetype plugins, and indentation enabled. The portable language set covers:
+
+```text
+Bash / sh
+JavaScript
+TypeScript / TSX
+Python
+```
+
+No Vim plugin manager or IDE layer is part of the base environment.
+
 ## Starship presets
 
 Default preset:
