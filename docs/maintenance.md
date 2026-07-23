@@ -26,13 +26,16 @@ git pull --ff-only
 -> repository static/safety checks
 -> self-update mise when supported
 -> apply latest declarations
+-> validate mise config loading
 -> upgrade chezmoi when supported
 -> macOS: native Homebrew upgrades
 -> Ubuntu/Debian: managed apt upgrades
 -> update managed Zsh repositories
 -> upgrade mise runtimes/versioned tools within configured ranges
--> mise + package + chezmoi convergence checks
+-> non-interactive mise + package + chezmoi convergence checks
 ```
+
+Scripts put mise shims on `PATH` explicitly; they do not depend on interactive prompt hooks. `mise doctor` is intentionally not run inside `update.sh` because its shell-activation diagnostics are meaningful after restarting an interactive shell.
 
 It does not run blanket `brew autoremove`, destructive cleanup, or mise's Homebrew backend on macOS.
 
@@ -52,7 +55,13 @@ This is a guardrail, not a full secret/history scanner. Before publishing an exi
 
 ## Verification
 
-After bootstrap/update:
+After bootstrap/update, restart the shell first:
+
+```bash
+exec zsh -l
+```
+
+Then verify:
 
 ```bash
 mise config ls
