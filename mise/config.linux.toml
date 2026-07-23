@@ -5,6 +5,7 @@
 "apt:fzf" = "latest"
 "apt:jq" = "latest"
 "apt:ripgrep" = "latest"
+"apt:vim" = "latest"
 "apt:zoxide" = "latest"
 
 [bootstrap.user]
