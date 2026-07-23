@@ -78,6 +78,8 @@ if [[ -z "$MISE_BIN" || ! -x "$MISE_BIN" ]]; then
   exit 1
 fi
 
+dotfiles_enable_mise_shims
+
 # Project portable platform/profile tool defaults into mise's global conf.d.
 # Numeric prefixes make precedence explicit: platform -> profile -> machine-local.
 MISE_CONF_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/mise/conf.d"
