@@ -81,6 +81,21 @@ dotfiles_find_executable() {
   return 1
 }
 
+# Scripts and IDEs should not depend on interactive prompt hooks. Keep mise's
+# shims on PATH in non-interactive contexts; interactive `mise activate` removes
+# the shim directory again when it installs its dynamic PATH hook.
+dotfiles_enable_mise_shims() {
+  local data_dir shims_dir
+
+  data_dir="${MISE_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/mise}"
+  shims_dir="$data_dir/shims"
+
+  case ":$PATH:" in
+    *":$shims_dir:"*) ;;
+    *) export PATH="$shims_dir:$PATH" ;;
+  esac
+}
+
 dotfiles_mise_env() {
   local platform="$1"
   local profile="$2"

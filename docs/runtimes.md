@@ -15,6 +15,12 @@ project config              repository-specific versions
 
 On Linux, the platform layer provides Starship globally. On macOS, Starship is owned by Homebrew instead, so no duplicate mise installation is declared.
 
+## Shell activation
+
+Interactive Zsh uses `mise activate zsh` so project changes update PATH dynamically. Login/non-interactive consumers use mise shims through `~/.local/share/mise/shims`; bootstrap/update scripts also add that shim directory explicitly instead of depending on prompt hooks.
+
+This split keeps terminal behavior dynamic while allowing scripts, IDEs, and remote commands to resolve mise-managed tools without an interactive prompt.
+
 ## local-dev defaults
 
 A full development Mac has global defaults for CLIs, MCP servers, Docker-related scripts, and ad-hoc commands:
@@ -84,4 +90,4 @@ mise doctor
 ls -la .nvmrc .python-version mise.toml .tool-versions 2>/dev/null
 ```
 
-`mise config ls` is the quickest way to verify which global, environment, and project files are actually active.
+`mise config ls` is the quickest way to verify which global, environment, and project files are actually active. Run `mise doctor` from a restarted interactive shell when diagnosing shell activation; routine non-interactive update checks do not use it.
