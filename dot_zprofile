@@ -9,3 +9,13 @@ if [[ "$OSTYPE" == darwin* ]]; then
     eval "$(/usr/local/bin/brew shellenv)"
   fi
 fi
+
+# Login/non-interactive consumers (IDEs, scripts, remote commands) need a stable
+# way to resolve mise-managed tools without prompt hooks. Interactive Zsh later
+# runs `mise activate zsh`, which removes this shim path and installs dynamic PATH.
+MISE_SHIMS_DIR="${MISE_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/mise}/shims"
+case ":$PATH:" in
+  *":$MISE_SHIMS_DIR:"*) ;;
+  *) export PATH="$MISE_SHIMS_DIR:$PATH" ;;
+esac
+unset MISE_SHIMS_DIR
