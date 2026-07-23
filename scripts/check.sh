@@ -21,6 +21,7 @@ required_files=(
   mise/runtime.macos-local-dev.toml
   dot_zprofile
   dot_zshrc
+  dot_vimrc
   dot_config/zsh/prompt.zsh
   dot_config/ghostty/config.ghostty
   docs/architecture.md
@@ -85,10 +86,35 @@ for file in homebrew/Brewfile.local-dev homebrew/Brewfile.remote-client; do
     exit 1
   fi
 done
+if ! grep -Eq '^[[:space:]]*brew[[:space:]]+"vim"' homebrew/Brewfile; then
+  printf '%s\n' 'check: macOS base must provide Vim explicitly.' >&2
+  exit 1
+fi
+if ! grep -Eq '^[[:space:]]*"apt:vim"[[:space:]]*=' mise/config.linux.toml; then
+  printf '%s\n' 'check: Linux base must provide Vim explicitly.' >&2
+  exit 1
+fi
 if ! grep -Eq '^[[:space:]]*starship[[:space:]]*=[[:space:]]*"' mise/runtime.linux.toml; then
   printf '%s\n' 'check: Linux platform runtime layer must provide Starship.' >&2
   exit 1
 fi
+if ! grep -Eq '^[[:space:]]*syntax[[:space:]]+enable' dot_vimrc || \
+   ! grep -Eq '^[[:space:]]*filetype[[:space:]]+plugin[[:space:]]+indent[[:space:]]+on' dot_vimrc; then
+  printf '%s\n' 'check: Vim must enable native syntax and filetype detection by default.' >&2
+  exit 1
+fi
+for path in \
+  '~/.vim/pack/dotfiles/start/fzf' \
+  '~/.vim/pack/dotfiles/start/fzf.vim' \
+  '~/.vim/pack/dotfiles/start/vim-surround' \
+  '~/.vim/pack/dotfiles/start/vim-repeat' \
+  '~/.vim/pack/dotfiles/start/vim-sleuth' \
+  '~/.vim/pack/dotfiles/start/vim-gitgutter'; do
+  if ! grep -Fq "\"$path\" = { url =" mise/config.toml; then
+    printf 'check: managed Vim repository missing from mise config: %s\n' "$path" >&2
+    exit 1
+  fi
+done
 for path in README.md .gitignore bootstrap.sh update.sh homebrew mise docs scripts .github; do
   if ! grep -Fxq "$path" .chezmoiignore; then
     printf 'check: repository-only path is missing from .chezmoiignore: %s\n' "$path" >&2
