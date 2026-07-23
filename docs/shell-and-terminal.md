@@ -93,12 +93,13 @@ Portable defaults are intentionally small:
 ```text
 dark theme   Catppuccin Mocha
 light theme  Catppuccin Latte
-font size    14.5 pt
+font family  JetBrains Mono
+font size    15.5 pt
 padding      balanced, 8 x 6
 cursor       non-blinking block
 ```
 
-Font family, tabs, splits, and most keybindings use Ghostty defaults. Automatic Zsh shell integration remains enabled.
+Ghostty's bundled JetBrains Mono is selected explicitly, so no separate font package is required. Tabs, splits, and most keybindings use Ghostty defaults. Automatic Zsh shell integration remains enabled.
 
 Useful commands:
 
