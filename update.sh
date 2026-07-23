@@ -53,15 +53,52 @@ if [[ -z "$MISE_BIN" || ! -x "$MISE_BIN" ]]; then
   exit 1
 fi
 
+dotfiles_enable_mise_shims
+
 echo "Updating mise..."
 if ! "$MISE_BIN" self-update --yes; then
   echo "mise self-update was unavailable or failed; continuing with the installed version."
 fi
 
+# Re-resolve the executable after self-update and keep shims available to this
+# non-interactive script and any child processes it starts.
+MISE_BIN="$(dotfiles_find_executable mise || true)"
+if [[ -z "$MISE_BIN" || ! -x "$MISE_BIN" ]]; then
+  echo "mise is unavailable after self-update."
+  exit 1
+fi
+dotfiles_enable_mise_shims
+
 # Apply the newest declarations first. On macOS bootstrap uses the real Homebrew
 # CLI with --no-upgrade, so this only installs newly declared dependencies.
 echo "Applying latest profile declarations..."
 bash "$SOURCE_DIR/bootstrap.sh" "$PROFILE"
+
+# Validate config loading separately so a missing/stale config path is reported at
+# a precise stage instead of surfacing later as an unrelated upgrade failure.
+echo "Validating mise configuration..."
+set +e
+if [[ "$PLATFORM" == "linux" ]]; then
+  MISE_CONFIG_CHECK="$(
+    cd "$SOURCE_DIR" &&
+      MISE_ENV="$MISE_ENV_VALUE" "$MISE_BIN" config ls 2>&1
+  )"
+  MISE_CONFIG_STATUS=$?
+else
+  MISE_CONFIG_CHECK="$(
+    cd "$SOURCE_DIR" &&
+      "$MISE_BIN" config ls 2>&1
+  )"
+  MISE_CONFIG_STATUS=$?
+fi
+set -e
+if (( MISE_CONFIG_STATUS != 0 )); then
+  echo "mise configuration failed to load:" >&2
+  printf '%s\n' "$MISE_CONFIG_CHECK" >&2
+  echo "Inspect active MISE_* environment variables and ~/.config/mise before retrying." >&2
+  exit "$MISE_CONFIG_STATUS"
+fi
+unset MISE_CONFIG_CHECK MISE_CONFIG_STATUS
 
 CHEZMOI_BIN="$(dotfiles_find_executable chezmoi || true)"
 if [[ -z "$CHEZMOI_BIN" || ! -x "$CHEZMOI_BIN" ]]; then
@@ -119,17 +156,17 @@ else
   )
 fi
 
-echo "Running health checks..."
+echo "Running non-interactive health checks..."
 if [[ "$PLATFORM" == "linux" ]]; then
   (
     cd "$SOURCE_DIR"
-    MISE_ENV="$MISE_ENV_VALUE" "$MISE_BIN" doctor
+    MISE_ENV="$MISE_ENV_VALUE" "$MISE_BIN" current
     MISE_ENV="$MISE_ENV_VALUE" "$MISE_BIN" bootstrap status --missing
   )
 else
   (
     cd "$SOURCE_DIR"
-    "$MISE_BIN" doctor
+    "$MISE_BIN" current
     "$MISE_BIN" bootstrap status --missing
   )
 
@@ -150,4 +187,5 @@ fi
 unset CHEZMOI_DIFF
 
 echo "Update completed successfully for $PLATFORM with profile $PROFILE."
-echo "Restart the shell to pick up any runtime or shell changes: exec zsh -l"
+echo "Restart the shell to pick up runtime/shell changes: exec zsh -l"
+echo "After restart, use 'mise doctor' for interactive shell diagnostics."
