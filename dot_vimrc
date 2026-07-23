@@ -1,0 +1,18 @@
+" Minimal portable Vim defaults.
+
+syntax enable
+filetype plugin indent on
+
+if has('termguicolors')
+  set termguicolors
+endif
+
+" Keep explicit fallbacks for the languages used across local and remote work.
+augroup dotfiles_filetypes
+  autocmd!
+  autocmd BufNewFile,BufRead *.sh,*.bash setfiletype sh
+  autocmd BufNewFile,BufRead *.js,*.mjs,*.cjs setfiletype javascript
+  autocmd BufNewFile,BufRead *.ts setfiletype typescript
+  autocmd BufNewFile,BufRead *.tsx setfiletype typescriptreact
+  autocmd BufNewFile,BufRead *.py,*.pyi setfiletype python
+augroup END
