@@ -1,0 +1,48 @@
+" Fast, portable terminal editor defaults. Keep Vim useful for quick edits without
+" turning it into an IDE.
+
+set nocompatible
+syntax enable
+filetype plugin indent on
+
+if has('termguicolors')
+  set termguicolors
+endif
+
+" Editing/navigation defaults.
+set number
+set ruler
+set showcmd
+set showmode
+set hidden
+set backspace=indent,eol,start
+set scrolloff=3
+set signcolumn=yes
+
+" Search behaves case-insensitively until the query contains uppercase letters.
+set incsearch
+set hlsearch
+set ignorecase
+set smartcase
+
+" Native command-line and insert completion.
+set wildmenu
+set wildmode=longest:full,full
+set completeopt=menu,menuone,noselect
+
+" Always-visible lightweight statusline: file, filetype, position, progress.
+set laststatus=2
+set statusline=%<%f\ %h%m%r
+set statusline+=\ [%{&filetype==#''?'text':&filetype}]
+set statusline+=%=
+set statusline+=%l:%c
+set statusline+=\ %p%%
+
+" Faster feedback for lightweight plugins such as vim-gitgutter.
+set updatetime=250
+
+" fzf.vim shortcuts. The same fzf/ripgrep binaries are already part of the base CLI stack.
+let mapleader=" "
+nnoremap <silent> <leader>f :Files<CR>
+nnoremap <silent> <leader>b :Buffers<CR>
+nnoremap <silent> <leader>g :Rg<CR>

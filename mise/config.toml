@@ -3,3 +3,9 @@
 [bootstrap.repos]
 "~/.local/share/zsh/plugins/zsh-autosuggestions" = { url = "https://github.com/zsh-users/zsh-autosuggestions.git" }
 "~/.local/share/zsh/plugins/zsh-syntax-highlighting" = { url = "https://github.com/zsh-users/zsh-syntax-highlighting.git" }
+"~/.vim/pack/dotfiles/start/fzf" = { url = "https://github.com/junegunn/fzf.git" }
+"~/.vim/pack/dotfiles/start/fzf.vim" = { url = "https://github.com/junegunn/fzf.vim.git" }
+"~/.vim/pack/dotfiles/start/vim-surround" = { url = "https://github.com/tpope/vim-surround.git" }
+"~/.vim/pack/dotfiles/start/vim-repeat" = { url = "https://github.com/tpope/vim-repeat.git" }
+"~/.vim/pack/dotfiles/start/vim-sleuth" = { url = "https://github.com/tpope/vim-sleuth.git" }
+"~/.vim/pack/dotfiles/start/vim-gitgutter" = { url = "https://github.com/airblade/vim-gitgutter.git" }
