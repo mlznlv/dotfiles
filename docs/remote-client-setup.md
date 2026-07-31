@@ -1,6 +1,6 @@
 # Remote client setup
 
-The `remote-client` profile installs Ghostty, Tailscale, VS Code, and the required remote-development extensions. Account sign-in and SSH credentials remain manual.
+The `remote-client` profile installs Ghostty, Tailscale, VS Code, and the baseline remote-development extensions. Account sign-in and SSH credentials remain manual.
 
 ## 1. Install
 
@@ -15,9 +15,10 @@ exec zsh -l
 
 ## 2. Sign in
 
-1. Open Tailscale and sign in.
-2. Open VS Code and enable **Settings Sync** with GitHub.
-3. Optional: authenticate GitHub CLI with `gh auth login`.
+1. Open Tailscale, approve the VPN/system extension if prompted, and sign in.
+2. In Tailscale, open **Settings → CLI integration** and install the CLI launcher.
+3. Open VS Code and enable **Settings Sync** with GitHub.
+4. Optional: authenticate GitHub CLI with `gh auth login`.
 
 ## 3. Create an SSH key
 
@@ -63,7 +64,7 @@ ssh -G dev >/dev/null
 ssh dev
 ```
 
-The extension list must include Remote SSH, Remote Explorer, Dev Containers, and Containers. Verify the server fingerprint through a trusted channel before accepting it.
+The extension list must include Remote SSH, Remote Explorer, Dev Containers, Containers, GitLens, EditorConfig, and Error Lens. Verify the server fingerprint through a trusted channel before accepting it.
 
 After terminal SSH works, in VS Code run:
 
@@ -71,4 +72,4 @@ After terminal SSH works, in VS Code run:
 Remote-SSH: Connect to Host...
 ```
 
-Select `dev`. Personal extensions come from Settings Sync; project-specific extensions belong in each project's Dev Container configuration.
+Select `dev`. Project-specific extensions belong in each project's Dev Container configuration.
