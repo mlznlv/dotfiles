@@ -1,13 +1,8 @@
-# Remote development
+# Remote SSH
 ms-vscode-remote.remote-ssh
 ms-vscode-remote.remote-ssh-edit
 ms-vscode.remote-explorer
+
+# Dev Containers
 ms-vscode-remote.remote-containers
-
-# Containers
 ms-azuretools.vscode-containers
-
-# Git and editor UX
-eamodio.gitlens
-editorconfig.editorconfig
-usernamehw.errorlens
