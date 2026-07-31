@@ -1,6 +1,6 @@
 # Remote client setup
 
-The `remote-client` profile installs Ghostty, Tailscale, VS Code, and required remote-development extensions. Account sign-in and SSH credentials remain manual.
+The `remote-client` profile installs Ghostty, Tailscale, VS Code, and the required remote-development extensions. Account sign-in and SSH credentials remain manual.
 
 ## 1. Install
 
@@ -22,6 +22,8 @@ exec zsh -l
 ## 3. Create an SSH key
 
 ```bash
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
 ssh-keygen -t ed25519 -a 100 -C "macbook-air-remote-client" -f ~/.ssh/id_ed25519
 ssh-add --apple-use-keychain ~/.ssh/id_ed25519
 cat ~/.ssh/id_ed25519.pub
@@ -48,7 +50,6 @@ Host dev
 Replace `HostName` with the Tailscale DNS name and `User` with the Linux account.
 
 ```bash
-chmod 700 ~/.ssh
 chmod 600 ~/.ssh/config ~/.ssh/id_ed25519
 chmod 644 ~/.ssh/id_ed25519.pub
 ```
@@ -56,11 +57,13 @@ chmod 644 ~/.ssh/id_ed25519.pub
 ## 5. Verify
 
 ```bash
+code --list-extensions
 tailscale status
+ssh -G dev >/dev/null
 ssh dev
 ```
 
-Verify the server fingerprint through a trusted channel before accepting it.
+The extension list must include Remote SSH, Remote Explorer, Dev Containers, and Containers. Verify the server fingerprint through a trusted channel before accepting it.
 
 After terminal SSH works, in VS Code run:
 
@@ -68,4 +71,4 @@ After terminal SSH works, in VS Code run:
 Remote-SSH: Connect to Host...
 ```
 
-Select `dev`. Project-specific extensions belong in each project's Dev Container configuration.
+Select `dev`. Personal extensions come from Settings Sync; project-specific extensions belong in each project's Dev Container configuration.
