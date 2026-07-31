@@ -25,7 +25,7 @@ exec zsh -l
 ```bash
 mkdir -p ~/.ssh
 chmod 700 ~/.ssh
-ssh-keygen -t ed25519 -a 100 -C "macbook-air-remote-client" -f ~/.ssh/id_ed25519
+ssh-keygen -t ed25519 -a 100 -C "remote-client" -f ~/.ssh/id_ed25519
 ssh-add --apple-use-keychain ~/.ssh/id_ed25519
 cat ~/.ssh/id_ed25519.pub
 ```
