@@ -13,6 +13,7 @@ required_files=(
   homebrew/Brewfile
   homebrew/Brewfile.local-dev
   homebrew/Brewfile.remote-client
+  editor/vscode/extensions.remote-client.txt
   mise/config.toml
   mise/config.linux.toml
   mise/config.linux-dev-host.toml
@@ -28,7 +29,9 @@ required_files=(
   docs/shell-and-terminal.md
   docs/runtimes.md
   docs/remote-development.md
+  docs/remote-client-setup.md
   docs/maintenance.md
+  scripts/install-vscode-extensions.sh
 )
 
 for file in "${required_files[@]}"; do
@@ -86,6 +89,14 @@ for file in homebrew/Brewfile.local-dev homebrew/Brewfile.remote-client; do
     exit 1
   fi
 done
+if ! grep -Eq '^[[:space:]]*cask[[:space:]]+"tailscale-app"' homebrew/Brewfile.remote-client; then
+  printf '%s\n' 'check: remote-client must provide the Tailscale app.' >&2
+  exit 1
+fi
+if ! grep -Eq '^[[:space:]]*cask[[:space:]]+"visual-studio-code"' homebrew/Brewfile.remote-client; then
+  printf '%s\n' 'check: remote-client must provide Visual Studio Code.' >&2
+  exit 1
+fi
 if ! grep -Eq '^[[:space:]]*brew[[:space:]]+"vim"' homebrew/Brewfile; then
   printf '%s\n' 'check: macOS base must provide Vim explicitly.' >&2
   exit 1
@@ -115,7 +126,16 @@ for path in \
     exit 1
   fi
 done
-for path in README.md .gitignore bootstrap.sh update.sh homebrew mise docs scripts .github; do
+for extension in \
+  ms-vscode-remote.remote-ssh \
+  ms-vscode-remote.remote-containers \
+  ms-azuretools.vscode-containers; do
+  if ! grep -Fxq "$extension" editor/vscode/extensions.remote-client.txt; then
+    printf 'check: required remote-client VS Code extension is missing: %s\n' "$extension" >&2
+    exit 1
+  fi
+done
+for path in README.md .gitignore bootstrap.sh update.sh homebrew editor mise docs scripts .github; do
   if ! grep -Fxq "$path" .chezmoiignore; then
     printf 'check: repository-only path is missing from .chezmoiignore: %s\n' "$path" >&2
     exit 1
