@@ -15,15 +15,13 @@ cd ~/.local/share/chezmoi
 exec zsh -l
 ```
 
-Choose one profile:
-
 | Profile | Purpose |
 |---|---|
 | `base` | minimal terminal environment |
 | `local-dev` | local development workstation |
 | `remote-client` | Mac client for remote development |
 
-For `remote-client`, continue with [Remote client setup](docs/remote-client-setup.md).
+Continue with [Local development setup](docs/local-dev-setup.md) or [Remote client setup](docs/remote-client-setup.md).
 
 ### Ubuntu/Debian development host
 
@@ -39,12 +37,12 @@ exec zsh -l
 
 Profiles are explicit. `bootstrap.sh` and `update.sh` refuse to run without one.
 
-## Update
+## Update and verify
 
 ```bash
 cd ~/.local/share/chezmoi
 bash ./update.sh <profile>
-exec zsh -l
+./scripts/health-check.sh <profile>
 ```
 
 ## Useful commands
@@ -58,6 +56,7 @@ remote <user>@<host> [session]
 
 ## Documentation
 
+- [Local development setup](docs/local-dev-setup.md)
 - [Remote client setup](docs/remote-client-setup.md)
 - [Remote development](docs/remote-development.md)
 - [Updates and troubleshooting](docs/maintenance.md)
@@ -69,6 +68,7 @@ remote <user>@<host> [session]
 
 ```text
 homebrew/     macOS packages and applications
+editor/       editor extension declarations
 mise/         runtimes, tools, Linux packages, managed repositories
 dot_config/   chezmoi-managed configuration
 docs/         documentation
