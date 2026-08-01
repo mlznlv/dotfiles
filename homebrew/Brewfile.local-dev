@@ -1,4 +1,6 @@
+brew "ansible"
 brew "awscli"
 brew "kubernetes-cli"
+brew "opentofu"
 
-cask "ghostty"
+cask "orbstack"
