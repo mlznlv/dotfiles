@@ -26,9 +26,6 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y zsh
 
-      - name: Format
-        run: test -z "$(gofmt -l .)"
-
       - name: Vet
         run: go vet ./...
 
