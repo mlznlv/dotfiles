@@ -9,52 +9,59 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
-    env:
-      XDG_CONFIG_HOME: /tmp/zshenv-test/.config
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install test dependencies
-        run: sudo apt-get update && sudo apt-get install -y zsh python3-yaml
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+          cache: true
 
-      - name: Prepare isolated config
+      - name: Install Zsh
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y zsh
+
+      - name: Format
+        run: test -z "$(gofmt -l .)"
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test -race ./...
+
+      - name: Build
+        run: go build -trimpath -o dist/zshenv .
+
+      - name: Smoke test
+        env:
+          XDG_CONFIG_HOME: ${{ runner.temp }}/home/.config
+          HOME: ${{ runner.temp }}/home
         run: |
-          mkdir -p "$XDG_CONFIG_HOME/zsh/custom"
-          cp dot_config/zsh/*.zsh "$XDG_CONFIG_HOME/zsh/"
-          cp config/shell.default.yaml "$XDG_CONFIG_HOME/zsh/shell.yaml"
+          mkdir -p "$HOME"
+          ./dist/zshenv init
+          ./dist/zshenv check
+          ./dist/zshenv status
+          test -f "$HOME/.zshrc"
+          test -d "$XDG_CONFIG_HOME/zsh/generated"
 
-      - name: Check defaults
-        run: python3 ./zshenv check
-
-      - name: Check extend and disable
+  cross-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+          cache: true
+      - name: Build release targets
         run: |
-          custom="$XDG_CONFIG_HOME/zsh/custom/aliases.zsh"
-          printf "alias ci-test='ok'\n" > "$custom"
-          cat > "$XDG_CONFIG_HOME/zsh/shell.yaml" <<YAML
-          version: 1
-          shell:
-            aliases:
-              extend:
-                path: $custom
-            remote: false
-            prompt: false
-          YAML
-          python3 ./zshenv check
-          python3 ./zshenv diff
-          python3 ./zshenv apply
-          test -f "$XDG_CONFIG_HOME/zsh/generated/15-aliases.zsh"
-          test ! -e "$XDG_CONFIG_HOME/zsh/generated/14-remote.zsh"
-          test ! -e "$XDG_CONFIG_HOME/zsh/generated/16-prompt.zsh"
-
-      - name: Reject invalid configuration without replacing generated state
-        run: |
-          before="$(find "$XDG_CONFIG_HOME/zsh/generated" -type f -print -exec sha256sum {} \; | sha256sum)"
-          printf 'version: 1\nshell:\n  aliases:\n    path: relative.zsh\n' > "$XDG_CONFIG_HOME/zsh/shell.yaml"
-          if python3 ./zshenv apply; then
-            echo 'invalid configuration unexpectedly succeeded' >&2
-            exit 1
-          fi
-          after="$(find "$XDG_CONFIG_HOME/zsh/generated" -type f -print -exec sha256sum {} \; | sha256sum)"
-          test "$before" = "$after"
+          for target in darwin/arm64 darwin/amd64 linux/arm64 linux/amd64; do
+            os="${target%/*}"
+            arch="${target#*/}"
+            GOOS="$os" GOARCH="$arch" CGO_ENABLED=0 go build -trimpath -ldflags='-s -w' -o "dist/zshenv-$os-$arch" .
+          done
