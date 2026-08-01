@@ -1,33 +1,27 @@
 # zshenv
 
-Portable Zsh configuration with declarative composition and safe migration of an existing `~/.zshrc`.
+Portable Zsh configuration with safe migration of an existing `~/.zshrc`.
 
 ## Requirements
 
-Required:
+Required: Zsh, Git, chezmoi, Python 3, PyYAML.
 
-- Zsh
-- Git
-- chezmoi
-- Python 3 with PyYAML
-- Starship for the default prompt
+The default prompt uses Starship when available and falls back to native Zsh. Optional integrations activate only when their commands exist.
 
-Optional integrations activate only when installed: `fzf`, `zoxide`, `mise`, Docker, kubectl, tmux, and SSH.
-
-### macOS example
+macOS example:
 
 ```bash
-brew install zsh git chezmoi python pyyaml starship fzf zoxide mise tmux
+brew install zsh git chezmoi python pyyaml starship fzf zoxide tmux
 ```
 
-### Ubuntu/Debian example
+Ubuntu/Debian example:
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y zsh git python3 python3-yaml fzf tmux ripgrep
+sudo apt-get install -y zsh git python3 python3-yaml fzf tmux
 ```
 
-Install `chezmoi`, Starship, zoxide, and mise using their official instructions when distribution packages are unavailable or outdated.
+Install missing tools using their official instructions. This repository does not install or update packages.
 
 ## Install
 
@@ -35,30 +29,21 @@ Install `chezmoi`, Starship, zoxide, and mise using their official instructions 
 git clone https://github.com/mlznlv/dotfiles.git ~/.local/share/zshenv
 cd ~/.local/share/zshenv
 python3 ./zshenv init
-```
-
-If an unmanaged `~/.zshrc` exists, `init` reports likely conflicts and changes nothing. Choose explicitly:
-
-```bash
-python3 ./zshenv init --adopt    # preserve and load the existing configuration
-python3 ./zshenv init --replace  # preserve only a timestamped backup
-```
-
-Then restart the shell:
-
-```bash
 exec zsh -l
 ```
 
-## Configuration
+When an unmanaged `~/.zshrc` exists, `init` reports likely conflicts and changes nothing. Continue explicitly:
 
-Edit:
-
-```text
-~/.config/zsh/shell.yaml
+```bash
+python3 ./zshenv init --adopt    # back up and load the existing config
+python3 ./zshenv init --replace  # back up, then use only managed config
 ```
 
-Default configuration:
+Conflicts are reported, never resolved automatically.
+
+## Configuration
+
+Edit `~/.config/zsh/shell.yaml`:
 
 ```yaml
 version: 1
@@ -67,7 +52,7 @@ shell:
   core: {}
   paths: {}
   completion: {}
-  runtimes: {}
+  integrations: {}
   remote: {}
   aliases: {}
   prompt:
@@ -85,7 +70,7 @@ shell:
     path: ~/.config/zsh/custom/aliases.zsh
 ```
 
-Extend a segment after the built-in configuration:
+Extend a built-in segment:
 
 ```yaml
 shell:
@@ -101,7 +86,7 @@ shell:
   remote: false
 ```
 
-Use a custom Starship configuration:
+Use a custom Starship config:
 
 ```yaml
 shell:
@@ -110,7 +95,7 @@ shell:
     path: ~/.config/starship/theme.toml
 ```
 
-Starship presets can generate that file, for example:
+Create one from an official preset:
 
 ```bash
 mkdir -p ~/.config/starship
@@ -120,25 +105,25 @@ starship preset pure-preset -o ~/.config/starship/theme.toml
 ## Commands
 
 ```bash
-python3 ./zshenv check   # validate YAML, paths, dependencies, and Zsh syntax
-python3 ./zshenv diff    # show generated changes
-python3 ./zshenv apply   # atomically apply the YAML configuration
-python3 ./zshenv status  # show active paths and managed state
+python3 ./zshenv check
+python3 ./zshenv diff
+python3 ./zshenv apply
+python3 ./zshenv status
 ```
 
-`apply` replaces only `~/.config/zsh/generated/`. Files referenced by YAML and files under `~/.config/zsh/custom/` are never modified or deleted.
+`apply` atomically replaces only `~/.config/zsh/generated/`. Custom files and files referenced by YAML are never changed or deleted.
 
 ## Built-in coverage
 
-The defaults preserve the current repository behavior:
+Defaults preserve the current shell behavior:
 
 - history and Zsh options;
 - user and Docker paths;
-- native completion, Docker completion, and keybindings;
-- mise activation;
+- native and Docker completion plus keybindings;
+- optional tool integrations, including mise;
 - `remote <host> [session]` for SSH plus tmux;
 - shell and Git aliases;
-- Starship prompt selection and module policy;
+- Starship prompt policy with native fallback;
 - fzf, zoxide, autosuggestions, and syntax highlighting.
 
 Missing optional tools are skipped without breaking shell startup.
