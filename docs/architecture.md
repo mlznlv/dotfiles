@@ -1,88 +1,40 @@
 # Architecture
 
+`zshenv` is a local configuration compiler for Zsh.
+
 ## Ownership
 
-Each domain has one owner:
+- Embedded defaults are owned by the project.
+- `~/.config/zsh/generated/` is derived state and may be replaced atomically.
+- Files referenced by YAML and files under `custom/` are user-owned and are never modified or deleted.
+- `~/.zshrc` is replaced only after an explicit migration choice and backup.
+
+## Apply flow
 
 ```text
-macOS packages/apps        -> native Homebrew + Brewfiles
-Linux system packages      -> mise bootstrap.packages + apt
-runtime/version-selected tools -> mise
-home/shell config           -> chezmoi
-prompt rendering            -> Starship
-terminal UI on macOS        -> Ghostty
-remote access               -> Tailscale + OpenSSH + tmux
+shell.yaml
+  -> parse and validate
+  -> resolve effective segments
+  -> render into a staging directory
+  -> validate with `zsh -n`
+  -> atomically activate generated state
 ```
 
-Do not mix managers for the same filesystem prefix. `/opt/homebrew` belongs to native Homebrew; mise must not pour or link Homebrew bottles there.
+If validation or activation fails, the previous generated state remains active.
 
-`mise` and `chezmoi` are bootstrap substrate. An existing executable is reused; when missing, bootstrap installs the official standalone binary under `~/.local/bin`. Routine update attempts their supported self-update/upgrade path instead of declaring a second package-manager owner.
+## Segment contract
 
-Starship follows platform ownership: Homebrew installs it on macOS; the Linux platform mise layer installs and activates it as a version-selected CLI tool.
+- Missing or `{}`: embedded default.
+- `path`: replace with a user-owned file.
+- `extend.path`: embedded default followed by a user-owned file.
+- `false`: disabled.
 
-## Supported platforms and profiles
+Prompt configuration uses an engine-specific native configuration file and is not composed as two simultaneous prompts.
 
-Supported OS families are intentionally explicit: macOS 13+ and Ubuntu/Debian Linux.
+## Trust boundary
 
-| Profile | Platform | Purpose |
-|---|---|---|
-| `base` | macOS 13+/Ubuntu/Debian | minimal shared terminal environment |
-| `local-dev` | macOS 13+ | full local-development workstation |
-| `remote-client` | macOS 13+ | lightweight remote-development client |
-| `dev-host` | Ubuntu/Debian | remote development host |
+YAML is declarative and cannot contain shell interpolation, URLs, globs, or commands. User-provided Zsh files are executable code; the tool validates syntax but cannot prove their safety or absence of side effects.
 
-Profiles are always explicit:
+## Non-goals
 
-```bash
-./bootstrap.sh <profile>
-bash ./update.sh <profile>
-```
-
-There is intentionally no implicit `base` fallback: forgetting a profile must not silently change machine capability state.
-
-## Mise layering
-
-Global mise fragments use numeric precedence:
-
-```text
-10-dotfiles-platform.toml   platform-wide tools, e.g. Starship on Linux
-20-dotfiles-profile.toml    profile defaults, e.g. Node/Python on macOS local-dev
-90-machine-local.toml       private machine constraints
-project config              repository-specific requirements
-```
-
-The first two are projected by `bootstrap.sh`. `90-machine-local.toml` is never committed.
-
-## Package declarations
-
-macOS uses native Homebrew:
-
-```text
-homebrew/Brewfile
-homebrew/Brewfile.local-dev
-homebrew/Brewfile.remote-client
-```
-
-Bootstrap installs missing declarations with `brew bundle install --no-upgrade`; routine upgrades are handled by `update.sh`.
-
-Ubuntu/Debian system packages are declared in:
-
-```text
-mise/config.linux.toml
-mise/config.linux-dev-host.toml
-```
-
-## Portable vs machine-local state
-
-Keep machine identity, credentials, private infrastructure, and machine-only constraints outside Git. Common local paths include:
-
-```text
-~/.config/zsh/local.zsh
-~/.config/mise/conf.d/90-machine-local.toml
-~/.config/starship/preset
-~/.config/starship/modules
-```
-
-Never commit credentials, API tokens, private keys, certificates, private registry credentials, real hostnames/IPs, Tailscale identity, SSH targets, or machine-local Git identity/credential configuration.
-
-A clean current tree does not sanitize old Git commits. Before publishing an existing private repository, inspect the full history; for strict redaction, publish a sanitized snapshot/clean history rather than relying on a squash merge alone.
+The project is not a package manager, dotfiles synchronizer, remote-code loader, dynamic plugin runtime, or general-purpose shell framework.
