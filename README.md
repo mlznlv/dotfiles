@@ -1,91 +1,144 @@
-# dotfiles
+# zshenv
 
-Portable terminal and development environment for macOS 13+ and Ubuntu/Debian.
+Portable Zsh configuration with declarative composition and safe migration of an existing `~/.zshrc`.
 
-## Quick start
+## Requirements
 
-### macOS 13+
+Required:
+
+- Zsh
+- Git
+- chezmoi
+- Python 3 with PyYAML
+- Starship for the default prompt
+
+Optional integrations activate only when installed: `fzf`, `zoxide`, `mise`, Docker, kubectl, tmux, and SSH.
+
+### macOS example
 
 ```bash
-xcode-select --install
-mkdir -p ~/.local/share
-git clone https://github.com/mlznlv/dotfiles.git ~/.local/share/chezmoi
-cd ~/.local/share/chezmoi
-./bootstrap.sh <profile>
-exec zsh -l
+brew install zsh git chezmoi python pyyaml starship fzf zoxide mise tmux
 ```
 
-Choose one profile:
-
-| Profile | Purpose |
-|---|---|
-| `base` | minimal terminal environment |
-| `local-dev` | local development workstation |
-| `remote-client` | Mac client for remote development |
-
-For `remote-client`, continue with [Remote client setup](docs/remote-client-setup.md).
-
-### Ubuntu/Debian development host
+### Ubuntu/Debian example
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y git curl
-mkdir -p ~/.local/share
-git clone https://github.com/mlznlv/dotfiles.git ~/.local/share/chezmoi
-cd ~/.local/share/chezmoi
-./bootstrap.sh dev-host
+sudo apt-get install -y zsh git python3 python3-yaml fzf tmux ripgrep
+```
+
+Install `chezmoi`, Starship, zoxide, and mise using their official instructions when distribution packages are unavailable or outdated.
+
+## Install
+
+```bash
+git clone https://github.com/mlznlv/dotfiles.git ~/.local/share/zshenv
+cd ~/.local/share/zshenv
+./zshenv init
+```
+
+If an unmanaged `~/.zshrc` exists, `init` reports likely conflicts and changes nothing. Choose explicitly:
+
+```bash
+./zshenv init --adopt    # preserve and load the existing configuration
+./zshenv init --replace  # preserve only a timestamped backup
+```
+
+Then restart the shell:
+
+```bash
 exec zsh -l
 ```
 
-Profiles are explicit. `bootstrap.sh` and `update.sh` refuse to run without one.
+## Configuration
 
-## Update
-
-```bash
-cd ~/.local/share/chezmoi
-bash ./update.sh <profile>
-exec zsh -l
-```
-
-## Useful commands
-
-```bash
-mise current
-mise doctor
-chezmoi diff
-remote <user>@<host> [session]
-```
-
-## Documentation
-
-- [Remote client setup](docs/remote-client-setup.md)
-- [Remote development](docs/remote-development.md)
-- [Updates and troubleshooting](docs/maintenance.md)
-- [Architecture and ownership](docs/architecture.md)
-- [Shell and terminal](docs/shell-and-terminal.md)
-- [Runtimes and versioned tools](docs/runtimes.md)
-
-## Repository layout
+Edit:
 
 ```text
-homebrew/     macOS packages and applications
-mise/         runtimes, tools, Linux packages, managed repositories
-dot_config/   chezmoi-managed configuration
-docs/         documentation
-scripts/      checks, helpers, migrations
-bootstrap.sh  first installation and convergence
-update.sh     routine updates
+~/.config/zsh/shell.yaml
 ```
 
-## Privacy
+Default configuration:
 
-Do not commit credentials, private keys, certificates, real hostnames/IPs, Tailscale identity, private registry configuration, or machine-specific identity.
+```yaml
+version: 1
 
-Machine-local configuration belongs in:
-
-```text
-~/.config/zsh/local.zsh
-~/.config/mise/conf.d/90-machine-local.toml
-~/.config/starship/preset
-~/.config/starship/modules
+shell:
+  core: {}
+  paths: {}
+  completion: {}
+  runtimes: {}
+  remote: {}
+  aliases: {}
+  prompt:
+    engine: starship
+  ux: {}
 ```
+
+A missing segment or `{}` uses the built-in configuration.
+
+Replace a segment:
+
+```yaml
+shell:
+  aliases:
+    path: ~/.config/zsh/custom/aliases.zsh
+```
+
+Extend a segment after the built-in configuration:
+
+```yaml
+shell:
+  aliases:
+    extend:
+      path: ~/.config/zsh/custom/aliases.zsh
+```
+
+Disable a segment:
+
+```yaml
+shell:
+  remote: false
+```
+
+Use a custom Starship configuration:
+
+```yaml
+shell:
+  prompt:
+    engine: starship
+    path: ~/.config/starship/theme.toml
+```
+
+Starship presets can generate that file, for example:
+
+```bash
+mkdir -p ~/.config/starship
+starship preset pure-preset -o ~/.config/starship/theme.toml
+```
+
+## Commands
+
+```bash
+./zshenv check   # validate YAML, paths, dependencies, and Zsh syntax
+./zshenv diff    # show generated changes
+./zshenv apply   # atomically apply the YAML configuration
+./zshenv status  # show active paths and managed state
+```
+
+`apply` replaces only `~/.config/zsh/generated/`. Files referenced by YAML and files under `~/.config/zsh/custom/` are never modified or deleted.
+
+## Built-in coverage
+
+The defaults preserve the current repository behavior:
+
+- history and Zsh options;
+- user and Docker paths;
+- native completion, Docker completion, and keybindings;
+- mise activation;
+- `remote <host> [session]` for SSH plus tmux;
+- shell and Git aliases;
+- Starship prompt selection and module policy;
+- fzf, zoxide, autosuggestions, and syntax highlighting.
+
+Missing optional tools are skipped without breaking shell startup.
