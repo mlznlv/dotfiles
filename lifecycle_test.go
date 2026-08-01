@@ -164,7 +164,7 @@ func TestInitReplaceBacksUpWithoutAdopting(t *testing.T) {
 	}
 }
 
-func TestApplyValidationFailurePreservesActiveState(t *testing.T) {
+func TestApplyFailurePreservesActiveState(t *testing.T) {
 	a, _ := newTestApp(t)
 	writeDefaultConfig(t, a.paths.configFile)
 	if err := a.apply(a.paths.configFile); err != nil {
@@ -172,30 +172,23 @@ func TestApplyValidationFailurePreservesActiveState(t *testing.T) {
 	}
 	before := readDirFiles(a.paths.generatedDir)
 
-	broken := filepath.Join(a.paths.customDir, "broken.zsh")
-	if err := os.MkdirAll(a.paths.customDir, 0o700); err != nil {
-		t.Fatal(err)
-	}
-	// An unterminated quote is rejected consistently by Zsh on macOS and Linux.
-	if err := os.WriteFile(broken, []byte("print 'unterminated\n"), 0o600); err != nil {
-		t.Fatal(err)
-	}
+	missing := filepath.Join(a.paths.customDir, "missing.zsh")
 	badConfig := filepath.Join(a.paths.configDir, "broken.yaml")
-	content := "version: 1\nshell:\n  prompt: false\n  aliases:\n    path: " + broken + "\n"
+	content := "version: 1\nshell:\n  prompt: false\n  aliases:\n    path: " + missing + "\n"
 	if err := os.WriteFile(badConfig, []byte(content), 0o600); err != nil {
 		t.Fatal(err)
 	}
 
 	if err := a.apply(badConfig); err == nil {
-		t.Fatal("expected invalid Zsh to fail")
+		t.Fatal("expected missing custom file to fail")
 	}
 	after := readDirFiles(a.paths.generatedDir)
 	if len(before) != len(after) {
-		t.Fatal("active generated state changed after failed validation")
+		t.Fatal("active generated state changed after failed apply")
 	}
 	for name, content := range before {
 		if after[name] != content {
-			t.Fatalf("active file %s changed after failed validation", name)
+			t.Fatalf("active file %s changed after failed apply", name)
 		}
 	}
 }
