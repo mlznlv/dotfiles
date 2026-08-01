@@ -11,7 +11,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     env:
-      XDG_CONFIG_HOME: ${{ runner.temp }}/home/.config
+      XDG_CONFIG_HOME: /tmp/zshenv-test/.config
 
     steps:
       - uses: actions/checkout@v4
