@@ -11,7 +11,25 @@ cd ~/.local/share/chezmoi
 exec zsh -l
 ```
 
-Open OrbStack once, enable Tailscale, and enable VS Code Settings Sync.
+Open Docker Desktop and Tailscale once. Enable VS Code Settings Sync.
+
+## Customize applications
+
+Default: Docker Desktop and the repository `local-dev` Brewfile.
+
+Replace the profile set:
+
+```bash
+DOTFILES_PROFILE_BREWFILE="$HOME/path/Brewfile" ./bootstrap.sh local-dev
+```
+
+Add applications to the default set:
+
+```bash
+DOTFILES_EXTRA_BREWFILE="$HOME/path/Brewfile.extra" ./bootstrap.sh local-dev
+```
+
+The replacement must still provide a Docker-compatible `docker` CLI for Dev Containers.
 
 ## Verify
 
