@@ -413,31 +413,47 @@ func (a app) diff(configPath string) error {
 	oldFiles := readDirFiles(a.paths.generatedDir)
 	newFiles := readDirFiles(temp)
 	names := map[string]bool{}
-	for name := range oldFiles { names[name] = true }
-	for name := range newFiles { names[name] = true }
+	for name := range oldFiles {
+		names[name] = true
+	}
+	for name := range newFiles {
+		names[name] = true
+	}
 	ordered := make([]string, 0, len(names))
-	for name := range names { ordered = append(ordered, name) }
+	for name := range names {
+		ordered = append(ordered, name)
+	}
 	sort.Strings(ordered)
 	changed := false
 	for _, name := range ordered {
 		oldText, newText := oldFiles[name], newFiles[name]
-		if oldText == newText { continue }
+		if oldText == newText {
+			continue
+		}
 		changed = true
 		fmt.Fprintf(a.out, "--- a/%s\n+++ b/%s\n", name, name)
 		fmt.Fprint(a.out, simpleDiff(oldText, newText))
 	}
-	if !changed { fmt.Fprintln(a.out, "No generated changes.") }
+	if !changed {
+		fmt.Fprintln(a.out, "No generated changes.")
+	}
 	return nil
 }
 
 func readDirFiles(dir string) map[string]string {
 	result := map[string]string{}
 	entries, err := os.ReadDir(dir)
-	if err != nil { return result }
+	if err != nil {
+		return result
+	}
 	for _, entry := range entries {
-		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".zsh") { continue }
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".zsh") {
+			continue
+		}
 		data, err := os.ReadFile(filepath.Join(dir, entry.Name()))
-		if err == nil { result[entry.Name()] = string(data) }
+		if err == nil {
+			result[entry.Name()] = string(data)
+		}
 	}
 	return result
 }
@@ -445,65 +461,103 @@ func readDirFiles(dir string) map[string]string {
 func simpleDiff(oldText, newText string) string {
 	var b strings.Builder
 	if oldText != "" {
-		for _, line := range strings.Split(strings.TrimSuffix(oldText, "\n"), "\n") { b.WriteString("-"+line+"\n") }
+		for _, line := range strings.Split(strings.TrimSuffix(oldText, "\n"), "\n") {
+			b.WriteString("-" + line + "\n")
+		}
 	}
 	if newText != "" {
-		for _, line := range strings.Split(strings.TrimSuffix(newText, "\n"), "\n") { b.WriteString("+"+line+"\n") }
+		for _, line := range strings.Split(strings.TrimSuffix(newText, "\n"), "\n") {
+			b.WriteString("+" + line + "\n")
+		}
 	}
 	return b.String()
 }
 
 func (a app) init(configPath string, adopt, replace bool) error {
 	existing, unmanaged, err := inspectLoader(a.paths.loader)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	conflicts := []string{}
-	if existing && unmanaged { conflicts = detectConflicts(a.paths.loader) }
+	if existing && unmanaged {
+		conflicts = detectConflicts(a.paths.loader)
+	}
 	if existing && unmanaged && !adopt && !replace {
 		fmt.Fprintln(a.out, "Existing ~/.zshrc detected. No active files were changed.")
 		if len(conflicts) > 0 {
 			fmt.Fprintln(a.out, "Potential conflicts:")
-			for _, item := range conflicts { fmt.Fprintln(a.out, "  -", item) }
+			for _, item := range conflicts {
+				fmt.Fprintln(a.out, "  -", item)
+			}
 		}
 		fmt.Fprintln(a.out, "Choose: `zshenv init --adopt` or `zshenv init --replace`.")
 		return errors.New("existing unmanaged .zshrc requires an explicit decision")
 	}
-	if err := os.MkdirAll(a.paths.customDir, 0o700); err != nil { return err }
+	if err := os.MkdirAll(a.paths.customDir, 0o700); err != nil {
+		return err
+	}
 	if _, err := os.Stat(configPath); errors.Is(err, os.ErrNotExist) {
 		data, readErr := fs.ReadFile(assets, "config/shell.default.yaml")
-		if readErr != nil { return readErr }
-		if err := atomicWrite(configPath, data, 0o600); err != nil { return err }
-	} else if err != nil { return err }
+		if readErr != nil {
+			return readErr
+		}
+		if err := atomicWrite(configPath, data, 0o600); err != nil {
+			return err
+		}
+	} else if err != nil {
+		return err
+	}
 
 	if existing && unmanaged {
 		stamp := time.Now().UTC().Format("20060102T150405Z")
 		backup := filepath.Join(a.paths.home, ".zshrc.backup-"+stamp)
 		data, err := os.ReadFile(a.paths.loader)
-		if err != nil { return err }
-		if err := atomicWrite(backup, data, 0o600); err != nil { return err }
+		if err != nil {
+			return err
+		}
+		if err := atomicWrite(backup, data, 0o600); err != nil {
+			return err
+		}
 		fmt.Fprintln(a.out, "Backup:", backup)
 		if adopt {
 			migrated := filepath.Join(a.paths.customDir, "migrated.zsh")
-			if _, err := os.Stat(migrated); err == nil { return fmt.Errorf("refusing to overwrite existing migration: %s", migrated) }
-			if err := atomicWrite(migrated, data, 0o600); err != nil { return err }
+			if _, err := os.Stat(migrated); err == nil {
+				return fmt.Errorf("refusing to overwrite existing migration: %s", migrated)
+			}
+			if err := atomicWrite(migrated, data, 0o600); err != nil {
+				return err
+			}
 			fmt.Fprintln(a.out, "Preserved existing config:", migrated)
 		}
 	}
-	if err := a.apply(configPath); err != nil { return err }
+	if err := a.apply(configPath); err != nil {
+		return err
+	}
 	loader, err := fs.ReadFile(assets, "dot_zshrc")
-	if err != nil { return err }
-	if err := atomicWrite(a.paths.loader, loader, 0o600); err != nil { return err }
-	if len(conflicts) > 0 { fmt.Fprintln(a.out, "Potential conflicts remain user-owned; zshenv did not resolve them.") }
+	if err != nil {
+		return err
+	}
+	if err := atomicWrite(a.paths.loader, loader, 0o600); err != nil {
+		return err
+	}
+	if len(conflicts) > 0 {
+		fmt.Fprintln(a.out, "Potential conflicts remain user-owned; zshenv did not resolve them.")
+	}
 	return nil
 }
 
 func inspectLoader(path string) (exists, unmanaged bool, err error) {
 	data, err := os.ReadFile(path)
-	if errors.Is(err, os.ErrNotExist) { return false, false, nil }
-	if err != nil { return false, false, err }
+	if errors.Is(err, os.ErrNotExist) {
+		return false, false, nil
+	}
+	if err != nil {
+		return false, false, err
+	}
 	return true, !strings.Contains(string(data), marker), nil
 }
 
-var conflictPatterns = []struct{name, pattern string}{
+var conflictPatterns = []struct{ name, pattern string }{
 	{"prompt initialization", `(starship init|oh-my-posh init|powerlevel10k|p10k)`},
 	{"tool integration", `(mise activate|pyenv init|nvm\.sh|zoxide init|direnv hook|atuin init)`},
 	{"completion initialization", `\bcompinit\b`},
@@ -513,38 +567,67 @@ var conflictPatterns = []struct{name, pattern string}{
 
 func detectConflicts(path string) []string {
 	data, err := os.ReadFile(path)
-	if err != nil { return nil }
+	if err != nil {
+		return nil
+	}
 	text := strings.ToLower(string(data))
 	var result []string
 	for _, item := range conflictPatterns {
-		if regexp.MustCompile(item.pattern).MatchString(text) { result = append(result, item.name) }
+		if regexp.MustCompile(item.pattern).MatchString(text) {
+			result = append(result, item.name)
+		}
 	}
 	return result
 }
 
 func atomicWrite(path string, data []byte, mode os.FileMode) error {
-	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil { return err }
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
+		return err
+	}
 	temp, err := os.CreateTemp(filepath.Dir(path), ".zshenv-write-")
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	name := temp.Name()
 	defer os.Remove(name)
-	if err := temp.Chmod(mode); err != nil { temp.Close(); return err }
-	if _, err := temp.Write(data); err != nil { temp.Close(); return err }
-	if err := temp.Sync(); err != nil { temp.Close(); return err }
-	if err := temp.Close(); err != nil { return err }
+	if err := temp.Chmod(mode); err != nil {
+		temp.Close()
+		return err
+	}
+	if _, err := temp.Write(data); err != nil {
+		temp.Close()
+		return err
+	}
+	if err := temp.Sync(); err != nil {
+		temp.Close()
+		return err
+	}
+	if err := temp.Close(); err != nil {
+		return err
+	}
 	return os.Rename(name, path)
 }
 
 func (a app) status(configPath string) error {
 	_, unmanaged, err := inspectLoader(a.paths.loader)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	loader := "managed"
-	if unmanaged { loader = "unmanaged" }
-	if _, err := os.Stat(a.paths.loader); errors.Is(err, os.ErrNotExist) { loader = "missing" }
+	if unmanaged {
+		loader = "unmanaged"
+	}
+	if _, err := os.Stat(a.paths.loader); errors.Is(err, os.ErrNotExist) {
+		loader = "missing"
+	}
 	generated := "missing"
-	if info, err := os.Stat(a.paths.generatedDir); err == nil && info.IsDir() { generated = "present" }
+	if info, err := os.Stat(a.paths.generatedDir); err == nil && info.IsDir() {
+		generated = "present"
+	}
 	customCount := 0
-	if entries, err := os.ReadDir(a.paths.customDir); err == nil { customCount = len(entries) }
+	if entries, err := os.ReadDir(a.paths.customDir); err == nil {
+		customCount = len(entries)
+	}
 	fmt.Fprintln(a.out, "Config:   ", configPath)
 	fmt.Fprintln(a.out, "Loader:   ", loader)
 	fmt.Fprintln(a.out, "Generated:", generated)

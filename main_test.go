@@ -22,10 +22,10 @@ func TestParseSegmentModes(t *testing.T) {
 	home := t.TempDir()
 	custom := filepath.Join(home, "aliases.zsh")
 	cases := []struct {
-		name  string
-		yaml  string
-		mode  segmentMode
-		path  string
+		name string
+		yaml string
+		mode segmentMode
+		path string
 	}{
 		{"default", "segment: {}", modeDefault, ""},
 		{"disabled", "segment: false", modeDisabled, ""},
