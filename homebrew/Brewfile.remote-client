@@ -1,2 +1,3 @@
 cask "ghostty"
 cask "tailscale-app"
+cask "visual-studio-code"

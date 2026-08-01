@@ -65,6 +65,10 @@ if [[ "$PLATFORM" == "macos" ]]; then
     brew bundle install --no-upgrade --file="$HOMEBREW_PROFILE_FILE"
   fi
   unset HOMEBREW_PROFILE_FILE
+
+  if [[ "$PROFILE" == "remote-client" ]]; then
+    bash "$SOURCE_DIR/scripts/install-vscode-extensions.sh"
+  fi
 fi
 
 MISE_BIN="$(dotfiles_find_executable mise || true)"

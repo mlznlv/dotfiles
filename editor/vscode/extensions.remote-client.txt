@@ -1,0 +1,13 @@
+# Remote SSH
+ms-vscode-remote.remote-ssh
+ms-vscode-remote.remote-ssh-edit
+ms-vscode.remote-explorer
+
+# Dev Containers
+ms-vscode-remote.remote-containers
+ms-azuretools.vscode-containers
+
+# Baseline editor UX
+eamodio.gitlens
+editorconfig.editorconfig
+usernamehw.errorlens

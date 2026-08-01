@@ -2,119 +2,86 @@
 
 Portable terminal and development environment for macOS 13+ and Ubuntu/Debian.
 
-```text
-Homebrew  -> macOS packages/apps
-mise      -> runtimes/versioned tools + Linux packages + managed repos
-chezmoi   -> home/shell config
-Starship  -> prompt
-Ghostty   -> macOS terminal UI
-Tailscale + OpenSSH + tmux -> remote development
-```
-
 ## Quick start
 
 ### macOS 13+
 
-Install Apple Command Line Tools first:
-
 ```bash
 xcode-select --install
-```
-
-Then:
-
-```bash
 mkdir -p ~/.local/share
-git clone <repository-url> ~/.local/share/chezmoi
+git clone https://github.com/mlznlv/dotfiles.git ~/.local/share/chezmoi
 cd ~/.local/share/chezmoi
-./bootstrap.sh local-dev
+./bootstrap.sh <profile>
 exec zsh -l
 ```
 
-### Ubuntu/Debian dev host
+Choose one profile:
+
+| Profile | Purpose |
+|---|---|
+| `base` | minimal terminal environment |
+| `local-dev` | local development workstation |
+| `remote-client` | Mac client for remote development |
+
+For `remote-client`, continue with [Remote client setup](docs/remote-client-setup.md).
+
+### Ubuntu/Debian development host
 
 ```bash
 sudo apt-get update
 sudo apt-get install -y git curl
-
 mkdir -p ~/.local/share
-git clone <repository-url> ~/.local/share/chezmoi
+git clone https://github.com/mlznlv/dotfiles.git ~/.local/share/chezmoi
 cd ~/.local/share/chezmoi
 ./bootstrap.sh dev-host
 exec zsh -l
 ```
 
-## Profiles
+Profiles are explicit. `bootstrap.sh` and `update.sh` refuse to run without one.
 
-| Profile | Platform | Purpose |
-|---|---|---|
-| `base` | macOS 13+/Ubuntu/Debian | minimal shared terminal environment |
-| `local-dev` | macOS 13+ | full local-development workstation |
-| `remote-client` | macOS 13+ | lightweight remote-development client |
-| `dev-host` | Ubuntu/Debian | remote development host |
-
-A profile is always explicit; there is no implicit fallback.
-
-Bootstrap/reconverge:
+## Update
 
 ```bash
-./bootstrap.sh <profile>
-```
-
-Routine update:
-
-```bash
+cd ~/.local/share/chezmoi
 bash ./update.sh <profile>
 exec zsh -l
 ```
 
-## Daily commands
+## Useful commands
 
 ```bash
-# Runtime/tool state
 mise current
 mise doctor
-
-# Starship
-prompt-preset
-prompt-module status
-prompt-module enable aws
-prompt-module disable aws
-
-# Remote dev: SSH + persistent tmux session
-remote <user>@<host> [session]
-
-# Verify chezmoi convergence
 chezmoi diff
+remote <user>@<host> [session]
 ```
-
-Default Starship preset: `plain-text-symbols`. Infrastructure/context modules are hidden by portable policy and can be enabled per machine with `prompt-module`.
 
 ## Documentation
 
-- [Architecture and ownership](docs/architecture.md)
-- [Shell, Starship, and Ghostty](docs/shell-and-terminal.md)
-- [Runtimes and versioned tools with mise](docs/runtimes.md)
+- [Remote client setup](docs/remote-client-setup.md)
 - [Remote development](docs/remote-development.md)
-- [Updates, verification, and troubleshooting](docs/maintenance.md)
+- [Updates and troubleshooting](docs/maintenance.md)
+- [Architecture and ownership](docs/architecture.md)
+- [Shell and terminal](docs/shell-and-terminal.md)
+- [Runtimes and versioned tools](docs/runtimes.md)
 
 ## Repository layout
 
 ```text
-homebrew/     macOS Brewfiles
-mise/         bootstrap/runtime/tool declarations
-dot_config/   chezmoi-managed XDG config
-docs/         operational documentation
-scripts/      repo-only checks, helpers, migrations
-bootstrap.sh  provisioning/convergence
+homebrew/     macOS packages and applications
+mise/         runtimes, tools, Linux packages, managed repositories
+dot_config/   chezmoi-managed configuration
+docs/         documentation
+scripts/      checks, helpers, migrations
+bootstrap.sh  first installation and convergence
 update.sh     routine updates
 ```
 
 ## Privacy
 
-Portable defaults belong in Git. Credentials, private keys, certificates, real hostnames/IPs, Tailscale identity, corporate/private registry configuration, and machine-specific identity stay local.
+Do not commit credentials, private keys, certificates, real hostnames/IPs, Tailscale identity, private registry configuration, or machine-specific identity.
 
-Common machine-local state:
+Machine-local configuration belongs in:
 
 ```text
 ~/.config/zsh/local.zsh
@@ -122,5 +89,3 @@ Common machine-local state:
 ~/.config/starship/preset
 ~/.config/starship/modules
 ```
-
-See [architecture.md](docs/architecture.md) before publishing an existing repository history.
