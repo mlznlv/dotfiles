@@ -59,15 +59,18 @@ if [[ "$PLATFORM" == "macos" ]]; then
   echo "Applying Homebrew base declarations..."
   brew bundle install --no-upgrade --file="$SOURCE_DIR/homebrew/Brewfile"
 
-  HOMEBREW_PROFILE_FILE="$SOURCE_DIR/homebrew/Brewfile.$PROFILE"
-  if [[ -f "$HOMEBREW_PROFILE_FILE" ]]; then
+  if [[ -f "$SOURCE_DIR/homebrew/Brewfile.$PROFILE" || -n "${DOTFILES_PROFILE_BREWFILE:-}" ]]; then
     echo "Applying Homebrew $PROFILE declarations..."
-    brew bundle install --no-upgrade --file="$HOMEBREW_PROFILE_FILE"
+    bash "$SOURCE_DIR/scripts/homebrew-profile.sh" install "$PROFILE"
   fi
-  unset HOMEBREW_PROFILE_FILE
 
-  if [[ "$PROFILE" == "remote-client" ]]; then
-    bash "$SOURCE_DIR/scripts/install-vscode-extensions.sh"
+  if [[ "$PROFILE" == "remote-client" || "$PROFILE" == "local-dev" ]]; then
+    bash "$SOURCE_DIR/scripts/install-vscode-extensions.sh" \
+      "$SOURCE_DIR/editor/vscode/extensions.remote-client.txt"
+  fi
+  if [[ "$PROFILE" == "local-dev" ]]; then
+    bash "$SOURCE_DIR/scripts/install-vscode-extensions.sh" \
+      "$SOURCE_DIR/editor/vscode/extensions.local-dev.txt"
   fi
 fi
 
@@ -84,8 +87,6 @@ fi
 
 dotfiles_enable_mise_shims
 
-# Project portable platform/profile tool defaults into mise's global conf.d.
-# Numeric prefixes make precedence explicit: platform -> profile -> machine-local.
 MISE_CONF_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/mise/conf.d"
 mkdir -p "$MISE_CONF_DIR"
 
@@ -138,5 +139,6 @@ if [[ -z "$CHEZMOI_BIN" || ! -x "$CHEZMOI_BIN" ]]; then
 fi
 
 "$CHEZMOI_BIN" --source "$SOURCE_DIR" apply
+bash "$SOURCE_DIR/scripts/health-check.sh" "$PROFILE"
 
 echo "Dotfiles applied successfully for $PLATFORM with profile $PROFILE."
