@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import difflib
 import os
 import re
@@ -15,7 +16,7 @@ from typing import Any
 try:
     import yaml
 except ImportError:
-    print("zshenv: PyYAML is required (python3 -m pip install --user pyyaml)", file=sys.stderr)
+    print("zshenv: PyYAML is required; see README", file=sys.stderr)
     raise SystemExit(2)
 
 ROOT = Path(__file__).resolve().parent
@@ -26,25 +27,26 @@ GENERATED_DIR = CONFIG_DIR / "generated"
 CUSTOM_DIR = CONFIG_DIR / "custom"
 LOADER = HOME / ".zshrc"
 MARKER = "# managed-by: zshenv"
-SEGMENTS = ["core", "paths", "completion", "runtimes", "remote", "aliases", "prompt", "ux"]
-DEFAULT_FILES = {
-    "core": CONFIG_DIR / "core.zsh",
-    "paths": CONFIG_DIR / "paths.zsh",
-    "completion": CONFIG_DIR / "completion.zsh",
-    "runtimes": CONFIG_DIR / "runtimes.zsh",
-    "remote": CONFIG_DIR / "remote.zsh",
-    "aliases": CONFIG_DIR / "aliases.zsh",
-    "prompt": CONFIG_DIR / "prompt.zsh",
-    "ux": CONFIG_DIR / "ux.zsh",
-}
+
+SEGMENTS = [
+    "core",
+    "paths",
+    "completion",
+    "integrations",
+    "remote",
+    "aliases",
+    "prompt",
+    "ux",
+]
+DEFAULT_FILES = {name: CONFIG_DIR / f"{name}.zsh" for name in SEGMENTS}
 CONFLICT_PATTERNS = {
     "prompt initialization": r"(starship init|oh-my-posh init|powerlevel10k|p10k)",
-    "runtime integration": r"(mise activate|pyenv init|nvm\.sh)",
-    "directory integration": r"(zoxide init|direnv hook|atuin init)",
+    "tool integration": r"(mise activate|pyenv init|nvm\.sh|zoxide init|direnv hook|atuin init)",
     "completion initialization": r"\bcompinit\b",
     "aliases": r"^\s*alias\s+",
     "keybindings": r"\bbindkey\b",
 }
+OPTIONAL_COMMANDS = ("fzf", "zoxide", "mise", "docker", "kubectl", "tmux", "ssh")
 
 
 def fail(message: str, code: int = 1) -> None:
@@ -52,13 +54,20 @@ def fail(message: str, code: int = 1) -> None:
     raise SystemExit(code)
 
 
-def run(*args: str, check: bool = True, capture: bool = False) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(args, check=check, text=True, capture_output=capture)
+def run(*args: str) -> None:
+    try:
+        subprocess.run(args, check=True)
+    except FileNotFoundError:
+        fail(f"command not found: {args[0]}")
+    except subprocess.CalledProcessError as exc:
+        fail(f"command failed ({exc.returncode}): {' '.join(args)}")
 
 
-def expand_path(value: str) -> Path:
-    if any(token in value for token in ("$(`", "`", "${", "$((")):
-        fail(f"unsafe path: {value}")
+def expand_path(value: Any) -> Path:
+    if not isinstance(value, str) or not value:
+        fail("path must be a non-empty string")
+    if any(token in value for token in ("$", "`", "*", "?", "[", "]")):
+        fail(f"path must not contain shell expansion or glob syntax: {value}")
     path = Path(value).expanduser()
     if not path.is_absolute():
         fail(f"path must be absolute or start with ~: {value}")
@@ -69,11 +78,11 @@ def load_config(path: Path) -> dict[str, Any]:
     if not path.is_file():
         fail(f"config not found: {path}")
     try:
-        data = yaml.safe_load(path.read_text()) or {}
-    except yaml.YAMLError as exc:
+        data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except (OSError, yaml.YAMLError) as exc:
         fail(f"invalid YAML: {exc}")
     if data.get("version") != 1 or not isinstance(data.get("shell"), dict):
-        fail("config must contain version: 1 and a shell mapping")
+        fail("config must contain `version: 1` and a `shell` mapping")
     unknown = set(data["shell"]) - set(SEGMENTS)
     if unknown:
         fail(f"unknown shell segments: {', '.join(sorted(unknown))}")
@@ -87,63 +96,83 @@ def parse_segment(name: str, value: Any) -> tuple[str, Path | None]:
         return "disabled", None
     if not isinstance(value, dict):
         fail(f"shell.{name} must be an object or false")
+
     if name == "prompt":
-        if "extend" in value:
-            fail("shell.prompt does not support extend")
+        unknown = set(value) - {"engine", "path"}
+        if unknown:
+            fail(f"unknown shell.prompt fields: {', '.join(sorted(unknown))}")
         engine = value.get("engine", "starship")
         if engine != "starship":
             fail(f"unsupported prompt engine: {engine}")
-        if "path" in value:
-            return "replace", expand_path(str(value["path"]))
-        return "default", None
+        return ("replace", expand_path(value["path"])) if "path" in value else ("default", None)
+
+    unknown = set(value) - {"path", "extend"}
+    if unknown:
+        fail(f"unknown shell.{name} fields: {', '.join(sorted(unknown))}")
     if "path" in value and "extend" in value:
         fail(f"shell.{name} cannot contain both path and extend")
     if "path" in value:
-        return "replace", expand_path(str(value["path"]))
+        return "replace", expand_path(value["path"])
     if "extend" in value:
-        ext = value["extend"]
-        if not isinstance(ext, dict) or "path" not in ext:
-            fail(f"shell.{name}.extend.path is required")
-        return "extend", expand_path(str(ext["path"]))
+        extension = value["extend"]
+        if not isinstance(extension, dict) or set(extension) != {"path"}:
+            fail(f"shell.{name}.extend must contain only path")
+        return "extend", expand_path(extension["path"])
     fail(f"shell.{name} must be empty, false, path, or extend.path")
 
 
+def quote_zsh(path: Path) -> str:
+    return "'" + str(path).replace("'", "'\\''") + "'"
+
+
 def source_line(path: Path) -> str:
-    quoted = str(path).replace("'", "'\\''")
-    return f"[[ -r '{quoted}' ]] || {{ print -u2 -- 'zshenv: unreadable file: {quoted}'; return 1; }}\nsource '{quoted}'\n"
+    quoted = quote_zsh(path)
+    return (
+        f"if [[ ! -r {quoted} ]]; then\n"
+        f"  print -u2 -- 'zshenv: unreadable file: {path}'\n"
+        "  return 1\n"
+        "fi\n"
+        f"source {quoted}\n"
+    )
+
+
+def resolve(config: dict[str, Any]) -> list[tuple[str, str, Path | None]]:
+    shell = config["shell"]
+    return [(name, *parse_segment(name, shell.get(name, {}))) for name in SEGMENTS]
 
 
 def render(config: dict[str, Any], output: Path) -> None:
     output.mkdir(parents=True, exist_ok=True)
-    shell = config["shell"]
-    for index, name in enumerate(SEGMENTS, 10):
-        mode, custom = parse_segment(name, shell.get(name, {}))
+    for index, (name, mode, custom) in enumerate(resolve(config), 10):
         if custom is not None and not custom.is_file():
             fail(f"custom file not found: {custom}")
         if mode == "disabled":
             continue
+
         content = "# Generated by zshenv. Do not edit.\n"
         if name == "prompt" and mode == "replace":
             if shutil.which("starship") is None:
-                fail("starship is selected but not installed")
-            content += f"export STARSHIP_CONFIG='{str(custom).replace(chr(39), chr(39)+chr(92)+chr(39)+chr(39))}'\neval \"$(starship init zsh)\"\n"
+                fail("starship is selected with a custom config but is not installed")
+            content += f"export STARSHIP_CONFIG={quote_zsh(custom)}\n"
+            content += 'eval "$(starship init zsh)"\n'
         else:
-            if mode in ("default", "extend"):
+            if mode in {"default", "extend"}:
                 default_file = DEFAULT_FILES[name]
                 if not default_file.is_file():
                     fail(f"default segment not installed: {default_file}")
                 content += source_line(default_file)
-            if mode in ("replace", "extend") and custom is not None:
+            if mode in {"replace", "extend"} and custom is not None:
                 content += source_line(custom)
-        (output / f"{index:02d}-{name}.zsh").write_text(content)
+
+        target = output / f"{index:02d}-{name}.zsh"
+        target.write_text(content, encoding="utf-8")
 
 
-def validate_rendered(path: Path) -> None:
-    files = sorted(path.glob("*.zsh"))
-    for file in files:
+def validate_zsh(path: Path) -> None:
+    if shutil.which("zsh") is None:
+        fail("zsh is not installed")
+    for file in sorted(path.glob("*.zsh")):
         run("zsh", "-n", str(file))
-    probe = "setopt NO_RCS; for f in $1/*.zsh(N); do source $f || exit 1; done"
-    run("zsh", "-dfc", probe, "zshenv-check", str(path))
 
 
 def install_defaults() -> None:
@@ -155,11 +184,15 @@ def install_defaults() -> None:
 def detect_conflicts(path: Path) -> list[str]:
     if not path.is_file():
         return []
-    text = path.read_text(errors="replace")
-    return [name for name, pattern in CONFLICT_PATTERNS.items() if re.search(pattern, text, re.MULTILINE | re.IGNORECASE)]
+    text = path.read_text(encoding="utf-8", errors="replace")
+    return [
+        name
+        for name, pattern in CONFLICT_PATTERNS.items()
+        if re.search(pattern, text, re.MULTILINE | re.IGNORECASE)
+    ]
 
 
-def ensure_config() -> None:
+def ensure_layout() -> None:
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     CUSTOM_DIR.mkdir(parents=True, exist_ok=True)
     if not CONFIG_FILE.exists():
@@ -169,11 +202,11 @@ def ensure_config() -> None:
 def atomic_apply(config_path: Path) -> None:
     config = load_config(config_path)
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix=".generated.", dir=CONFIG_DIR) as temp:
-        staging = Path(temp)
+    staging = Path(tempfile.mkdtemp(prefix=".generated.", dir=CONFIG_DIR))
+    previous = CONFIG_DIR / ".generated.previous"
+    try:
         render(config, staging)
-        validate_rendered(staging)
-        previous = CONFIG_DIR / ".generated.previous"
+        validate_zsh(staging)
         if previous.exists():
             shutil.rmtree(previous)
         if GENERATED_DIR.exists():
@@ -181,50 +214,58 @@ def atomic_apply(config_path: Path) -> None:
         staging.rename(GENERATED_DIR)
         if previous.exists():
             shutil.rmtree(previous)
+    except BaseException:
+        if staging.exists():
+            shutil.rmtree(staging)
+        if not GENERATED_DIR.exists() and previous.exists():
+            previous.rename(GENERATED_DIR)
+        raise
     print("Applied shell configuration.")
 
 
 def cmd_init(args: argparse.Namespace) -> None:
-    conflicts = []
-    existing = LOADER.is_file() and MARKER not in LOADER.read_text(errors="replace")
+    existing = LOADER.is_file() and MARKER not in LOADER.read_text(encoding="utf-8", errors="replace")
+    conflicts = detect_conflicts(LOADER) if existing else []
+
+    if existing and not args.adopt and not args.replace:
+        print("Existing ~/.zshrc detected. No active files were changed.")
+        if conflicts:
+            print("Potential conflicts:")
+            for item in conflicts:
+                print(f"  - {item}")
+        print("Choose: `python3 ./zshenv init --adopt` or `python3 ./zshenv init --replace`.")
+        raise SystemExit(3)
+
+    ensure_layout()
     if existing:
-        conflicts = detect_conflicts(LOADER)
-        if not args.adopt and not args.replace:
-            print("Existing ~/.zshrc detected. No active files were changed.")
-            if conflicts:
-                print("Potential conflicts:")
-                for item in conflicts:
-                    print(f"  - {item}")
-            print("Run `./zshenv init --adopt` to preserve and load it, or `--replace` to keep only the backup.")
-            raise SystemExit(3)
-        backup = LOADER.with_name(f".zshrc.backup-{__import__('datetime').datetime.now().strftime('%Y%m%dT%H%M%S')}")
+        timestamp = dt.datetime.now().strftime("%Y%m%dT%H%M%S")
+        backup = LOADER.with_name(f".zshrc.backup-{timestamp}")
         shutil.copy2(LOADER, backup)
         print(f"Backup: {backup}")
         if args.adopt:
-            CUSTOM_DIR.mkdir(parents=True, exist_ok=True)
             migrated = CUSTOM_DIR / "migrated.zsh"
             if migrated.exists():
-                fail(f"refusing to overwrite: {migrated}")
+                fail(f"refusing to overwrite existing migration: {migrated}")
             shutil.copy2(LOADER, migrated)
             print(f"Preserved existing config: {migrated}")
-    ensure_config()
+
     install_defaults()
     atomic_apply(Path(args.config).expanduser())
     if conflicts:
-        print("Review reported conflicts; zshenv does not resolve them automatically.")
+        print("Potential conflicts remain user-owned; zshenv did not resolve them.")
 
 
 def cmd_check(args: argparse.Namespace) -> None:
-    if shutil.which("zsh") is None:
-        fail("zsh is not installed")
-    config = load_config(Path(args.config).expanduser())
+    config_path = Path(args.config).expanduser()
+    config = load_config(config_path)
     with tempfile.TemporaryDirectory(prefix="zshenv-check-") as temp:
-        render(config, Path(temp))
-        validate_rendered(Path(temp))
-    print("Configuration is valid.")
-    for command in ("fzf", "zoxide", "mise", "docker", "kubectl"):
-        state = "ok" if shutil.which(command) else "skip"
-        print(f"[{state}] {command}")
+        rendered = Path(temp)
+        render(config, rendered)
+        validate_zsh(rendered)
+    print("[ok] configuration")
+    print("[ok] generated Zsh syntax")
+    for command in OPTIONAL_COMMANDS:
+        print(f"[{'ok' if shutil.which(command) else 'skip'}] {command}")
 
 
 def cmd_diff(args: argparse.Namespace) -> None:
@@ -232,32 +273,43 @@ def cmd_diff(args: argparse.Namespace) -> None:
     with tempfile.TemporaryDirectory(prefix="zshenv-diff-") as temp:
         rendered = Path(temp)
         render(config, rendered)
-        old = {p.name: p.read_text().splitlines(True) for p in GENERATED_DIR.glob("*.zsh")} if GENERATED_DIR.exists() else {}
-        new = {p.name: p.read_text().splitlines(True) for p in rendered.glob("*.zsh")}
+        old = {p.name: p.read_text(encoding="utf-8").splitlines(True) for p in GENERATED_DIR.glob("*.zsh")} if GENERATED_DIR.exists() else {}
+        new = {p.name: p.read_text(encoding="utf-8").splitlines(True) for p in rendered.glob("*.zsh")}
+        changed = False
         for name in sorted(set(old) | set(new)):
-            sys.stdout.writelines(difflib.unified_diff(old.get(name, []), new.get(name, []), f"a/{name}", f"b/{name}"))
+            diff = list(difflib.unified_diff(old.get(name, []), new.get(name, []), f"a/{name}", f"b/{name}"))
+            if diff:
+                changed = True
+                sys.stdout.writelines(diff)
+        if not changed:
+            print("No generated changes.")
 
 
 def cmd_status(args: argparse.Namespace) -> None:
-    print(f"Config:    {Path(args.config).expanduser()}")
-    print(f"Loader:    {'managed' if LOADER.is_file() and MARKER in LOADER.read_text(errors='replace') else 'unmanaged'}")
+    config_path = Path(args.config).expanduser()
+    managed = LOADER.is_file() and MARKER in LOADER.read_text(encoding="utf-8", errors="replace")
+    print(f"Config:    {config_path}")
+    print(f"Loader:    {'managed' if managed else 'unmanaged'}")
     print(f"Generated: {'present' if GENERATED_DIR.is_dir() else 'missing'}")
-    print(f"Custom:    {len(list(CUSTOM_DIR.glob('*'))) if CUSTOM_DIR.is_dir() else 0} files")
+    print(f"Custom:    {len(list(CUSTOM_DIR.iterdir())) if CUSTOM_DIR.is_dir() else 0} files")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(prog="zshenv")
     parser.add_argument("--config", default=str(CONFIG_FILE))
     sub = parser.add_subparsers(dest="command", required=True)
+
     init = sub.add_parser("init")
-    group = init.add_mutually_exclusive_group()
-    group.add_argument("--adopt", action="store_true")
-    group.add_argument("--replace", action="store_true")
+    choice = init.add_mutually_exclusive_group()
+    choice.add_argument("--adopt", action="store_true")
+    choice.add_argument("--replace", action="store_true")
     init.set_defaults(func=cmd_init)
+
     sub.add_parser("apply").set_defaults(func=lambda a: atomic_apply(Path(a.config).expanduser()))
     sub.add_parser("check").set_defaults(func=cmd_check)
     sub.add_parser("diff").set_defaults(func=cmd_diff)
     sub.add_parser("status").set_defaults(func=cmd_status)
+
     args = parser.parse_args()
     args.func(args)
 
