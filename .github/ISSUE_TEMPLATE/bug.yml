@@ -1,0 +1,32 @@
+name: Bug report
+description: Report reproducible incorrect behavior
+title: "bug: "
+labels: [bug]
+body:
+  - type: textarea
+    attributes:
+      label: Problem
+      description: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Reproduction
+      description: Include the minimal YAML and commands needed to reproduce the problem. Remove secrets and private hostnames.
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: zshenv version
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: OS and architecture
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Zsh version
+    validations:
+      required: true
