@@ -3,4 +3,7 @@ brew "awscli"
 brew "kubernetes-cli"
 brew "opentofu"
 
+cask "ghostty"
 cask "orbstack"
+cask "tailscale-app"
+cask "visual-studio-code"
