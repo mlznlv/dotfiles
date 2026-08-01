@@ -176,7 +176,8 @@ func TestApplyValidationFailurePreservesActiveState(t *testing.T) {
 	if err := os.MkdirAll(a.paths.customDir, 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(broken, []byte("if then\n"), 0o600); err != nil {
+	// An unterminated quote is rejected consistently by Zsh on macOS and Linux.
+	if err := os.WriteFile(broken, []byte("print 'unterminated\n"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	badConfig := filepath.Join(a.paths.configDir, "broken.yaml")
