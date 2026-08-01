@@ -1,0 +1,12 @@
+version: 1
+
+shell:
+  core: {}
+  paths: {}
+  completion: {}
+  runtimes: {}
+  remote: {}
+  aliases: {}
+  prompt:
+    engine: starship
+  ux: {}
