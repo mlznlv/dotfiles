@@ -24,6 +24,14 @@ check() {
     failed=1
   fi
 }
+warn() {
+  local name="$1"; shift
+  if "$@" >/dev/null 2>&1; then
+    printf '[ok] %s\n' "$name"
+  else
+    printf '[warn] %s\n' "$name" >&2
+  fi
+}
 
 check git command -v git
 check mise command -v mise
@@ -36,13 +44,15 @@ if [[ "$PLATFORM" == "macos" ]]; then
 
   if [[ "$PROFILE" == "remote-client" || "$PROFILE" == "local-dev" ]]; then
     check vscode test -x '/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code'
-    check tailscale test -d '/Applications/Tailscale.app'
+    check tailscale-app test -d '/Applications/Tailscale.app'
+    warn tailscale-cli command -v tailscale
     check remote-ssh grep -Fxq 'ms-vscode-remote.remote-ssh' "$SOURCE_DIR/editor/vscode/extensions.remote-client.txt"
     check dev-containers grep -Fxq 'ms-vscode-remote.remote-containers' "$SOURCE_DIR/editor/vscode/extensions.remote-client.txt"
   fi
 
   if [[ "$PROFILE" == "local-dev" ]]; then
-    check docker docker version
+    check docker-cli command -v docker
+    warn docker-engine docker info
     check compose docker compose version
     check node node --version
     check python python --version
@@ -50,6 +60,8 @@ if [[ "$PLATFORM" == "macos" ]]; then
     check kubectl kubectl version --client
     check tofu tofu version
     check ansible ansible --version
+    check python-extension grep -Fxq 'ms-python.python' "$SOURCE_DIR/editor/vscode/extensions.local-dev.txt"
+    check ruff-extension grep -Fxq 'charliermarsh.ruff' "$SOURCE_DIR/editor/vscode/extensions.local-dev.txt"
   fi
 fi
 
