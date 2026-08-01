@@ -2,17 +2,13 @@
 
 ZSH_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
 
-[[ -r "$ZSH_CONFIG_HOME/custom/before.zsh" ]] &&
-  source "$ZSH_CONFIG_HOME/custom/before.zsh"
+[[ -r "$ZSH_CONFIG_HOME/custom/before.zsh" ]] && source "$ZSH_CONFIG_HOME/custom/before.zsh"
 
 for file in "$ZSH_CONFIG_HOME"/generated/*.zsh(N); do
   source "$file"
 done
 
-[[ -r "$ZSH_CONFIG_HOME/custom/migrated.zsh" ]] &&
-  source "$ZSH_CONFIG_HOME/custom/migrated.zsh"
-
-[[ -r "$ZSH_CONFIG_HOME/custom/after.zsh" ]] &&
-  source "$ZSH_CONFIG_HOME/custom/after.zsh"
+[[ -r "$ZSH_CONFIG_HOME/custom/migrated.zsh" ]] && source "$ZSH_CONFIG_HOME/custom/migrated.zsh"
+[[ -r "$ZSH_CONFIG_HOME/custom/after.zsh" ]] && source "$ZSH_CONFIG_HOME/custom/after.zsh"
 
 unset ZSH_CONFIG_HOME file
