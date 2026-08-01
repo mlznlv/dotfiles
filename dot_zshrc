@@ -1,18 +1,18 @@
-# ~/.zshrc
+# managed-by: zshenv
 
 ZSH_CONFIG_HOME="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
 
-source "$ZSH_CONFIG_HOME/core.zsh"
-source "$ZSH_CONFIG_HOME/paths.zsh"
-[[ -r "$ZSH_CONFIG_HOME/local.zsh" ]] && source "$ZSH_CONFIG_HOME/local.zsh"
+[[ -r "$ZSH_CONFIG_HOME/custom/before.zsh" ]] &&
+  source "$ZSH_CONFIG_HOME/custom/before.zsh"
 
-# Completion must initialize before runtime integrations that may register
-# completions. Interactive UX is finalized last.
-source "$ZSH_CONFIG_HOME/completion.zsh"
-source "$ZSH_CONFIG_HOME/runtimes.zsh"
-source "$ZSH_CONFIG_HOME/remote.zsh"
-source "$ZSH_CONFIG_HOME/aliases.zsh"
-source "$ZSH_CONFIG_HOME/prompt.zsh"
-source "$ZSH_CONFIG_HOME/ux.zsh"
+for file in "$ZSH_CONFIG_HOME"/generated/*.zsh(N); do
+  source "$file"
+done
 
-unset ZSH_CONFIG_HOME
+[[ -r "$ZSH_CONFIG_HOME/custom/migrated.zsh" ]] &&
+  source "$ZSH_CONFIG_HOME/custom/migrated.zsh"
+
+[[ -r "$ZSH_CONFIG_HOME/custom/after.zsh" ]] &&
+  source "$ZSH_CONFIG_HOME/custom/after.zsh"
+
+unset ZSH_CONFIG_HOME file
