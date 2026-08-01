@@ -4,7 +4,7 @@ shell:
   core: {}
   paths: {}
   completion: {}
-  runtimes: {}
+  integrations: {}
   remote: {}
   aliases: {}
   prompt:
