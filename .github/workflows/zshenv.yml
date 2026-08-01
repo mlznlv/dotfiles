@@ -27,7 +27,7 @@ jobs:
           HOME: ${{ runner.temp }}/home
         run: python3 ./zshenv check
 
-      - name: Check extend and replace
+      - name: Check extend and disable
         env:
           HOME: ${{ runner.temp }}/home
         run: |
@@ -44,8 +44,9 @@ jobs:
           python3 ./zshenv check
           python3 ./zshenv diff
           python3 ./zshenv apply
-          test -f "$HOME/.config/zsh/generated/60-aliases.zsh"
-          test ! -e "$HOME/.config/zsh/generated/50-remote.zsh"
+          test -f "$HOME/.config/zsh/generated/15-aliases.zsh"
+          test ! -e "$HOME/.config/zsh/generated/14-remote.zsh"
+          test ! -e "$HOME/.config/zsh/generated/16-prompt.zsh"
 
       - name: Reject invalid configuration without replacing generated state
         env:
