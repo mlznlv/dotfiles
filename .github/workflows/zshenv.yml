@@ -10,53 +10,51 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      XDG_CONFIG_HOME: ${{ runner.temp }}/home/.config
+
     steps:
       - uses: actions/checkout@v4
 
       - name: Install test dependencies
         run: sudo apt-get update && sudo apt-get install -y zsh python3-yaml
 
-      - name: Prepare isolated home
+      - name: Prepare isolated config
         run: |
-          mkdir -p "$RUNNER_TEMP/home/.config/zsh/custom"
-          cp dot_config/zsh/*.zsh "$RUNNER_TEMP/home/.config/zsh/"
-          cp config/shell.default.yaml "$RUNNER_TEMP/home/.config/zsh/shell.yaml"
+          mkdir -p "$XDG_CONFIG_HOME/zsh/custom"
+          cp dot_config/zsh/*.zsh "$XDG_CONFIG_HOME/zsh/"
+          cp config/shell.default.yaml "$XDG_CONFIG_HOME/zsh/shell.yaml"
 
       - name: Check defaults
-        env:
-          HOME: ${{ runner.temp }}/home
         run: python3 ./zshenv check
 
       - name: Check extend and disable
-        env:
-          HOME: ${{ runner.temp }}/home
         run: |
-          printf "alias ci-test='ok'\n" > "$HOME/.config/zsh/custom/aliases.zsh"
-          cat > "$HOME/.config/zsh/shell.yaml" <<'YAML'
+          custom="$XDG_CONFIG_HOME/zsh/custom/aliases.zsh"
+          printf "alias ci-test='ok'\n" > "$custom"
+          cat > "$XDG_CONFIG_HOME/zsh/shell.yaml" <<YAML
           version: 1
           shell:
             aliases:
               extend:
-                path: ~/.config/zsh/custom/aliases.zsh
+                path: $custom
             remote: false
             prompt: false
           YAML
           python3 ./zshenv check
           python3 ./zshenv diff
           python3 ./zshenv apply
-          test -f "$HOME/.config/zsh/generated/15-aliases.zsh"
-          test ! -e "$HOME/.config/zsh/generated/14-remote.zsh"
-          test ! -e "$HOME/.config/zsh/generated/16-prompt.zsh"
+          test -f "$XDG_CONFIG_HOME/zsh/generated/15-aliases.zsh"
+          test ! -e "$XDG_CONFIG_HOME/zsh/generated/14-remote.zsh"
+          test ! -e "$XDG_CONFIG_HOME/zsh/generated/16-prompt.zsh"
 
       - name: Reject invalid configuration without replacing generated state
-        env:
-          HOME: ${{ runner.temp }}/home
         run: |
-          before="$(find "$HOME/.config/zsh/generated" -type f -print -exec sha256sum {} \; | sha256sum)"
-          printf 'version: 1\nshell:\n  aliases:\n    path: relative.zsh\n' > "$HOME/.config/zsh/shell.yaml"
+          before="$(find "$XDG_CONFIG_HOME/zsh/generated" -type f -print -exec sha256sum {} \; | sha256sum)"
+          printf 'version: 1\nshell:\n  aliases:\n    path: relative.zsh\n' > "$XDG_CONFIG_HOME/zsh/shell.yaml"
           if python3 ./zshenv apply; then
             echo 'invalid configuration unexpectedly succeeded' >&2
             exit 1
           fi
-          after="$(find "$HOME/.config/zsh/generated" -type f -print -exec sha256sum {} \; | sha256sum)"
+          after="$(find "$XDG_CONFIG_HOME/zsh/generated" -type f -print -exec sha256sum {} \; | sha256sum)"
           test "$before" = "$after"
