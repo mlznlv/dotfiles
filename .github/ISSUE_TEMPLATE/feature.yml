@@ -1,0 +1,21 @@
+name: Feature request
+description: Propose a focused improvement
+title: "feature: "
+labels: [enhancement]
+body:
+  - type: textarea
+    attributes:
+      label: Problem
+      description: Describe the concrete user problem, not only the proposed implementation.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Proposed behavior
+      description: Show the expected CLI or YAML contract.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Alternatives and trade-offs
+      description: Explain simpler alternatives and compatibility implications.
