@@ -1,45 +1,38 @@
 # zshenv
 
-Portable Zsh configuration with safe migration of an existing `~/.zshrc`.
+Declarative Zsh configuration with safe migration of an existing `~/.zshrc`.
+
+The current repository is a development location. The project will move to a dedicated public repository before its first release.
 
 ## Requirements
 
-Required: Zsh, Git, chezmoi, Python 3, PyYAML.
+For users:
 
-The default prompt uses Starship when available and falls back to native Zsh. Optional integrations activate only when their commands exist.
+- Zsh 5.8 or newer;
+- the `zshenv` binary;
+- macOS or Linux on arm64 or amd64.
 
-macOS example:
+Starship, fzf, zoxide, mise, Docker, kubectl, tmux, and SSH are optional. Missing optional commands are skipped without breaking shell startup. A custom Starship configuration requires Starship.
 
-```bash
-brew install zsh git chezmoi python pyyaml starship fzf zoxide tmux
-```
+For contributors: Go 1.23 or newer.
 
-Ubuntu/Debian example:
-
-```bash
-sudo apt-get update
-sudo apt-get install -y zsh git python3 python3-yaml fzf tmux
-```
-
-Install missing tools using their official instructions. This repository does not install or update packages.
-
-## Install
+## Build and install
 
 ```bash
-git clone https://github.com/mlznlv/dotfiles.git ~/.local/share/zshenv
-cd ~/.local/share/zshenv
-python3 ./zshenv init
+go build -trimpath -o zshenv .
+install -m 0755 zshenv ~/.local/bin/zshenv
+zshenv init
 exec zsh -l
 ```
 
 When an unmanaged `~/.zshrc` exists, `init` reports likely conflicts and changes nothing. Continue explicitly:
 
 ```bash
-python3 ./zshenv init --adopt    # back up and load the existing config
-python3 ./zshenv init --replace  # back up, then use only managed config
+zshenv init --adopt    # back up and load the existing config
+zshenv init --replace  # back up, then use only managed config
 ```
 
-Conflicts are reported, never resolved automatically.
+Conflicts are advisory and are never resolved automatically.
 
 ## Configuration
 
@@ -60,7 +53,7 @@ shell:
   ux: {}
 ```
 
-A missing segment or `{}` uses the built-in configuration.
+A missing segment or `{}` uses the built-in implementation.
 
 Replace a segment:
 
@@ -86,7 +79,7 @@ shell:
   remote: false
 ```
 
-Use a custom Starship config:
+Use a custom Starship configuration:
 
 ```yaml
 shell:
@@ -95,35 +88,36 @@ shell:
     path: ~/.config/starship/theme.toml
 ```
 
-Create one from an official preset:
-
-```bash
-mkdir -p ~/.config/starship
-starship preset pure-preset -o ~/.config/starship/theme.toml
-```
+Only absolute paths and paths beginning with `~/` are accepted. URLs, variables, command substitution, and glob syntax are rejected.
 
 ## Commands
 
 ```bash
-python3 ./zshenv check
-python3 ./zshenv diff
-python3 ./zshenv apply
-python3 ./zshenv status
+zshenv check
+zshenv diff
+zshenv apply
+zshenv status
 ```
 
-`apply` atomically replaces only `~/.config/zsh/generated/`. Custom files and files referenced by YAML are never changed or deleted.
+`apply` renders and validates a staging directory, then atomically replaces only `~/.config/zsh/generated/`. Files under `custom/` and files referenced from YAML are never modified or deleted.
 
 ## Built-in coverage
 
-Defaults preserve the current shell behavior:
-
 - history and Zsh options;
-- user and Docker paths;
+- user and Docker CLI paths;
 - native and Docker completion plus keybindings;
 - optional tool integrations, including mise;
 - `remote <host> [session]` for SSH plus tmux;
 - shell and Git aliases;
-- Starship prompt policy with native fallback;
+- Starship with native Zsh fallback;
 - fzf, zoxide, autosuggestions, and syntax highlighting.
 
-Missing optional tools are skipped without breaking shell startup.
+## Development
+
+```bash
+go vet ./...
+go test -race ./...
+go build ./...
+```
+
+CI tests Linux and macOS, performs cross-builds for four release targets, and runs the repository secret scan. See `SECURITY.md` before reporting a vulnerability or suspected credential exposure.
