@@ -34,14 +34,14 @@ Install `chezmoi`, Starship, zoxide, and mise using their official instructions 
 ```bash
 git clone https://github.com/mlznlv/dotfiles.git ~/.local/share/zshenv
 cd ~/.local/share/zshenv
-./zshenv init
+python3 ./zshenv init
 ```
 
 If an unmanaged `~/.zshrc` exists, `init` reports likely conflicts and changes nothing. Choose explicitly:
 
 ```bash
-./zshenv init --adopt    # preserve and load the existing configuration
-./zshenv init --replace  # preserve only a timestamped backup
+python3 ./zshenv init --adopt    # preserve and load the existing configuration
+python3 ./zshenv init --replace  # preserve only a timestamped backup
 ```
 
 Then restart the shell:
@@ -120,10 +120,10 @@ starship preset pure-preset -o ~/.config/starship/theme.toml
 ## Commands
 
 ```bash
-./zshenv check   # validate YAML, paths, dependencies, and Zsh syntax
-./zshenv diff    # show generated changes
-./zshenv apply   # atomically apply the YAML configuration
-./zshenv status  # show active paths and managed state
+python3 ./zshenv check   # validate YAML, paths, dependencies, and Zsh syntax
+python3 ./zshenv diff    # show generated changes
+python3 ./zshenv apply   # atomically apply the YAML configuration
+python3 ./zshenv status  # show active paths and managed state
 ```
 
 `apply` replaces only `~/.config/zsh/generated/`. Files referenced by YAML and files under `~/.config/zsh/custom/` are never modified or deleted.
