@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mlznlv/zshenv/raw/main/schema/shell-v1.schema.json",
+  "title": "zshenv shell configuration v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "shell"],
+  "properties": {
+    "version": { "const": 1 },
+    "shell": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "core": { "$ref": "#/$defs/segment" },
+        "paths": { "$ref": "#/$defs/segment" },
+        "completion": { "$ref": "#/$defs/segment" },
+        "integrations": { "$ref": "#/$defs/segment" },
+        "remote": { "$ref": "#/$defs/segment" },
+        "aliases": { "$ref": "#/$defs/segment" },
+        "prompt": { "$ref": "#/$defs/prompt" },
+        "ux": { "$ref": "#/$defs/segment" }
+      }
+    }
+  },
+  "$defs": {
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(~/|/)(?!.*(?:\\$|`|\\*|\\?|\\[|\\]|://)).+$"
+    },
+    "segment": {
+      "oneOf": [
+        { "const": false },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "maxProperties": 0
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["path"],
+          "properties": { "path": { "$ref": "#/$defs/path" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["extend"],
+          "properties": {
+            "extend": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["path"],
+              "properties": { "path": { "$ref": "#/$defs/path" } }
+            }
+          }
+        }
+      ]
+    },
+    "prompt": {
+      "oneOf": [
+        { "const": false },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "engine": { "const": "starship" },
+            "config": { "$ref": "#/$defs/path" }
+          }
+        }
+      ]
+    }
+  }
+}
