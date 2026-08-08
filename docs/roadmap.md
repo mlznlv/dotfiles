@@ -6,6 +6,8 @@ before dependent work begins.
 
 ## Phase 1: Architecture foundation
 
+**Status:** Complete.
+
 **Objective:** replace the legacy implementation with a clean, documented
 foundation.
 
@@ -28,6 +30,8 @@ foundation.
 configuration.
 
 ## Phase 2: Catalog and resolver
+
+**Status:** Complete.
 
 **Objective:** implement a read-only core that discovers and resolves catalog
 entries.
@@ -55,6 +59,8 @@ entries.
 
 ## Phase 3: Minimal shell vertical slice
 
+**Status:** Next.
+
 **Objective:** prove end-to-end planning and safe application with a small,
 useful composition.
 
@@ -80,6 +86,8 @@ useful composition.
 
 ## Phase 4: Configuration workflow
 
+**Status:** Planned.
+
 **Objective:** make normal setup possible without editing TOML.
 
 **Deliverables:**
@@ -101,6 +109,8 @@ useful composition.
 
 ## Phase 5: Saved and shared profiles
 
+**Status:** Planned.
+
 **Objective:** let users preserve and share custom compositions safely.
 
 **Deliverables:**
@@ -120,6 +130,8 @@ useful composition.
 **Depends on:** phase 4.
 
 ## Phase 6: Personal and developer workstations
+
+**Status:** Planned.
 
 **Objective:** support the personal MacBook Air and developer Mac Pro roles
 through explicit profiles.
@@ -143,6 +155,8 @@ through explicit profiles.
 
 ## Phase 7: Remote development hosts
 
+**Status:** Planned.
+
 **Objective:** support Ubuntu, Kali, and other Debian-family homelab guests.
 
 **Deliverables:**
@@ -164,6 +178,8 @@ through explicit profiles.
 
 ## Phase 8: Security and hypervisor roles
 
+**Status:** Planned.
+
 **Objective:** add narrowly scoped hardened and Proxmox-host compositions.
 
 **Deliverables:**
@@ -184,6 +200,8 @@ through explicit profiles.
 **Depends on:** phase 7.
 
 ## Phase 9: Hardening, release, and cutover
+
+**Status:** Planned.
 
 **Objective:** prepare a stable public release and controlled replacement of the
 legacy default branch.

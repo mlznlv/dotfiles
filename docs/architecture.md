@@ -3,9 +3,9 @@
 ## Purpose
 
 This document defines the target architecture for the new dotfiles system. It is
-normative for implementation work. The repository is currently in an
-architecture-only phase; none of the planned commands or modules is available
-yet.
+normative for implementation work. The read-only catalog, discovery commands,
+and deterministic resolver are available. No production module, provider plan,
+or apply behavior is available yet.
 
 ## System model
 
@@ -61,6 +61,12 @@ chezmoi or maintain a second copy of chezmoi state.
 
 Catalogs are stored as TOML for maintainers. Users interact through the CLI and
 are not required to edit TOML.
+
+Chezmoi merges every file below .chezmoidata at the data root, so category
+directories do not provide a namespace. Manifests therefore declare entries
+below dotfiles.modules or dotfiles.profiles. The CLI asks chezmoi to parse the
+TOML, then performs strict semantic validation and deterministic resolution
+without applying chezmoi state. See the [catalog contract](catalog.md).
 
 ## Provider ownership
 

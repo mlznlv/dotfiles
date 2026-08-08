@@ -1,0 +1,10 @@
+[dotfiles.modules."prompt.starship"]
+schema = 1
+id = "prompt.starship"
+name = "Starship"
+summary = "Fixture prompt renderer"
+docs = "docs/modules/prompt/starship.md"
+platforms = ["macos", "debian"]
+depends = []
+conflicts = []
+exclusive_group = ""

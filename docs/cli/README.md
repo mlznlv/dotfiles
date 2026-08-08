@@ -1,43 +1,51 @@
 # CLI
 
-The planned dotfiles command is the user interface for discovery, composition,
-configuration, planning, application, diagnosis, and profile sharing. It is not
-implemented in the architecture foundation.
+The dotfiles command currently provides read-only discovery, validation, and
+resolution. Installation, configuration mutation, provider planning, and apply
+behavior are not implemented.
+
+## Requirements
+
+Help and version work without dependencies. Catalog commands require chezmoi,
+which is the accepted home-state foundation and TOML loader.
 
 ## Design rules
 
 - Normal users do not edit catalog TOML.
-- Read-only discovery and planning are available before mutation.
-- Changing configuration never applies it.
-- Applying is explicit and uses provider-native previews where possible.
-- Interactive prompts have documented non-interactive behavior.
-- Errors are actionable and distinguish invalid input from provider failure.
-- Imported profile data is validated and never evaluated as code.
-- Human output is clear; machine-readable output is versioned when introduced.
+- Every available command is read-only.
+- Platform detection uses only factual operating-system information.
+- Errors distinguish usage, invalid catalog data, and missing dependencies.
+- Catalog data is never evaluated as shell code.
+- Output is deterministic for identical inputs.
+- No command invokes a package or home-state provider.
 
-## Planned command surface
+## Available command surface
 
-| Command | Effect | Earliest phase |
+| Command | Effect | Documentation |
 | --- | --- | --- |
-| dotfiles help | Read-only help and discovery | 2 |
-| dotfiles version | Read-only version information | 2 |
-| dotfiles module list | List compatible or all modules | 2 |
-| dotfiles module show | Inspect one module | 2 |
-| dotfiles profile list | List curated and saved profiles | 2 |
-| dotfiles profile show | Inspect requested and resolved modules | 2 |
-| dotfiles resolve | Validate and display a composition | 2 |
-| dotfiles plan | Preview provider and home-state changes | 3 |
-| dotfiles apply | Apply an already validated composition | 3 |
-| dotfiles config init | Create local choices without applying | 4 |
-| dotfiles config show | Inspect sanitized local choices | 4 |
-| dotfiles config set | Change local choices without applying | 4 |
-| dotfiles doctor | Diagnose platform and provider readiness | 4 |
-| dotfiles profile save | Save a custom composition | 5 |
-| dotfiles profile export | Export portable profile data | 5 |
-| dotfiles profile import | Validate and store profile data | 5 |
+| dotfiles help | Show usage | [help](help.md) |
+| dotfiles version | Show development version | [version](version.md) |
+| dotfiles catalog validate | Validate all catalog data | [catalog validate](catalog/validate.md) |
+| dotfiles module list | List compatible or all modules | [module list](module/list.md) |
+| dotfiles module show | Inspect one module | [module show](module/show.md) |
+| dotfiles profile list | List compatible or all profiles | [profile list](profile/list.md) |
+| dotfiles profile show | Inspect one profile | [profile show](profile/show.md) |
+| dotfiles resolve | Expand and validate a composition | [resolve](resolve.md) |
 
-Names are design targets and may change in the implementation pull request with
-an ADR update when the change affects architecture.
+The production module and profile catalogs are empty until Phase 3.
+
+## Exit statuses
+
+- 0: Success.
+- 2: Invalid command usage.
+- 3: Unsupported platform, invalid catalog, or failed resolution.
+- 4: Required dependency or internal implementation file unavailable.
+
+## Future command surface
+
+Configuration, planning, applying, diagnostics, and profile-sharing commands
+remain planned in the [roadmap](../roadmap.md). Changing configuration will not
+apply it, and applying will remain explicit.
 
 ## Command contract
 
@@ -56,10 +64,9 @@ Use [the command documentation template](command-template.md).
 
 ## Safety model
 
-Plan is read-only. Apply must use the same validated composition and must make
-drift visible if the target changes between planning and application. Dangerous
-connectivity or privilege changes require an additional explicit
-acknowledgement.
+The available CLI reads static repository data and operating-system facts only.
+It does not write configuration, save state, access secrets, invoke providers,
+or modify the target.
 
-The initial implementation does not provide destructive cleanup. A future
-removal or prune command requires its own ADR, recovery behavior, and tests.
+A future removal or prune command requires its own ADR, recovery behavior, and
+tests.

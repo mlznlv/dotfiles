@@ -1,0 +1,10 @@
+[dotfiles.modules."shell.alpha"]
+schema = 1
+id = "shell.alpha"
+name = "Alpha"
+summary = "Invalid layout fixture"
+docs = "docs/modules/shell/alpha.md"
+platforms = ["macos", "debian"]
+depends = []
+conflicts = []
+exclusive_group = ""

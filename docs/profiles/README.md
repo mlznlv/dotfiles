@@ -1,8 +1,8 @@
 # Profiles
 
 Profiles are transparent, named compositions of module identifiers. This page
-defines their planned contract. No profiles are implemented in the architecture
-foundation.
+defines their contract. The production catalog remains empty until Phase 3.
+Catalog entries below tests/fixtures are test data, not curated profiles.
 
 ## Composition types
 
@@ -39,6 +39,8 @@ Later curated profiles can represent:
 - Narrow security-lab and hypervisor-host targets.
 
 These are explicit choices, not automatic experience levels.
+
+See the [catalog contract](../catalog.md) for the strict TOML schema and path rules.
 
 ## Resolution
 

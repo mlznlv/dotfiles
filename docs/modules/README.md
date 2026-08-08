@@ -1,8 +1,8 @@
 # Modules
 
 Modules are the smallest documented, selectable units of capability. This page
-defines their planned contract. No modules are implemented in the architecture
-foundation.
+defines their contract. The production catalog remains empty until Phase 3.
+Catalog entries below tests/fixtures are test data, not product modules.
 
 ## Categories
 
@@ -51,19 +51,15 @@ vertical slice, not released functionality.
 
 ## Manifest contract
 
-A future module manifest will declare, at minimum:
+Schema 1 declares resolution metadata:
 
 - Schema version and stable identifier.
 - Human-readable name, summary, and documentation path.
-- Supported platform families and optional constraints.
+- Supported platform families.
 - Dependencies, conflicts, and optional exclusive group.
-- Provider requests with one owner per resource.
-- Chezmoi data used to select home source state.
-- Options with types, defaults, validation, and privacy classification.
-
-A conceptual manifest looks like this:
 
 ~~~toml
+[dotfiles.modules."shell.zsh"]
 schema = 1
 id = "shell.zsh"
 name = "Zsh"
@@ -72,10 +68,11 @@ docs = "docs/modules/shell/zsh.md"
 platforms = ["macos", "debian"]
 depends = []
 conflicts = []
+exclusive_group = "shell.primary"
 ~~~
 
-The schema introduced by implementation work may refine field names. Its tests
-and documentation become authoritative when merged.
+Provider requests, chezmoi home-state selection, and module options arrive with
+the Phase 3 schema extension. See the [catalog contract](../catalog.md).
 
 ## Module boundaries
 

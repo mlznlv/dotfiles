@@ -1,0 +1,10 @@
+[dotfiles.modules."terminal.ghostty"]
+schema = 1
+id = "terminal.ghostty"
+name = "Ghostty"
+summary = "Fixture macOS terminal"
+docs = "docs/modules/terminal/ghostty.md"
+platforms = ["macos"]
+depends = []
+conflicts = []
+exclusive_group = "terminal.primary"

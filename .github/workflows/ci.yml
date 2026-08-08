@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - master
+      - next
+  push:
+    branches:
+      - master
+      - next
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  read-only-core:
+    name: Read-only core (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Install pinned chezmoi test dependency
+        shell: bash
+        env:
+          CHEZMOI_INSTALLER_URL: https://raw.githubusercontent.com/twpayne/chezmoi/f81cb321789aa3df62871248f5e4d361a59e7cc1/assets/scripts/install.sh
+          CHEZMOI_VERSION: v2.69.2
+        run: |
+          install_dir="${RUNNER_TEMP}/chezmoi-bin"
+          installer="${RUNNER_TEMP}/install-chezmoi.sh"
+          curl --fail --silent --show-error --location \
+            --output "${installer}" \
+            "${CHEZMOI_INSTALLER_URL}"
+          sh "${installer}" -b "${install_dir}" -t "${CHEZMOI_VERSION}"
+          echo "${install_dir}" >> "${GITHUB_PATH}"
+
+      - name: Run repository checks
+        run: bash scripts/check.sh
