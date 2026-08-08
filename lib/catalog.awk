@@ -22,58 +22,58 @@ function split_list(value, result) {
     return split(value, result, ",")
 }
 
-function list_contains(value, wanted,    values, count, index) {
+function list_contains(value, wanted,    values, count, i) {
     count = split_list(value, values)
-    for (index = 1; index <= count; index++) {
-        if (values[index] == wanted) {
+    for (i = 1; i <= count; i++) {
+        if (values[i] == wanted) {
             return 1
         }
     }
     return 0
 }
 
-function validate_list(value, label, require_value,    values, count, index, previous) {
+function validate_list(value, label, require_value,    values, count, i, previous) {
     count = split_list(value, values)
     if (require_value && count == 0) {
         fail(label " must not be empty")
         return
     }
-    for (index = 1; index <= count; index++) {
-        if (!valid_id(values[index])) {
-            fail(label " contains invalid identifier " values[index])
+    for (i = 1; i <= count; i++) {
+        if (!valid_id(values[i])) {
+            fail(label " contains invalid identifier " values[i])
         }
-        for (previous = 1; previous < index; previous++) {
-            if (values[previous] == values[index]) {
-                fail(label " contains duplicate identifier " values[index])
+        for (previous = 1; previous < i; previous++) {
+            if (values[previous] == values[i]) {
+                fail(label " contains duplicate identifier " values[i])
             }
         }
     }
 }
 
-function validate_platforms(value, label,    values, count, index, previous) {
+function validate_platforms(value, label,    values, count, i, previous) {
     count = split_list(value, values)
     if (count == 0) {
         fail(label " must declare at least one platform")
         return
     }
-    for (index = 1; index <= count; index++) {
-        if (values[index] != "macos" && values[index] != "debian") {
-            fail(label " contains unsupported platform " values[index])
+    for (i = 1; i <= count; i++) {
+        if (values[i] != "macos" && values[i] != "debian") {
+            fail(label " contains unsupported platform " values[i])
         }
-        for (previous = 1; previous < index; previous++) {
-            if (values[previous] == values[index]) {
-                fail(label " contains duplicate platform " values[index])
+        for (previous = 1; previous < i; previous++) {
+            if (values[previous] == values[i]) {
+                fail(label " contains duplicate platform " values[i])
             }
         }
     }
 }
 
-function expected_docs(kind, id,    parts, count, index, filename, directory) {
+function expected_docs(kind, id,    parts, count, i, filename, directory) {
     count = split(id, parts, ".")
     directory = parts[1]
     filename = parts[2]
-    for (index = 3; index <= count; index++) {
-        filename = filename "-" parts[index]
+    for (i = 3; i <= count; i++) {
+        filename = filename "-" parts[i]
     }
     return "docs/" kind "/" directory "/" filename ".md"
 }
@@ -90,7 +90,7 @@ function sort_values(values, count,    left, right, temporary) {
     }
 }
 
-function visit_dependency(id,    dependencies, count, index) {
+function visit_dependency(id,    dependencies, count, i) {
     if (dependency_mark[id] == 1) {
         fail("dependency cycle includes " id)
         return
@@ -101,15 +101,15 @@ function visit_dependency(id,    dependencies, count, index) {
     dependency_mark[id] = 1
     count = split_list(module_depends[id], dependencies)
     sort_values(dependencies, count)
-    for (index = 1; index <= count; index++) {
-        if (module_exists[dependencies[index]]) {
-            visit_dependency(dependencies[index])
+    for (i = 1; i <= count; i++) {
+        if (module_exists[dependencies[i]]) {
+            visit_dependency(dependencies[i])
         }
     }
     dependency_mark[id] = 2
 }
 
-function validate_catalog(    index, id, values, count, item, platform_values, platform_count, platform_index, dependency_values, dependency_count, dependency_index) {
+function validate_catalog(    i, id, values, count, item, platform_values, platform_count, platform_index, dependency_values, dependency_count, dependency_index) {
     if (root_count != 1) {
         fail("catalog must contain exactly one root record")
     }
@@ -120,8 +120,8 @@ function validate_catalog(    index, id, values, count, item, platform_values, p
         fail("catalog root fields must be " expected_root_keys)
     }
 
-    for (index = 1; index <= module_count; index++) {
-        id = module_order[index]
+    for (i = 1; i <= module_count; i++) {
+        id = module_order[i]
         if (!valid_id(id)) {
             fail("invalid module identifier " id)
         }
@@ -181,12 +181,12 @@ function validate_catalog(    index, id, values, count, item, platform_values, p
         }
     }
 
-    for (index = 1; index <= module_count; index++) {
-        visit_dependency(module_order[index])
+    for (i = 1; i <= module_count; i++) {
+        visit_dependency(module_order[i])
     }
 
-    for (index = 1; index <= profile_count; index++) {
-        id = profile_order[index]
+    for (i = 1; i <= profile_count; i++) {
+        id = profile_order[i]
         if (!valid_id(id)) {
             fail("invalid profile identifier " id)
         }
@@ -226,7 +226,7 @@ function validate_catalog(    index, id, values, count, item, platform_values, p
     }
 }
 
-function add_resolved(id,    dependencies, count, index) {
+function add_resolved(id,    dependencies, count, i) {
     if (!module_exists[id]) {
         fail("unknown module " id)
         return
@@ -246,8 +246,8 @@ function add_resolved(id,    dependencies, count, index) {
     resolve_mark[id] = 1
     count = split_list(module_depends[id], dependencies)
     sort_values(dependencies, count)
-    for (index = 1; index <= count; index++) {
-        add_resolved(dependencies[index])
+    for (i = 1; i <= count; i++) {
+        add_resolved(dependencies[i])
     }
     resolve_mark[id] = 2
     if (!chosen[id]) {
@@ -256,7 +256,7 @@ function add_resolved(id,    dependencies, count, index) {
     }
 }
 
-function resolve_modules(    roots, root_count_local, additions, addition_count, index, id, conflicts, conflict_count, conflict_index, group) {
+function resolve_modules(    roots, root_count_local, additions, addition_count, i, id, conflicts, conflict_count, conflict_index, group) {
     if (profile != "") {
         if (!profile_exists[profile]) {
             fail("unknown profile " profile)
@@ -276,19 +276,19 @@ function resolve_modules(    roots, root_count_local, additions, addition_count,
     }
 
     root_count_local = split_list(base_selection, roots)
-    for (index = 1; index <= root_count_local; index++) {
-        add_resolved(roots[index])
+    for (i = 1; i <= root_count_local; i++) {
+        add_resolved(roots[i])
     }
     addition_count = split_list(additional, additions)
-    for (index = 1; index <= addition_count; index++) {
-        add_resolved(additions[index])
+    for (i = 1; i <= addition_count; i++) {
+        add_resolved(additions[i])
     }
     if (errors) {
         return
     }
 
-    for (index = 1; index <= resolved_count; index++) {
-        id = resolved_order[index]
+    for (i = 1; i <= resolved_count; i++) {
+        id = resolved_order[i]
         conflict_count = split_list(module_conflicts[id], conflicts)
         for (conflict_index = 1; conflict_index <= conflict_count; conflict_index++) {
             if (chosen[conflicts[conflict_index]]) {
@@ -306,8 +306,8 @@ function resolve_modules(    roots, root_count_local, additions, addition_count,
     }
 
     if (!errors) {
-        for (index = 1; index <= resolved_count; index++) {
-            print resolved_order[index]
+        for (i = 1; i <= resolved_count; i++) {
+            print resolved_order[i]
         }
     }
 }
@@ -386,8 +386,8 @@ END {
     if (action == "validate") {
         print "catalog valid: " module_count " modules, " profile_count " profiles"
     } else if (action == "list_modules") {
-        for (index = 1; index <= module_count; index++) {
-            id = module_order[index]
+        for (i = 1; i <= module_count; i++) {
+            id = module_order[i]
             if (show_all == "1" || list_contains(module_platforms[id], platform)) {
                 print id, module_name[id], module_summary[id]
             }
@@ -406,8 +406,8 @@ END {
             print "docs: " module_docs[target_id]
         }
     } else if (action == "list_profiles") {
-        for (index = 1; index <= profile_count; index++) {
-            id = profile_order[index]
+        for (i = 1; i <= profile_count; i++) {
+            id = profile_order[i]
             if (show_all == "1" || list_contains(profile_platforms[id], platform)) {
                 print id, profile_name[id], profile_summary[id]
             }
