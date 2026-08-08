@@ -1,12 +1,10 @@
-# dotfiles module show
+# Inspect a module
 
-- Status: Available
-- Effect: Read-only
-- Introduced in: Phase 2
+[Command guide](../README.md) / Modules / Show
 
-## Purpose
+Show the metadata stored for one module identifier.
 
-Inspect one module's resolution metadata.
+Available · Read-only · Chezmoi required.
 
 ## Usage
 
@@ -14,49 +12,37 @@ Inspect one module's resolution metadata.
 dotfiles module show <module-id>
 ~~~
 
-## Arguments
+Get identifiers from `dotfiles module list --all`. A module identifier is a
+stable dotted name such as `shell.zsh.autosuggestions`.
 
-module-id is one stable dotted module identifier.
+## Example
 
-## Behavior
-
-The complete catalog is validated before lookup. The command displays the
-module name, summary, platforms, dependencies, conflicts, exclusive group, and
-documentation path. It does not resolve dependencies or invoke a provider.
-
-## Output
-
-Human-readable labeled fields. Empty dependency, conflict, or group values are
-shown as a hyphen.
-
-## Examples
-
-Inspect a planned module identifier:
-
-~~~text
+~~~console
 ./bin/dotfiles module show shell.zsh.autosuggestions
 ~~~
 
-The Phase 2 catalog is empty, so the current result is:
+The example identifier is planned and currently returns `unknown module`. Once
+released, output follows this format:
 
 ~~~text
-error: unknown module shell.zsh.autosuggestions
+id: shell.zsh.autosuggestions
+name: Zsh autosuggestions
+summary: Interactive history suggestions
+platforms: macos,debian
+depends: shell.zsh
+conflicts: -
+exclusive group: -
+docs: docs/modules/shell/zsh-autosuggestions.md
 ~~~
 
-Representative output after that entry is released is shown in the
-[user guide](../../user-guide/README.md).
+This command shows direct metadata. It does not expand dependencies or call a
+provider; use [`resolve`](../resolve.md) to preview the final composition.
 
-## Exit statuses
+## Exit codes
 
-- 0: The module was displayed.
-- 2: The identifier argument was missing or duplicated.
-- 3: The identifier was unknown or the catalog was invalid.
-- 4: Chezmoi is unavailable.
+- `0` — the module was displayed.
+- `2` — exactly one identifier was not supplied.
+- `3` — the identifier is unknown or the catalog is invalid.
+- `4` — chezmoi is unavailable.
 
-## Security and privacy
-
-Only versioned static catalog data is displayed.
-
-## Tests
-
-CI covers known and unknown identifiers and dependency metadata.
+Back to [list modules](list.md) or the [command guide](../README.md).

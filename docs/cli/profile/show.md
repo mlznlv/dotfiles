@@ -1,12 +1,10 @@
-# dotfiles profile show
+# Inspect a profile
 
-- Status: Available
-- Effect: Read-only
-- Introduced in: Phase 2
+[Command guide](../README.md) / Profiles / Show
 
-## Purpose
+Show one profile and the modules it explicitly requests.
 
-Inspect one profile and its explicitly requested modules.
+Available · Read-only · Chezmoi required.
 
 ## Usage
 
@@ -14,46 +12,35 @@ Inspect one profile and its explicitly requested modules.
 dotfiles profile show <profile-id>
 ~~~
 
-## Arguments
+Get identifiers from `dotfiles profile list --all`. A profile identifier is a
+stable dotted name such as `shell.minimal`.
 
-profile-id is one stable dotted profile identifier.
+## Example
 
-## Behavior
-
-The complete catalog is validated before lookup. The command displays profile
-metadata and the requested module list. Use dotfiles resolve to expand
-dependencies for a target platform.
-
-Importing, selecting, or applying a profile is not part of this command.
-
-## Examples
-
-Inspect the planned minimal shell profile:
-
-~~~text
+~~~console
 ./bin/dotfiles profile show shell.minimal
 ~~~
 
-The Phase 2 catalog is empty, so the current result is:
+The example identifier is planned and currently returns `unknown profile`. Once
+released, output follows this format:
 
 ~~~text
-error: unknown profile shell.minimal
+id: shell.minimal
+name: Minimal shell
+summary: Zsh, autosuggestions, and Starship
+platforms: macos,debian
+modules: shell.zsh,shell.zsh.autosuggestions,prompt.starship
+docs: docs/profiles/shell/minimal.md
 ~~~
 
-Representative populated-catalog output is shown in the
-[user guide](../../user-guide/README.md).
+This command shows only the modules requested by the profile. Use
+[`resolve`](../resolve.md) to expand dependencies and check platform support.
 
-## Exit statuses
+## Exit codes
 
-- 0: The profile was displayed.
-- 2: The identifier argument was missing or duplicated.
-- 3: The identifier was unknown or the catalog was invalid.
-- 4: Chezmoi is unavailable.
+- `0` — the profile was displayed.
+- `2` — exactly one identifier was not supplied.
+- `3` — the identifier is unknown or the catalog is invalid.
+- `4` — chezmoi is unavailable.
 
-## Security and privacy
-
-Only versioned static catalog data is displayed.
-
-## Tests
-
-CI covers requested-module output and unknown profiles.
+Back to [list profiles](list.md) or the [command guide](../README.md).
