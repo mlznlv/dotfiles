@@ -25,6 +25,7 @@ apply behavior.
 │   ├── cli/
 │   ├── modules/
 │   ├── profiles/
+│   ├── user-guide/
 │   ├── architecture.md
 │   ├── catalog.md
 │   ├── repository-structure.md

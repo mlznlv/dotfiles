@@ -26,6 +26,20 @@ release, the version carries a development suffix.
 dotfiles 0.1.0-dev
 ~~~
 
+## Examples
+
+~~~text
+./bin/dotfiles version
+dotfiles 0.1.0-dev
+~~~
+
+The long option is equivalent:
+
+~~~text
+./bin/dotfiles --version
+dotfiles 0.1.0-dev
+~~~
+
 ## Exit statuses
 
 - 0: Version information was displayed.

@@ -36,6 +36,30 @@ Each result is tab-separated:
 identifier    name    summary
 ~~~
 
+## Examples
+
+List every released profile:
+
+~~~text
+./bin/dotfiles profile list --all
+~~~
+
+The current empty catalog exits successfully without output. Preview one
+supported platform:
+
+~~~text
+./bin/dotfiles profile list --platform macos
+~~~
+
+Representative populated-catalog output is tab-separated:
+
+~~~text
+shell.minimal    Minimal shell    Zsh, autosuggestions, and Starship
+~~~
+
+See the [user guide](../../user-guide/README.md) for the complete discovery
+workflow.
+
 ## Exit statuses
 
 - 0: Listing completed, including an empty result.

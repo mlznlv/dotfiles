@@ -36,6 +36,18 @@ catalog valid: 0 modules, 0 profiles
 
 The production catalog is empty until Phase 3.
 
+## Examples
+
+Validate the current production catalog from the repository root:
+
+~~~text
+./bin/dotfiles catalog validate
+catalog valid: 0 modules, 0 profiles
+~~~
+
+The zero counts are expected until Phase 3. See the
+[user guide](../../user-guide/README.md) for requirements and troubleshooting.
+
 ## Exit statuses
 
 - 0: The catalog is valid.

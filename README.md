@@ -5,6 +5,11 @@ A modular, reproducible, and security-conscious developer environment for macOS 
 > [!IMPORTANT]
 > The Phase 2 read-only catalog and resolver are available. Installation and apply behavior are not implemented yet.
 
+## Start here
+
+The [user guide](docs/user-guide/README.md) covers requirements, every available
+command, platform behavior, examples, errors, and current safety boundaries.
+
 ## Goals
 
 - Compose machines from independently selectable modules.
@@ -31,7 +36,7 @@ Read the [architecture](docs/architecture.md) and accepted [architecture decisio
 
 ## Read-only commands
 
-With chezmoi available, repository contributors can inspect the empty production
+With chezmoi available, users and contributors can inspect the empty production
 catalog and the command surface:
 
 ~~~text
@@ -46,6 +51,7 @@ apply home state.
 
 ## Documentation
 
+- [User guide](docs/user-guide/README.md)
 - [Architecture](docs/architecture.md)
 - [Catalog](docs/catalog.md)
 - [Roadmap](docs/roadmap.md)
