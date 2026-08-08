@@ -1,0 +1,70 @@
+name: Feature proposal
+description: Propose an architecture, module, profile, CLI, or repository improvement
+title: "[Feature]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Start with the user need and boundaries. New modules, profiles, and CLI
+        commands require documentation and tests in the same pull request.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Architecture
+        - Module
+        - Profile
+        - CLI
+        - Provider
+        - Documentation
+        - Repository workflow
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What user need or limitation should be addressed?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed outcome
+      description: Describe observable behavior, not only an implementation.
+    validations:
+      required: true
+
+  - type: textarea
+    id: boundaries
+    attributes:
+      label: Boundaries and non-goals
+      description: What must remain out of scope?
+    validations:
+      required: true
+
+  - type: textarea
+    id: composition
+    attributes:
+      label: Composition and ownership
+      description: List dependencies, conflicts, platforms, and the owner of each managed resource.
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What other approaches did you evaluate?
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Project checks
+      options:
+        - label: This proposal does not require secrets or committed machine identity.
+          required: true
+        - label: I checked the architecture, ADRs, and roadmap for conflicts.
+          required: true

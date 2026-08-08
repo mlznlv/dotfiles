@@ -1,0 +1,71 @@
+name: Bug report
+description: Report incorrect released behavior or a repository problem
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve the project. During the architecture phase,
+        use this form for documentation and repository problems. Do not include
+        secrets, tokens, private addresses, hostnames, or other machine identity.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What is wrong, and what did you expect?
+      placeholder: A concise description of the problem.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: Provide the smallest sanitized sequence that demonstrates the problem.
+      placeholder: |
+        1. Open or run ...
+        2. Select ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Documentation or repository
+        - macOS
+        - Ubuntu
+        - Kali
+        - Other Debian-family Linux
+        - Not applicable
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: Use a release version or commit SHA. Do not include a machine name.
+      placeholder: Commit SHA or not released
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Sanitized evidence
+      description: Add relevant output after removing personal and sensitive data.
+      render: text
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Safety checks
+      options:
+        - label: I removed secrets, private addresses, hostnames, usernames, and personal paths.
+          required: true
+        - label: I searched existing issues for the same problem.
+          required: true

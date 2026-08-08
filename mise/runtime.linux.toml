@@ -1,4 +1,0 @@
-# Portable CLI tools that must be globally available on Linux hosts.
-
-[tools]
-starship = "latest"

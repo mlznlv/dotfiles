@@ -1,88 +1,156 @@
 # Architecture
 
-## Ownership
+## Purpose
 
-Each domain has one owner:
+This document defines the target architecture for the new dotfiles system. It is
+normative for implementation work. The repository is currently in an
+architecture-only phase; none of the planned commands or modules is available
+yet.
 
-```text
-macOS packages/apps        -> native Homebrew + Brewfiles
-Linux system packages      -> mise bootstrap.packages + apt
-runtime/version-selected tools -> mise
-home/shell config           -> chezmoi
-prompt rendering            -> Starship
-terminal UI on macOS        -> Ghostty
-remote access               -> Tailscale + OpenSSH + tmux
-```
+## System model
 
-Do not mix managers for the same filesystem prefix. `/opt/homebrew` belongs to native Homebrew; mise must not pour or link Homebrew bottles there.
+A target installation is resolved from detected platform facts, one profile or
+a custom composition, and optional additional modules.
 
-`mise` and `chezmoi` are bootstrap substrate. An existing executable is reused; when missing, bootstrap installs the official standalone binary under `~/.local/bin`. Routine update attempts their supported self-update/upgrade path instead of declaring a second package-manager owner.
+~~~text
+target = platform + composition + additional modules
+composition = curated profile | saved custom profile | explicit module set
+~~~
 
-Starship follows platform ownership: Homebrew installs it on macOS; the Linux platform mise layer installs and activates it as a version-selected CLI tool.
+The resolver produces a deterministic desired state. Providers compare that
+state with the machine and propose a plan. Applying a plan must be explicit,
+repeatable, and safe.
 
-## Supported platforms and profiles
+~~~mermaid
+flowchart LR
+    A["CLI intent"] --> B["Platform detection"]
+    C["Module catalog"] --> D["Resolver"]
+    E["Profile catalog"] --> D
+    B --> D
+    A --> D
+    D --> F["Desired state"]
+    F --> G["Provider plans"]
+    G --> H["User review"]
+    H --> I["Safe apply"]
+    I --> J["Actual state"]
+~~~
 
-Supported OS families are intentionally explicit: macOS 13+ and Ubuntu/Debian Linux.
+## Core concepts
 
-| Profile | Platform | Purpose |
-|---|---|---|
-| `base` | macOS 13+/Ubuntu/Debian | minimal shared terminal environment |
-| `local-dev` | macOS 13+ | full local-development workstation |
-| `remote-client` | macOS 13+ | lightweight remote-development client |
-| `dev-host` | Ubuntu/Debian | remote development host |
+- **Target**: the machine and user account being configured.
+- **Platform**: detected operating-system facts used for compatibility checks.
+- **Module**: the smallest documented, selectable unit of capability.
+- **Profile**: a named, curated composition of module identifiers.
+- **Custom profile**: a user-saved composition that can be exported and shared.
+- **Provider**: the single owner that converges one kind of resource.
+- **Plan**: an ordered description of proposed, non-applied changes.
+- **Desired state**: the resolved configuration requested by the user.
+- **Actual state**: the machine state observed by providers.
 
-Profiles are always explicit:
+A profile is composition, not inheritance. A module can declare dependencies,
+conflicts, supported platforms, and an exclusive group. Dependency expansion
+must be deterministic. A conflict or unsupported selection must fail before
+changes begin.
 
-```bash
-./bootstrap.sh <profile>
-bash ./update.sh <profile>
-```
+## Foundation
 
-There is intentionally no implicit `base` fallback: forgetting a profile must not silently change machine capability state.
+Chezmoi owns home-directory configuration and supplies templating, diffing, and
+application semantics. A thin repository CLI will provide discovery,
+composition, validation, planning, and orchestration. It will not replace
+chezmoi or maintain a second copy of chezmoi state.
 
-## Mise layering
+Catalogs are stored as TOML for maintainers. Users interact through the CLI and
+are not required to edit TOML.
 
-Global mise fragments use numeric precedence:
+## Provider ownership
 
-```text
-10-dotfiles-platform.toml   platform-wide tools, e.g. Starship on Linux
-20-dotfiles-profile.toml    profile defaults, e.g. Node/Python on macOS local-dev
-90-machine-local.toml       private machine constraints
-project config              repository-specific requirements
-```
+Each capability has exactly one owner.
 
-The first two are projected by `bootstrap.sh`. `90-machine-local.toml` is never committed.
+| Capability | Owner |
+| --- | --- |
+| macOS packages and applications | Homebrew |
+| runtimes and versioned developer tools | mise |
+| Linux packages requested by modules | mise |
+| managed external repositories | mise |
+| home-directory files and templates | chezmoi |
+| interactive shell experience | Zsh |
+| prompt rendering | Starship |
+| macOS terminal interface | Ghostty |
+| persistent terminal sessions | tmux |
+| secure shell access | OpenSSH |
+| private network reachability | Tailscale |
 
-## Package declarations
+A module can request resources from several providers, but it cannot introduce
+a competing owner. Provider overlap is a validation error.
 
-macOS uses native Homebrew:
+## Terminal stack
 
-```text
-homebrew/Brewfile
-homebrew/Brewfile.local-dev
-homebrew/Brewfile.remote-client
-```
+Terminal, multiplexer, shell, and prompt are separate layers.
 
-Bootstrap installs missing declarations with `brew bundle install --no-upgrade`; routine upgrades are handled by `update.sh`.
+~~~text
+Ghostty or another terminal
+  -> tmux when selected
+    -> Zsh
+      -> Starship prompt
+        -> shell extensions such as autosuggestions
+~~~
 
-Ubuntu/Debian system packages are declared in:
+This separation lets a remote Debian host use Zsh and Starship without
+installing a macOS terminal application.
 
-```text
-mise/config.linux.toml
-mise/config.linux-dev-host.toml
-```
+## Platform scope
 
-## Portable vs machine-local state
+The initial platform families are:
 
-Keep machine identity, credentials, private infrastructure, and machine-only constraints outside Git. Common local paths include:
+- macOS on personal and developer workstations.
+- Debian-family Linux on Ubuntu, Kali, and similar homelab guests.
 
-```text
-~/.config/zsh/local.zsh
-~/.config/mise/conf.d/90-machine-local.toml
-~/.config/starship/preset
-~/.config/starship/modules
-```
+Proxmox infrastructure management is outside this repository. A Proxmox host
+can later be treated only as a carefully scoped Debian-family target.
 
-Never commit credentials, API tokens, private keys, certificates, private registry credentials, real hostnames/IPs, Tailscale identity, SSH targets, or machine-local Git identity/credential configuration.
+Platform detection is factual. It must not infer personal identity, host
+identity, or a hidden profile.
 
-A clean current tree does not sanitize old Git commits. Before publishing an existing private repository, inspect the full history; for strict redaction, publish a sanitized snapshot/clean history rather than relying on a squash merge alone.
+## State and convergence
+
+The system must derive state from three sources:
+
+1. Versioned repository catalogs and chezmoi source state.
+2. Local chezmoi configuration for user choices and machine-local facts.
+3. Provider observations of the current machine.
+
+There is no custom state database in the initial design. Generated cache data
+must be disposable.
+
+Planning is read-only. Applying requires an explicit command. Repeated apply
+operations must converge without duplicating content or reinstalling resources
+unnecessarily. The initial product does not remove unmanaged files, packages,
+accounts, or services.
+
+## Security and privacy boundaries
+
+- Secrets, tokens, private keys, and machine identity never enter the catalog.
+- Local answers are stored only in chezmoi's local configuration when needed.
+- Imported profiles contain declarative module identifiers and options, never
+  executable code.
+- Remote downloads require an owning provider and integrity controls.
+- Commands must show intended changes before mutation and avoid broad cleanup.
+- Public examples use fictional values and sanitized machine names.
+
+## Documentation contract
+
+Architecture decisions are recorded in [ADRs](adr/README.md). Repository layout
+is defined in [repository structure](repository-structure.md). Delivery order
+and acceptance criteria are defined in the [roadmap](roadmap.md).
+
+Every module, profile, and CLI command must be documented in the same pull
+request that introduces or changes it. Documentation must clearly distinguish
+planned behavior from released behavior.
+
+## Accepted decisions
+
+- [ADR 0001: Use chezmoi as the foundation](adr/0001-use-chezmoi-as-the-foundation.md)
+- [ADR 0002: Use modules and profiles for composition](adr/0002-use-modules-and-profiles-for-composition.md)
+- [ADR 0003: Use TOML for declarative catalogs](adr/0003-use-toml-for-declarative-catalogs.md)
+- [ADR 0004: Enforce single-provider ownership](adr/0004-enforce-single-provider-ownership.md)
+- [ADR 0005: Provide a thin dotfiles CLI](adr/0005-provide-a-thin-dotfiles-cli.md)

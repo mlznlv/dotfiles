@@ -1,91 +1,48 @@
 # dotfiles
 
-Portable terminal and development environment for macOS 13+ and Ubuntu/Debian.
+A modular, reproducible, and security-conscious developer environment for macOS and Debian-family Linux.
 
-## Quick start
+> [!IMPORTANT]
+> This repository is in its architecture phase. The new solution is not installable yet.
 
-### macOS 13+
+## Goals
 
-```bash
-xcode-select --install
-mkdir -p ~/.local/share
-git clone https://github.com/mlznlv/dotfiles.git ~/.local/share/chezmoi
-cd ~/.local/share/chezmoi
-./bootstrap.sh <profile>
-exec zsh -l
-```
+- Compose machines from independently selectable modules.
+- Provide curated profiles without preventing custom compositions.
+- Keep one authoritative provider for every capability.
+- Make every change inspectable, repeatable, and safe to reapply.
+- Keep secrets, machine identity, and private infrastructure outside Git.
 
-Choose one profile:
+## Target platforms
 
-| Profile | Purpose |
-|---|---|
-| `base` | minimal terminal environment |
-| `local-dev` | local development workstation |
-| `remote-client` | Mac client for remote development |
+The planned targets are:
 
-For `remote-client`, continue with [Remote client setup](docs/remote-client-setup.md).
+- macOS
+- Debian-family Linux, including Debian, Ubuntu, Kali, and Proxmox
 
-### Ubuntu/Debian development host
+Support will be introduced incrementally and documented per module.
 
-```bash
-sudo apt-get update
-sudo apt-get install -y git curl
-mkdir -p ~/.local/share
-git clone https://github.com/mlznlv/dotfiles.git ~/.local/share/chezmoi
-cd ~/.local/share/chezmoi
-./bootstrap.sh dev-host
-exec zsh -l
-```
+## Architecture
 
-Profiles are explicit. `bootstrap.sh` and `update.sh` refuse to run without one.
+The system will combine an automatically detected platform with either a curated profile or an exact custom module composition. Chezmoi will manage home configuration, while Homebrew and mise will retain explicit package and runtime ownership.
 
-## Update
-
-```bash
-cd ~/.local/share/chezmoi
-bash ./update.sh <profile>
-exec zsh -l
-```
-
-## Useful commands
-
-```bash
-mise current
-mise doctor
-chezmoi diff
-remote <user>@<host> [session]
-```
+Read the [architecture](docs/architecture.md) and accepted [architecture decisions](docs/adr/README.md) for the normative design.
 
 ## Documentation
 
-- [Remote client setup](docs/remote-client-setup.md)
-- [Remote development](docs/remote-development.md)
-- [Updates and troubleshooting](docs/maintenance.md)
-- [Architecture and ownership](docs/architecture.md)
-- [Shell and terminal](docs/shell-and-terminal.md)
-- [Runtimes and versioned tools](docs/runtimes.md)
+- [Architecture](docs/architecture.md)
+- [Roadmap](docs/roadmap.md)
+- [Repository structure](docs/repository-structure.md)
+- [Modules](docs/modules/README.md)
+- [Profiles](docs/profiles/README.md)
+- [CLI](docs/cli/README.md)
+- [Contributing](CONTRIBUTING.md)
+- [Security](SECURITY.md)
 
-## Repository layout
+## Project status
 
-```text
-homebrew/     macOS packages and applications
-mise/         runtimes, tools, Linux packages, managed repositories
-dot_config/   chezmoi-managed configuration
-docs/         documentation
-scripts/      checks, helpers, migrations
-bootstrap.sh  first installation and convergence
-update.sh     routine updates
-```
+Implementation begins after the architecture foundation is accepted. The [roadmap](docs/roadmap.md) divides the work into reviewable pull requests, starting with a read-only catalog and resolver.
 
-## Privacy
+## License
 
-Do not commit credentials, private keys, certificates, real hostnames/IPs, Tailscale identity, private registry configuration, or machine-specific identity.
-
-Machine-local configuration belongs in:
-
-```text
-~/.config/zsh/local.zsh
-~/.config/mise/conf.d/90-machine-local.toml
-~/.config/starship/preset
-~/.config/starship/modules
-```
+Licensed under the [MIT License](LICENSE).
