@@ -3,7 +3,7 @@
 A modular, reproducible, and security-conscious developer environment for macOS and Debian-family Linux.
 
 > [!IMPORTANT]
-> This repository is in its architecture phase. The new solution is not installable yet.
+> The architecture foundation is established. The new solution is not installable yet.
 
 ## Goals
 
@@ -25,7 +25,7 @@ Support will be introduced incrementally and documented per module.
 
 ## Architecture
 
-The system will combine an automatically detected platform with either a curated profile or an exact custom module composition. Chezmoi will manage home configuration, while Homebrew and mise will retain explicit package and runtime ownership.
+The system will combine an automatically detected platform with a curated, saved, or explicit module composition and optional additional modules. Chezmoi will manage home configuration, while Homebrew and mise will retain explicit package and runtime ownership.
 
 Read the [architecture](docs/architecture.md) and accepted [architecture decisions](docs/adr/README.md) for the normative design.
 
