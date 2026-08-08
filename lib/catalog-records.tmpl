@@ -1,0 +1,18 @@
+{{- $rootKeys := keys .dotfiles | sortAlpha | join "," -}}
+{{ printf "C\t%v\t%s\n" .dotfiles.schema $rootKeys -}}
+{{- range $key := keys .dotfiles.modules | sortAlpha -}}
+{{- $module := index $.dotfiles.modules $key -}}
+{{- $keys := keys $module | sortAlpha | join "," -}}
+{{- $platforms := default "-" (join "," $module.platforms) -}}
+{{- $depends := default "-" (join "," $module.depends) -}}
+{{- $conflicts := default "-" (join "," $module.conflicts) -}}
+{{- $group := default "-" $module.exclusive_group -}}
+{{ printf "M\t%s\t%s\t%s\t%v\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" $key $keys $module.id $module.schema $module.name $module.summary $module.docs $platforms $depends $conflicts $group -}}
+{{- end -}}
+{{- range $key := keys .dotfiles.profiles | sortAlpha -}}
+{{- $profile := index $.dotfiles.profiles $key -}}
+{{- $keys := keys $profile | sortAlpha | join "," -}}
+{{- $platforms := default "-" (join "," $profile.platforms) -}}
+{{- $modules := default "-" (join "," $profile.modules) -}}
+{{ printf "P\t%s\t%s\t%s\t%v\t%s\t%s\t%s\t%s\t%s\n" $key $keys $profile.id $profile.schema $profile.name $profile.summary $profile.docs $platforms $modules -}}
+{{- end -}}

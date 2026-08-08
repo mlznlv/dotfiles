@@ -1,0 +1,10 @@
+[dotfiles.modules."shell.alpha"]
+schema = 1
+id = "shell.alpha"
+name = "Alpha"
+summary = "Cycle fixture alpha"
+docs = "docs/modules/shell/alpha.md"
+platforms = ["macos", "debian"]
+depends = ["shell.beta"]
+conflicts = []
+exclusive_group = ""

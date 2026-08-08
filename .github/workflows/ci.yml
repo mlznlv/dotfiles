@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - master
+      - next
+  push:
+    branches:
+      - master
+      - next
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  read-only-core:
+    name: Read-only core (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@5064d95ba18d4a9dda7c4cc67adeb03aea1a2a14 # v7
+        with:
+          go-version: "1.26.x"
+          cache: false
+
+      - name: Install pinned chezmoi test dependency
+        run: go install chezmoi.io/chezmoi/v2@f81cb321789aa3df62871248f5e4d361a59e7cc1
+
+      - name: Run repository checks
+        run: bash scripts/check.sh

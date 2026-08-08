@@ -1,0 +1,10 @@
+[dotfiles.modules."terminal.wezterm"]
+schema = 1
+id = "terminal.wezterm"
+name = "WezTerm"
+summary = "Fixture alternative terminal"
+docs = "docs/modules/terminal/wezterm.md"
+platforms = ["macos"]
+depends = []
+conflicts = []
+exclusive_group = "terminal.primary"

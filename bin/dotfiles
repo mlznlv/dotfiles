@@ -1,0 +1,417 @@
+#!/usr/bin/env bash
+
+set -u
+
+DOTFILES_VERSION="0.1.0-dev"
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+PROJECT_ROOT=$(CDPATH= cd -- "${SCRIPT_DIR}/.." && pwd)
+SOURCE_DIR=${DOTFILES_SOURCE_DIR:-"${PROJECT_ROOT}"}
+CHEZMOI_BIN=${DOTFILES_CHEZMOI_BIN:-chezmoi}
+CATALOG_TEMPLATE="${PROJECT_ROOT}/lib/catalog-records.tmpl"
+CATALOG_PROGRAM="${PROJECT_ROOT}/lib/catalog.awk"
+
+usage() {
+    cat <<'EOF'
+Usage:
+  dotfiles help
+  dotfiles version
+  dotfiles catalog validate
+  dotfiles module list [--platform macos|debian | --all]
+  dotfiles module show <module-id>
+  dotfiles profile list [--platform macos|debian | --all]
+  dotfiles profile show <profile-id>
+  dotfiles resolve (--profile <profile-id> | --modules <id,id>) [--add <id,id>] [--platform macos|debian]
+
+All commands in this release are read-only.
+EOF
+}
+
+usage_error() {
+    printf 'error: %s\n' "$1" >&2
+    printf 'Run dotfiles help for usage.\n' >&2
+    exit 2
+}
+
+validate_platform() {
+    case "$1" in
+        macos|debian)
+            return 0
+            ;;
+        *)
+            printf 'error: unsupported platform %s\n' "$1" >&2
+            return 3
+            ;;
+    esac
+}
+
+detect_platform() {
+    system_name=$(uname -s 2>/dev/null || true)
+    case "$system_name" in
+        Darwin)
+            printf 'macos\n'
+            return 0
+            ;;
+        Linux)
+            if [ -r /etc/os-release ]; then
+                os_id=$(sed -n 's/^ID=//p' /etc/os-release | head -n 1 | tr -d '"')
+                os_like=$(sed -n 's/^ID_LIKE=//p' /etc/os-release | head -n 1 | tr -d '"')
+                case " ${os_id} ${os_like} " in
+                    *debian*|*ubuntu*|*kali*)
+                        printf 'debian\n'
+                        return 0
+                        ;;
+                esac
+            fi
+            ;;
+    esac
+    printf 'error: unsupported operating system\n' >&2
+    return 3
+}
+
+validate_root_catalog() {
+    catalog_file="${SOURCE_DIR}/.chezmoidata/catalog.toml"
+    if [ ! -f "$catalog_file" ]; then
+        printf 'error: missing catalog root %s\n' "$catalog_file" >&2
+        return 3
+    fi
+
+    awk '
+        BEGIN {
+            allowed["schema"] = 1
+        }
+        /^[[:space:]]*$/ || /^[[:space:]]*#/ {
+            next
+        }
+        /^\[dotfiles\]$/ || /^\[dotfiles\.modules\]$/ || /^\[dotfiles\.profiles\]$/ {
+            tables[$0]++
+            next
+        }
+        /^[[:space:]]*[a-z_]+[[:space:]]*=/ {
+            line = $0
+            sub(/^[[:space:]]*/, "", line)
+            key = line
+            sub(/[[:space:]]*=.*$/, "", key)
+            if (!allowed[key]) {
+                print "error: unsupported catalog root field " key > "/dev/stderr"
+                invalid = 1
+            }
+            next
+        }
+        {
+            print "error: unsupported catalog root syntax: " $0 > "/dev/stderr"
+            invalid = 1
+        }
+        END {
+            if (tables["[dotfiles]"] != 1 || tables["[dotfiles.modules]"] != 1 || tables["[dotfiles.profiles]"] != 1) {
+                print "error: catalog root must contain dotfiles, modules, and profiles tables" > "/dev/stderr"
+                invalid = 1
+            }
+            exit invalid
+        }
+    ' "$catalog_file" || return 3
+}
+
+validate_manifest_shape() {
+    manifest=$1
+    kind=$2
+
+    awk -v kind="$kind" -v manifest="$manifest" '
+        BEGIN {
+            allowed["schema"] = 1
+            allowed["id"] = 1
+            allowed["name"] = 1
+            allowed["summary"] = 1
+            allowed["docs"] = 1
+            allowed["platforms"] = 1
+            if (kind == "modules") {
+                allowed["depends"] = 1
+                allowed["conflicts"] = 1
+                allowed["exclusive_group"] = 1
+            } else {
+                allowed["modules"] = 1
+            }
+            prefix = "[dotfiles." kind ".\""
+        }
+        /^[[:space:]]*$/ || /^[[:space:]]*#/ {
+            next
+        }
+        index($0, prefix) == 1 && substr($0, length($0) - 1) == "\"]" {
+            headers++
+            next
+        }
+        /^[[:space:]]*[a-z_]+[[:space:]]*=/ {
+            line = $0
+            sub(/^[[:space:]]*/, "", line)
+            key = line
+            sub(/[[:space:]]*=.*$/, "", key)
+            if (!allowed[key]) {
+                print "error: unsupported field " key " in " manifest > "/dev/stderr"
+                invalid = 1
+            }
+            next
+        }
+        {
+            print "error: unsupported manifest syntax in " manifest ": " $0 > "/dev/stderr"
+            invalid = 1
+        }
+        END {
+            if (headers != 1) {
+                print "error: " manifest " must contain exactly one " kind " table" > "/dev/stderr"
+                invalid = 1
+            }
+            exit invalid
+        }
+    ' "$manifest" || return 3
+}
+
+validate_manifest_layout() {
+    kind=$1
+    directory="${SOURCE_DIR}/.chezmoidata/${kind}"
+
+    if [ ! -d "$directory" ]; then
+        return 0
+    fi
+
+    invalid_file=$(find "$directory" -type f ! -name '*.toml' -print -quit)
+    if [ -n "$invalid_file" ]; then
+        printf 'error: catalog entries must be TOML files: %s\n' "$invalid_file" >&2
+        return 3
+    fi
+
+    while IFS= read -r manifest; do
+        [ -n "$manifest" ] || continue
+        validate_manifest_shape "$manifest" "$kind" || return $?
+
+        if [ "$kind" = "modules" ]; then
+            table_id=$(sed -n 's/^\[dotfiles\.modules\."\([^"]*\)"\]$/\1/p' "$manifest")
+        else
+            table_id=$(sed -n 's/^\[dotfiles\.profiles\."\([^"]*\)"\]$/\1/p' "$manifest")
+        fi
+
+        table_count=$(printf '%s\n' "$table_id" | awk 'NF { count++ } END { print count + 0 }')
+        if [ "$table_count" -ne 1 ]; then
+            printf 'error: %s must declare exactly one catalog identifier\n' "$manifest" >&2
+            return 3
+        fi
+
+        category=${table_id%%.*}
+        remainder=${table_id#*.}
+        filename=${remainder//./-}
+        relative=${manifest#"${SOURCE_DIR}/"}
+        expected=".chezmoidata/${kind}/${category}/${filename}.toml"
+        if [ "$relative" != "$expected" ]; then
+            printf 'error: %s must be stored at %s\n' "$table_id" "$expected" >&2
+            return 3
+        fi
+    done < <(find "$directory" -type f -name '*.toml' -print | LC_ALL=C sort)
+}
+
+validate_catalog_layout() {
+    validate_root_catalog || return $?
+    validate_manifest_layout modules || return $?
+    validate_manifest_layout profiles || return $?
+}
+
+catalog_records() {
+    if ! command -v "$CHEZMOI_BIN" >/dev/null 2>&1; then
+        printf 'error: chezmoi is required for catalog commands\n' >&2
+        return 4
+    fi
+    if [ ! -f "$CATALOG_TEMPLATE" ] || [ ! -f "$CATALOG_PROGRAM" ]; then
+        printf 'error: catalog implementation files are missing\n' >&2
+        return 4
+    fi
+
+    "$CHEZMOI_BIN" --no-pager --no-tty --source "$SOURCE_DIR" execute-template < "$CATALOG_TEMPLATE"
+}
+
+run_catalog() {
+    action=$1
+    platform=${2:-}
+    show_all=${3:-0}
+    target_id=${4:-}
+    profile=${5:-}
+    base_selection=${6:-}
+    additional=${7:-}
+
+    validate_catalog_layout || return $?
+    records=$(catalog_records) || return $?
+
+    printf '%s\n' "$records" | LC_ALL=C awk \
+        -v action="$action" \
+        -v platform="$platform" \
+        -v show_all="$show_all" \
+        -v target_id="$target_id" \
+        -v profile="$profile" \
+        -v base_selection="$base_selection" \
+        -v additional="$additional" \
+        -f "$CATALOG_PROGRAM"
+}
+
+list_command() {
+    kind=$1
+    shift
+    platform=
+    show_all=0
+
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            --all)
+                show_all=1
+                ;;
+            --platform)
+                shift
+                [ "$#" -gt 0 ] || usage_error "--platform requires a value"
+                platform=$1
+                ;;
+            -h|--help)
+                usage
+                return 0
+                ;;
+            *)
+                usage_error "unknown option $1"
+                ;;
+        esac
+        shift
+    done
+
+    if [ "$show_all" -eq 1 ] && [ -n "$platform" ]; then
+        usage_error "--all and --platform cannot be combined"
+    fi
+    if [ "$show_all" -eq 0 ]; then
+        if [ -z "$platform" ]; then
+            platform=$(detect_platform) || exit $?
+        fi
+        validate_platform "$platform" || exit $?
+    fi
+
+    if [ "$kind" = "module" ]; then
+        run_catalog list_modules "$platform" "$show_all"
+    else
+        run_catalog list_profiles "$platform" "$show_all"
+    fi
+}
+
+show_command() {
+    kind=$1
+    shift
+    [ "$#" -eq 1 ] || usage_error "${kind} show requires one identifier"
+
+    if [ "$kind" = "module" ]; then
+        run_catalog show_module "" 0 "$1"
+    else
+        run_catalog show_profile "" 0 "$1"
+    fi
+}
+
+resolve_command() {
+    profile=
+    modules=
+    additional=
+    platform=
+
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            --profile)
+                shift
+                [ "$#" -gt 0 ] || usage_error "--profile requires a value"
+                profile=$1
+                ;;
+            --modules)
+                shift
+                [ "$#" -gt 0 ] || usage_error "--modules requires a value"
+                modules=$1
+                ;;
+            --add)
+                shift
+                [ "$#" -gt 0 ] || usage_error "--add requires a value"
+                additional=$1
+                ;;
+            --platform)
+                shift
+                [ "$#" -gt 0 ] || usage_error "--platform requires a value"
+                platform=$1
+                ;;
+            -h|--help)
+                usage
+                return 0
+                ;;
+            *)
+                usage_error "unknown option $1"
+                ;;
+        esac
+        shift
+    done
+
+    if [ -n "$profile" ] && [ -n "$modules" ]; then
+        usage_error "--profile and --modules are mutually exclusive"
+    fi
+    if [ -z "$profile" ] && [ -z "$modules" ]; then
+        usage_error "resolve requires --profile or --modules"
+    fi
+    if [ -z "$platform" ]; then
+        platform=$(detect_platform) || exit $?
+    fi
+    validate_platform "$platform" || exit $?
+
+    run_catalog resolve "$platform" 0 "" "$profile" "$modules" "$additional"
+}
+
+main() {
+    [ "$#" -gt 0 ] || {
+        usage
+        return 0
+    }
+
+    command_name=$1
+    shift
+    case "$command_name" in
+        help|-h|--help)
+            [ "$#" -eq 0 ] || usage_error "help takes no arguments"
+            usage
+            ;;
+        version|--version)
+            [ "$#" -eq 0 ] || usage_error "version takes no arguments"
+            printf 'dotfiles %s\n' "$DOTFILES_VERSION"
+            ;;
+        catalog)
+            [ "$#" -gt 0 ] || usage_error "catalog requires a subcommand"
+            subcommand=$1
+            shift
+            case "$subcommand" in
+                validate)
+                    [ "$#" -eq 0 ] || usage_error "catalog validate takes no arguments"
+                    run_catalog validate
+                    ;;
+                *)
+                    usage_error "unknown catalog subcommand $subcommand"
+                    ;;
+            esac
+            ;;
+        module|profile)
+            kind=$command_name
+            [ "$#" -gt 0 ] || usage_error "${kind} requires a subcommand"
+            subcommand=$1
+            shift
+            case "$subcommand" in
+                list)
+                    list_command "$kind" "$@"
+                    ;;
+                show)
+                    show_command "$kind" "$@"
+                    ;;
+                *)
+                    usage_error "unknown ${kind} subcommand $subcommand"
+                    ;;
+            esac
+            ;;
+        resolve)
+            resolve_command "$@"
+            ;;
+        *)
+            usage_error "unknown command $command_name"
+            ;;
+    esac
+}
+
+main "$@"

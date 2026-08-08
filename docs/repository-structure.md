@@ -1,92 +1,88 @@
 # Repository structure
 
-## Foundation pull request
+## Current Phase 2 layout
 
-The first pull request intentionally contains documentation and repository
-governance only.
+The repository contains a read-only catalog and resolver. It does not contain
+production modules, provider adapters, package requests, managed home files, or
+apply behavior.
 
 ~~~text
 .
+├── .chezmoidata/
+│   └── catalog.toml
 ├── .github/
 │   ├── ISSUE_TEMPLATE/
 │   ├── workflows/
+│   │   ├── ci.yml
+│   │   ├── documentation.yml
+│   │   └── secret-scan.yml
 │   ├── PULL_REQUEST_TEMPLATE.md
 │   └── dependabot.yml
+├── bin/
+│   └── dotfiles
 ├── docs/
 │   ├── adr/
 │   ├── cli/
 │   ├── modules/
 │   ├── profiles/
 │   ├── architecture.md
+│   ├── catalog.md
 │   ├── repository-structure.md
 │   └── roadmap.md
-├── .editorconfig
-├── .gitignore
-├── .markdownlint-cli2.yaml
-├── CODE_OF_CONDUCT.md
-├── CONTRIBUTING.md
-├── LICENSE
-├── README.md
-└── SECURITY.md
-~~~
-
-No placeholder directories are committed. A directory appears when its first
-real artifact is introduced.
-
-## Planned implementation layout
-
-The layout below is a design target, not current functionality.
-
-~~~text
-.
-├── .chezmoidata/
-│   ├── modules/
-│   │   ├── shell/
-│   │   │   ├── zsh.toml
-│   │   │   └── zsh-autosuggestions.toml
-│   │   └── prompt/
-│   │       └── starship.toml
-│   └── profiles/
-│       ├── shell/
-│       │   └── minimal.toml
-│       ├── personal/
-│       ├── development/
-│       └── homelab/
-├── home/
-│   └── chezmoi source state
-├── bin/
-│   └── dotfiles
 ├── lib/
-│   └── CLI implementation libraries
+│   ├── catalog-records.tmpl
+│   └── catalog.awk
 ├── scripts/
-│   └── repository validation
+│   └── check.sh
 ├── tests/
 │   ├── fixtures/
-│   ├── integration/
-│   └── unit/
-└── docs/
-    ├── modules/
-    │   ├── shell/
-    │   └── prompt/
-    ├── profiles/
-    └── cli/
+│   └── run.sh
+└── public repository files
 ~~~
 
-The exact chezmoi source directory will be chosen when the vertical slice is
-implemented and recorded in an ADR if it differs from chezmoi conventions.
+Fixture modules and profiles exist only below tests/fixtures. They are not
+production catalog entries.
+
+## Planned Phase 3 additions
+
+The next phase adds the first production catalog entries and their chezmoi home
+state.
+
+~~~text
+.chezmoidata/
+├── catalog.toml
+├── modules/
+│   ├── shell/
+│   │   ├── zsh.toml
+│   │   └── zsh-autosuggestions.toml
+│   └── prompt/
+│       └── starship.toml
+└── profiles/
+    └── shell/
+        └── minimal.toml
+~~~
+
+The home-state layout will be fixed by the Phase 3 pull request and recorded in
+an ADR if it differs from chezmoi conventions.
 
 ## Naming rules
 
 - Module identifiers use dotted category names, such as shell.zsh.
 - The first identifier segment equals the category directory.
-- Manifest filenames use lowercase kebab-case.
+- Remaining identifier segments map to one lowercase kebab-case filename.
 - Profile identifiers follow the same category-first rule.
-- A manifest's identifier is authoritative; its path must agree with it.
+- A manifest's identifier must equal its TOML table key.
 - Flat module and profile manifest directories are not allowed.
-- Documentation mirrors catalog paths. For example, shell.zsh is documented at
-  docs/modules/shell/zsh.md.
+- Documentation mirrors catalog paths.
 - CLI command documentation mirrors command groups below docs/cli.
 - Shell files and commands use portable, descriptive names.
+
+For example, shell.zsh.autosuggestions maps to:
+
+~~~text
+.chezmoidata/modules/shell/zsh-autosuggestions.toml
+docs/modules/shell/zsh-autosuggestions.md
+~~~
 
 ## Category boundaries
 

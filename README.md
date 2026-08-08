@@ -3,7 +3,7 @@
 A modular, reproducible, and security-conscious developer environment for macOS and Debian-family Linux.
 
 > [!IMPORTANT]
-> The architecture foundation is established. The new solution is not installable yet.
+> The Phase 2 read-only catalog and resolver are available. Installation and apply behavior are not implemented yet.
 
 ## Goals
 
@@ -29,9 +29,25 @@ The system will combine an automatically detected platform with a curated, saved
 
 Read the [architecture](docs/architecture.md) and accepted [architecture decisions](docs/adr/README.md) for the normative design.
 
+## Read-only commands
+
+With chezmoi available, repository contributors can inspect the empty production
+catalog and the command surface:
+
+~~~text
+./bin/dotfiles help
+./bin/dotfiles catalog validate
+./bin/dotfiles module list --all
+./bin/dotfiles profile list --all
+~~~
+
+These commands do not install packages, change configuration, call providers, or
+apply home state.
+
 ## Documentation
 
 - [Architecture](docs/architecture.md)
+- [Catalog](docs/catalog.md)
 - [Roadmap](docs/roadmap.md)
 - [Repository structure](docs/repository-structure.md)
 - [Modules](docs/modules/README.md)
@@ -42,7 +58,7 @@ Read the [architecture](docs/architecture.md) and accepted [architecture decisio
 
 ## Project status
 
-The architecture foundation is established, but the new solution is not installable. The next milestone is the read-only catalog and resolver described in the [roadmap](docs/roadmap.md).
+The architecture foundation and read-only catalog resolver are established. The production catalog is empty, and the solution remains non-installable. The next milestone is the minimal shell vertical slice described in the [roadmap](docs/roadmap.md).
 
 ## License
 

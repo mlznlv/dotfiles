@@ -2,7 +2,7 @@
 
 Contributions that improve portability, safety, documentation, or a clearly scoped capability are welcome.
 
-The project is currently documentation-first. Do not implement roadmap work before its architecture and acceptance criteria are agreed.
+Follow the roadmap in dependency order. Do not implement work before its architecture and acceptance criteria are agreed.
 
 ## Workflow
 
@@ -12,7 +12,14 @@ The project is currently documentation-first. Do not implement roadmap work befo
 4. Keep the pull request limited to one roadmap outcome.
 5. Update documentation and tests in the same pull request as behavior.
 6. Use clear, English commit messages.
-7. Complete the pull request checklist.
+7. Run the repository checks.
+8. Complete the pull request checklist.
+
+Catalog and CLI changes require chezmoi. Validate them with:
+
+~~~text
+bash scripts/check.sh
+~~~
 
 Use conventional commit prefixes where practical, such as docs, feat, fix, test, and chore.
 

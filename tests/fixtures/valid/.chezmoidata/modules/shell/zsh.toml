@@ -1,0 +1,10 @@
+[dotfiles.modules."shell.zsh"]
+schema = 1
+id = "shell.zsh"
+name = "Zsh"
+summary = "Fixture interactive shell"
+docs = "docs/modules/shell/zsh.md"
+platforms = ["macos", "debian"]
+depends = []
+conflicts = []
+exclusive_group = "shell.primary"
