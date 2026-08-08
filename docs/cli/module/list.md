@@ -40,6 +40,31 @@ Each result is tab-separated:
 identifier    name    summary
 ~~~
 
+## Examples
+
+List every released module:
+
+~~~text
+./bin/dotfiles module list --all
+~~~
+
+The current empty catalog exits successfully without output. Preview a supported
+platform explicitly:
+
+~~~text
+./bin/dotfiles module list --platform debian
+~~~
+
+Representative populated-catalog output is tab-separated:
+
+~~~text
+prompt.starship    Starship    Cross-shell prompt renderer
+shell.zsh    Zsh    Interactive Zsh shell experience
+~~~
+
+See the [user guide](../../user-guide/README.md) for platform detection and
+current release limitations.
+
 ## Exit statuses
 
 - 0: Listing completed, including an empty result.

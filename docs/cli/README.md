@@ -4,6 +4,9 @@ The dotfiles command currently provides read-only discovery, validation, and
 resolution. Installation, configuration mutation, provider planning, and apply
 behavior are not implemented.
 
+Start with the [user guide](../user-guide/README.md) for setup, end-to-end
+examples, current empty-catalog behavior, errors, and safety boundaries.
+
 ## Requirements
 
 Help and version work without dependencies. Catalog commands require chezmoi,

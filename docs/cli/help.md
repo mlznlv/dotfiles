@@ -26,6 +26,23 @@ chezmoi.
 
 Human-readable usage on standard output.
 
+## Examples
+
+Run from the repository root:
+
+~~~text
+./bin/dotfiles help
+~~~
+
+The aliases produce the same output:
+
+~~~text
+./bin/dotfiles --help
+./bin/dotfiles -h
+~~~
+
+See the [user guide](../user-guide/README.md) for the complete command workflow.
+
 ## Exit statuses
 
 - 0: Help was displayed.

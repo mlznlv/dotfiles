@@ -26,6 +26,23 @@ dependencies for a target platform.
 
 Importing, selecting, or applying a profile is not part of this command.
 
+## Examples
+
+Inspect the planned minimal shell profile:
+
+~~~text
+./bin/dotfiles profile show shell.minimal
+~~~
+
+The Phase 2 catalog is empty, so the current result is:
+
+~~~text
+error: unknown profile shell.minimal
+~~~
+
+Representative populated-catalog output is shown in the
+[user guide](../../user-guide/README.md).
+
 ## Exit statuses
 
 - 0: The profile was displayed.

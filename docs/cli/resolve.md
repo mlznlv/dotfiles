@@ -39,6 +39,35 @@ changes.
 
 One resolved module identifier per line.
 
+## Examples
+
+Resolve one profile for Debian-family Linux:
+
+~~~text
+./bin/dotfiles resolve --profile shell.minimal --platform debian
+~~~
+
+Resolve an explicit custom set:
+
+~~~text
+./bin/dotfiles resolve \
+  --modules shell.zsh.autosuggestions,prompt.starship \
+  --platform macos
+~~~
+
+Add a module to a base composition:
+
+~~~text
+./bin/dotfiles resolve \
+  --modules shell.zsh.autosuggestions \
+  --add prompt.starship \
+  --platform debian
+~~~
+
+The production catalog is empty in Phase 2, so these planned identifiers are
+currently rejected as unknown. The [user guide](../user-guide/README.md) shows
+representative successful output, dependency expansion, and failure examples.
+
 ## Exit statuses
 
 - 0: The composition resolved successfully.

@@ -29,6 +29,23 @@ documentation path. It does not resolve dependencies or invoke a provider.
 Human-readable labeled fields. Empty dependency, conflict, or group values are
 shown as a hyphen.
 
+## Examples
+
+Inspect a planned module identifier:
+
+~~~text
+./bin/dotfiles module show shell.zsh.autosuggestions
+~~~
+
+The Phase 2 catalog is empty, so the current result is:
+
+~~~text
+error: unknown module shell.zsh.autosuggestions
+~~~
+
+Representative output after that entry is released is shown in the
+[user guide](../../user-guide/README.md).
+
 ## Exit statuses
 
 - 0: The module was displayed.
