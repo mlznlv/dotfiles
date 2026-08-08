@@ -1,13 +1,10 @@
-# dotfiles catalog validate
+# Validate the catalog
 
-- Status: Available
-- Effect: Read-only
-- Introduced in: Phase 2
+[Command guide](../README.md) / Catalog validation
 
-## Purpose
+Check every module and profile definition before discovery or resolution.
 
-Validate the complete module and profile catalog before discovery or
-resolution.
+Available · Read-only · Chezmoi required.
 
 ## Usage
 
@@ -15,39 +12,24 @@ resolution.
 dotfiles catalog validate
 ~~~
 
-## Behavior
+## Example
 
-The command:
-
-1. Verifies canonical category paths and one TOML table per manifest.
-2. Uses chezmoi to parse and merge static catalog TOML.
-3. Rejects unknown fields, schema mismatches, invalid identifiers, bad
-   documentation paths, unknown references, incompatible platform claims, and
-   dependency cycles.
-4. Prints catalog counts on success.
-
-The command does not apply chezmoi state or invoke providers.
-
-## Output
-
-~~~text
+~~~console
+$ ./bin/dotfiles catalog validate
 catalog valid: 0 modules, 0 profiles
 ~~~
 
-The production catalog is empty until Phase 3.
+The zero counts are expected until Phase 3.
 
-## Exit statuses
+Validation checks manifest paths, TOML structure, schema fields, identifiers,
+documentation paths, platforms, dependencies, conflicts, profile references,
+and dependency cycles. It never applies chezmoi state or calls a provider.
 
-- 0: The catalog is valid.
-- 3: Catalog parsing or semantic validation failed.
-- 4: Chezmoi or an internal implementation file is unavailable.
+## Exit codes
 
-## Security and privacy
+- `0` — the catalog is valid.
+- `3` — parsing or validation failed.
+- `4` — chezmoi or an internal CLI file is unavailable.
 
-Catalog data is static and never evaluated as shell source. No network or
-privileged operation is performed by the command.
-
-## Tests
-
-Fixtures cover valid catalogs, cycles, missing dependencies, unknown fields, and
-category-path mismatches on macOS and Ubuntu.
+If validation fails, fix the first reported error and run the command again.
+Catalog maintainers can read the [catalog contract](../../catalog.md).

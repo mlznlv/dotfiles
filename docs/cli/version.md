@@ -1,12 +1,10 @@
-# dotfiles version
+# Show the version
 
-- Status: Available
-- Effect: Read-only
-- Introduced in: Phase 2
+[Command guide](README.md) / Version
 
-## Purpose
+Print the current CLI version.
 
-Print the development version of the repository CLI.
+Available · Read-only · Chezmoi not required.
 
 ## Usage
 
@@ -15,26 +13,20 @@ dotfiles version
 dotfiles --version
 ~~~
 
-## Behavior
+## Example
 
-The command reads no catalog and does not require chezmoi. Until the first
-release, the version carries a development suffix.
-
-## Output
-
-~~~text
+~~~console
+$ ./bin/dotfiles version
 dotfiles 0.1.0-dev
 ~~~
 
-## Exit statuses
+Both forms produce the same output. Development builds use the `-dev` suffix.
+The command does not read the catalog or expose machine identity.
 
-- 0: Version information was displayed.
-- 2: Unexpected arguments were supplied.
+## Exit codes
 
-## Security and privacy
+- `0` — the version was printed.
+- `2` — an unexpected argument was supplied.
 
-The command emits no machine or repository identity.
-
-## Tests
-
-CI checks the exact version output on macOS and Ubuntu.
+Next: [validate the catalog](catalog/validate.md) or return to the
+[command guide](README.md).

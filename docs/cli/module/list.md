@@ -1,57 +1,49 @@
-# dotfiles module list
+# List modules
 
-- Status: Available
-- Effect: Read-only
-- Introduced in: Phase 2
+[Command guide](../README.md) / Modules / List
 
-## Purpose
+Discover modules available for the current machine or another supported target.
 
-List modules compatible with a platform or inspect every catalog entry.
+Available · Read-only · Chezmoi required.
 
 ## Usage
 
 ~~~text
-dotfiles module list
-dotfiles module list --platform macos
-dotfiles module list --platform debian
-dotfiles module list --all
+dotfiles module list [--platform macos|debian | --all]
 ~~~
 
-## Flags
+| Option | Meaning |
+| --- | --- |
+| no option | Detect the current platform and show compatible modules |
+| `--platform macos` | Show modules compatible with macOS |
+| `--platform debian` | Show modules compatible with Debian-family Linux |
+| `--all` | Show every module without platform filtering |
 
-- --platform selects macos or debian instead of detecting the local platform.
-- --all disables platform filtering.
-- --platform and --all are mutually exclusive.
+Do not combine `--platform` and `--all`.
 
-## Behavior
+## Examples
 
-The complete catalog is validated first. Without flags, macOS is detected from
-Darwin. Linux is supported when /etc/os-release identifies a Debian-family
-distribution.
+~~~console
+./bin/dotfiles module list
+./bin/dotfiles module list --platform debian
+./bin/dotfiles module list --all
+~~~
 
-Entries are printed in lexical identifier order. The current production catalog
-is empty.
-
-## Output
-
-Each result is tab-separated:
+The production catalog is currently empty, so these commands succeed without
+printing rows. A populated catalog prints tab-separated rows in identifier
+order:
 
 ~~~text
-identifier    name    summary
+prompt.starship    Starship    Cross-shell prompt renderer
+shell.zsh          Zsh         Interactive Zsh shell experience
 ~~~
 
-## Exit statuses
+## Exit codes
 
-- 0: Listing completed, including an empty result.
-- 2: Arguments were invalid.
-- 3: Platform or catalog validation failed.
-- 4: Chezmoi is unavailable.
+- `0` — listing completed, including an empty result.
+- `2` — the options are invalid.
+- `3` — platform detection or catalog validation failed.
+- `4` — chezmoi is unavailable.
 
-## Security and privacy
-
-Platform detection reads only operating-system facts. It does not read a
-hostname, username, or machine identity.
-
-## Tests
-
-CI covers explicit platform filtering, all-entry listing, and empty catalogs.
+Next: [inspect a module](show.md) or return to the
+[command guide](../README.md).

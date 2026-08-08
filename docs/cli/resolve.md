@@ -1,12 +1,10 @@
-# dotfiles resolve
+# Resolve a composition
 
-- Status: Available
-- Effect: Read-only
-- Introduced in: Phase 2
+[Command guide](README.md) / Resolve
 
-## Purpose
+Preview the final module set for a profile or a custom selection.
 
-Validate and expand a profile or explicit module composition for one platform.
+Available · Read-only · Chezmoi required.
 
 ## Usage
 
@@ -15,43 +13,74 @@ dotfiles resolve --profile <profile-id> [--add <id,id>] [--platform macos|debian
 dotfiles resolve --modules <id,id> [--add <id,id>] [--platform macos|debian]
 ~~~
 
-## Flags
+| Option | Meaning |
+| --- | --- |
+| `--profile <profile-id>` | Start from one curated profile |
+| `--modules <id,id>` | Start from a comma-separated custom module set |
+| `--add <id,id>` | Add modules to either base selection |
+| `--platform <value>` | Override local detection with `macos` or `debian` |
 
-- --profile selects one curated or saved catalog profile.
-- --modules supplies an explicit comma-separated base composition.
-- --add supplies optional additional module identifiers.
-- --platform overrides factual local platform detection.
-- --profile and --modules are mutually exclusive.
+Choose exactly one of `--profile` and `--modules`.
 
-## Behavior
+## Examples
 
-The command validates the full catalog, expands dependencies in lexical order,
-de-duplicates modules, validates platform compatibility, and rejects conflicts
-or exclusive-group collisions.
+Start from a profile:
 
-Output is deterministic for identical catalog and command inputs. Dependency
-identifiers appear before the modules that require them.
+~~~console
+./bin/dotfiles resolve --profile shell.minimal --platform debian
+~~~
 
-The command does not save the composition, produce a provider plan, or apply
-changes.
+Build a custom composition:
 
-## Output
+~~~console
+./bin/dotfiles resolve \
+    --modules shell.zsh.autosuggestions,prompt.starship \
+    --platform macos
+~~~
 
-One resolved module identifier per line.
+Add a module to a profile:
 
-## Exit statuses
+~~~console
+./bin/dotfiles resolve \
+    --profile shell.minimal \
+    --add terminal.ghostty \
+    --platform macos
+~~~
 
-- 0: The composition resolved successfully.
-- 2: Required or mutually exclusive arguments were invalid.
-- 3: Platform, catalog, identifier, dependency, or conflict validation failed.
-- 4: Chezmoi is unavailable.
+These identifiers are planned and remain unavailable while the production
+catalog is empty.
 
-## Security and privacy
+## What it returns
 
-Resolution uses static repository data and factual platform information. It
-does not inspect hostname, username, credentials, or provider state.
+The command validates the catalog, expands dependencies, removes duplicates,
+checks platform support, and rejects conflicts. Dependencies appear before the
+modules that need them, one identifier per line:
 
-## Tests
+~~~text
+shell.zsh
+shell.zsh.autosuggestions
+prompt.starship
+~~~
 
-CI covers curated and custom composition, additional modules, dependency order,
-unknown identifiers, unsupported platforms, cycles, and exclusive groups.
+The result is deterministic for the same catalog and options. It is not saved,
+and no provider or home-state operation runs.
+
+## Common failures
+
+- An unknown module or profile.
+- A module that does not support the selected platform.
+- Conflicting modules or two modules in one exclusive group.
+- A missing dependency or dependency cycle.
+- Both or neither base-selection options were supplied.
+
+The command stops without printing a partial result.
+
+## Exit codes
+
+- `0` — the composition was resolved.
+- `2` — the command syntax or base selection is invalid.
+- `3` — platform, catalog, identifier, dependency, or conflict validation failed.
+- `4` — chezmoi is unavailable.
+
+See the [user guide](../user-guide/README.md) for the complete composition
+workflow, or return to the [command guide](README.md).

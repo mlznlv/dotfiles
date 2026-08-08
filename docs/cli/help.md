@@ -1,13 +1,10 @@
-# dotfiles help
+# Show help
 
-- Status: Available
-- Effect: Read-only
-- Introduced in: Phase 2
+[Command guide](README.md) / Help
 
-## Purpose
+Print the complete command list and syntax summary.
 
-Show the supported command surface and state that every currently available
-command is read-only.
+Available · Read-only · Chezmoi not required.
 
 ## Usage
 
@@ -17,24 +14,19 @@ dotfiles --help
 dotfiles -h
 ~~~
 
-## Behavior
+Run it from the repository root:
 
-The command reads no catalog or machine configuration and does not require
-chezmoi.
+~~~console
+./bin/dotfiles help
+~~~
 
-## Output
+All three forms print the same human-readable output. The command does not read
+the catalog or inspect the machine.
 
-Human-readable usage on standard output.
+## Exit codes
 
-## Exit statuses
+- `0` — help was printed.
+- `2` — an unexpected argument was supplied.
 
-- 0: Help was displayed.
-- 2: Unexpected arguments were supplied.
-
-## Security and privacy
-
-The command performs no network, file, provider, or privilege operation.
-
-## Tests
-
-CI checks the help contract on macOS and Ubuntu.
+Next: [check the version](version.md) or return to the
+[command guide](README.md).

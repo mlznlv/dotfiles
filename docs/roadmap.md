@@ -199,25 +199,29 @@ through explicit profiles.
 
 **Depends on:** phase 7.
 
-## Phase 9: Hardening, release, and cutover
+## Phase 9: Hardening and release
 
 **Status:** Planned.
 
-**Objective:** prepare a stable public release and controlled replacement of the
-legacy default branch.
+**Objective:** prepare the implementation on the default branch for a stable
+public release.
+
+The development branch cutover is complete before this phase. The `legacy`
+branch remains only as a temporary recovery snapshot.
 
 **Deliverables:**
 
 - End-to-end clean-machine tests and upgrade tests.
 - Versioning, changelog, release, and support policies.
 - Bootstrap integrity and failure-recovery tests.
-- Cutover checklist for merging next into the default branch.
+- Release-readiness checklist and legacy-branch removal decision.
 
 **Acceptance criteria:**
 
 - Supported targets pass installation and idempotency tests.
 - Security and privacy review has no unresolved high-risk findings.
 - Documentation matches the released CLI.
-- The default branch changes only after an explicit maintainer decision.
+- A production release and legacy-branch removal each require an explicit
+  maintainer decision.
 
 **Depends on:** all previous phases.

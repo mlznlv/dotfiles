@@ -1,72 +1,109 @@
-# CLI
+# Command guide
 
-The dotfiles command currently provides read-only discovery, validation, and
-resolution. Installation, configuration mutation, provider planning, and apply
-behavior are not implemented.
+Use the CLI to inspect and validate the catalog or preview a module composition.
+Every command available today is read-only: nothing is installed, saved, or
+applied.
 
-## Requirements
+Run commands from the repository root with `./bin/dotfiles`.
 
-Help and version work without dependencies. Catalog commands require chezmoi,
-which is the accepted home-state foundation and TOML loader.
+> [!NOTE]
+> The production catalog is empty until Phase 3. List commands therefore return
+> no rows, and example module or profile identifiers are not available yet.
 
-## Design rules
+## Quick start
 
-- Normal users do not edit catalog TOML.
-- Every available command is read-only.
-- Platform detection uses only factual operating-system information.
-- Errors distinguish usage, invalid catalog data, and missing dependencies.
-- Catalog data is never evaluated as shell code.
-- Output is deterministic for identical inputs.
-- No command invokes a package or home-state provider.
+~~~console
+$ ./bin/dotfiles help
+$ ./bin/dotfiles version
+dotfiles 0.1.0-dev
+$ ./bin/dotfiles catalog validate
+catalog valid: 0 modules, 0 profiles
+~~~
 
-## Available command surface
+Catalog commands require [chezmoi](https://www.chezmoi.io/). Help and version do
+not.
 
-| Command | Effect | Documentation |
+## Find the right command
+
+| I want to... | Command | Reference |
 | --- | --- | --- |
-| dotfiles help | Show usage | [help](help.md) |
-| dotfiles version | Show development version | [version](version.md) |
-| dotfiles catalog validate | Validate all catalog data | [catalog validate](catalog/validate.md) |
-| dotfiles module list | List compatible or all modules | [module list](module/list.md) |
-| dotfiles module show | Inspect one module | [module show](module/show.md) |
-| dotfiles profile list | List compatible or all profiles | [profile list](profile/list.md) |
-| dotfiles profile show | Inspect one profile | [profile show](profile/show.md) |
-| dotfiles resolve | Expand and validate a composition | [resolve](resolve.md) |
+| See all commands | `dotfiles help` | [help](help.md) |
+| Check the CLI version | `dotfiles version` | [version](version.md) |
+| Check catalog integrity | `dotfiles catalog validate` | [catalog validate](catalog/validate.md) |
+| Discover modules | `dotfiles module list` | [module list](module/list.md) |
+| Inspect one module | `dotfiles module show <module-id>` | [module show](module/show.md) |
+| Discover profiles | `dotfiles profile list` | [profile list](profile/list.md) |
+| Inspect one profile | `dotfiles profile show <profile-id>` | [profile show](profile/show.md) |
+| Preview a composition | `dotfiles resolve ...` | [resolve](resolve.md) |
 
-The production module and profile catalogs are empty until Phase 3.
+## Typical workflow
 
-## Exit statuses
+1. List available modules or profiles.
+2. Inspect an identifier with `show`.
+3. Preview the final dependency-expanded composition with `resolve`.
 
-- 0: Success.
-- 2: Invalid command usage.
-- 3: Unsupported platform, invalid catalog, or failed resolution.
-- 4: Required dependency or internal implementation file unavailable.
+~~~console
+./bin/dotfiles profile list
+./bin/dotfiles profile show shell.minimal
+./bin/dotfiles resolve --profile shell.minimal
+~~~
 
-## Future command surface
+The example identifier above is planned and remains unavailable while the
+production catalog is empty.
 
-Configuration, planning, applying, diagnostics, and profile-sharing commands
-remain planned in the [roadmap](../roadmap.md). Changing configuration will not
-apply it, and applying will remain explicit.
+## Choose a platform
 
-## Command contract
+List and resolve commands detect the local platform by default. Use
+`--platform` to preview another supported target:
 
-Every command or subcommand must ship with:
+~~~console
+./bin/dotfiles module list --platform debian
+./bin/dotfiles profile list --platform macos
+~~~
 
-- A dedicated page below docs/cli.
-- Purpose, syntax, arguments, flags, defaults, and examples.
-- Whether it is read-only or mutating.
-- Preconditions, provider effects, and network or privilege requirements.
-- Interactive and non-interactive behavior.
-- Exit statuses and stable machine-output behavior, if any.
-- Security and privacy notes.
-- Unit or integration tests and help-output coverage.
+Supported values are:
 
-Use [the command documentation template](command-template.md).
+- `macos` for macOS.
+- `debian` for Debian-family Linux, including Debian, Ubuntu, and Kali.
 
-## Safety model
+Use `--all` with a list command to disable platform filtering. Do not combine
+`--all` and `--platform`.
 
-The available CLI reads static repository data and operating-system facts only.
-It does not write configuration, save state, access secrets, invoke providers,
-or modify the target.
+## Exit codes
 
-A future removal or prune command requires its own ADR, recovery behavior, and
-tests.
+| Code | Meaning |
+| --- | --- |
+| `0` | Success, including an empty list |
+| `2` | Invalid command syntax |
+| `3` | Unsupported platform, invalid catalog, or failed resolution |
+| `4` | Chezmoi or an internal CLI file is unavailable |
+
+Errors are written to standard error. Invalid syntax also suggests
+`dotfiles help`.
+
+## Common problems
+
+### A list command prints nothing
+
+This is expected while the production catalog is empty. The command still exits
+successfully.
+
+### `chezmoi is required for catalog commands`
+
+Install chezmoi, confirm `chezmoi --version` works, and retry. Help and version
+remain available.
+
+### A module or profile is unknown
+
+Use `module list --all` or `profile list --all` to find released identifiers.
+Identifiers shown as planned examples are not released yet.
+
+## Safety
+
+The current CLI reads versioned catalog data and basic operating-system facts.
+It does not use the network, request elevated privileges, call providers, read
+secrets, or change the machine.
+
+For an end-to-end introduction, read the [user guide](../user-guide/README.md).
+Future commands are tracked in the [roadmap](../roadmap.md). Contributors adding
+a command must follow the [command documentation guide](command-template.md).
