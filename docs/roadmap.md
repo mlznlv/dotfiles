@@ -15,7 +15,7 @@ foundation.
 - MIT license and public contribution, security, and conduct policies.
 - Documentation templates for modules, profiles, and CLI commands.
 - Issue and pull-request templates.
-- Automated Markdown and link validation.
+- Automated Markdown, link, and secret validation.
 
 **Acceptance criteria:**
 
