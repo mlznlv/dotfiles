@@ -1,64 +1,85 @@
-# dotfiles command
+# Documenting a command
 
-- Status: Planned
-- Effect: Read-only or mutating
-- Introduced in: version or pull request
+Command pages are for people using the CLI. Keep architecture, implementation,
+and test details in contributor documentation or the pull request.
 
-## Purpose
+## Writing rules
 
-Describe the user outcome and when to use the command.
+1. Lead with the outcome: explain what the command helps the user do.
+2. Show exact syntax before describing internals.
+3. Prefer one realistic success example over several minor variations.
+4. State prerequisites, side effects, and destructive behavior plainly.
+5. Document current behavior only; link planned work to the roadmap.
+6. Reuse common guidance by linking to the command guide instead of copying it.
+7. Keep paragraphs short and use tables only when they improve scanning.
+
+## Standard page order
+
+Use this order so readers can scan every command page the same way:
+
+1. Breadcrumb back to the command guide.
+2. Task-oriented title and one-sentence summary.
+3. Availability, effect, and primary requirement.
+4. Usage syntax.
+5. Arguments or options, when present.
+6. Copy-paste examples.
+7. Output and important behavior.
+8. Common failures and exit codes.
+9. Safety notes and related commands.
+
+Omit a section when it adds no useful information.
+
+## Minimal template
+
+~~~markdown
+[Command guide](README.md) / Command name
+
+# Verb + outcome
+
+One sentence explaining when to use the command.
+
+**Available · Read-only or mutating · Main requirement**
 
 ## Usage
 
-~~~text
-dotfiles command [flags] [arguments]
+    dotfiles command <argument> [--option <value>]
+
+## Options
+
+| Option | Meaning |
+| --- | --- |
+| `--option <value>` | Explain the value and default |
+
+## Example
+
+Show one command and the output a user should expect.
+
+## What it returns
+
+Explain output, ordering, files changed, provider calls, and idempotency only
+when relevant to the user.
+
+## Common failures
+
+List likely failures and the next corrective action.
+
+## Exit codes
+
+- `0` — success.
+- Other documented codes and their meaning.
+
+End with links to the next useful command and the command guide.
 ~~~
 
-## Arguments
+## Review checklist
 
-Document required and optional arguments, validation, and defaults.
+Before merging a command page, verify:
 
-## Flags
-
-Document every flag, default, compatibility, and precedence rule.
-
-## Behavior
-
-Describe resolution, provider calls, files read or written, ordering, and
-idempotency.
-
-## Interactive behavior
-
-Document prompts, defaults, cancellation, and terminal requirements.
-
-## Non-interactive behavior
-
-Document required flags, refusal conditions, and automation safety.
-
-## Output
-
-Describe human output and any versioned machine-readable output.
-
-## Exit statuses
-
-List each supported exit status and its meaning.
-
-## Security and privacy
-
-Describe privileges, network access, sensitive values, and log redaction.
-
-## Examples
-
-Show sanitized successful and failing examples.
-
-## Related commands
-
-Link to discovery, planning, application, or recovery commands.
-
-## Tests
-
-List unit, integration, help-contract, and platform coverage.
-
-## Known limitations
-
-List intentional boundaries and deferred behavior.
+- Syntax, flags, defaults, output, and exit codes against the real CLI.
+- Examples are safe, current, sanitized, and copyable.
+- Read-only or mutating behavior is unmistakable.
+- Network, privilege, provider, file, privacy, and secret effects are stated.
+- Interactive prompts and non-interactive requirements are covered when used.
+- Errors tell the reader what to do next.
+- Navigation links work and the page does not duplicate shared guidance.
+- Behavior and help-output tests ship with the command implementation.

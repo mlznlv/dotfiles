@@ -1,514 +1,187 @@
 # User guide
 
-This guide documents every user-visible capability currently available on the
-default branch.
+This guide shows the shortest path from cloning the repository to previewing a
+dotfiles composition. For exact syntax, use the [command guide](../cli/README.md).
 
 > [!IMPORTANT]
 > The current release is read-only. It can inspect, validate, and resolve catalog
-> data, but it cannot install packages, write configuration, save selections, or
-> apply home state.
+> data, but it cannot install packages, save a profile, or apply configuration.
+>
+> The production catalog is empty until Phase 3. List commands currently return
+> no rows, and planned identifiers used in examples are not available yet.
 
-## What works today
-
-| Capability | Available | Changes the machine |
-| --- | --- | --- |
-| Show CLI help and version | Yes | No |
-| Validate the catalog | Yes | No |
-| List and inspect modules | Yes | No |
-| List and inspect profiles | Yes | No |
-| Resolve a profile | Yes | No |
-| Resolve a custom module set | Yes | No |
-| Add modules to a base composition | Yes | No |
-| Install packages or applications | No | Not implemented |
-| Save, import, or export profiles | No | Not implemented |
-| Plan or apply configuration | No | Not implemented |
-
-The production module and profile catalogs are empty until Phase 3. Discovery
-commands therefore return no entries today, and lookup or resolution commands
-reject example identifiers as unknown. Populated-catalog examples below show the
-implemented output contract without claiming that those entries are released.
-
-## Requirements
+## Before you start
 
 You need:
 
+- macOS or Debian-family Linux, including Debian, Ubuntu, or Kali.
+- Bash.
+- [Chezmoi](https://www.chezmoi.io/) for catalog commands.
 - A local copy of this repository.
-- Bash to run the CLI.
-- Chezmoi on PATH for catalog, module, profile, and resolve commands.
-- macOS or Debian-family Linux for automatic platform detection.
 
-Help and version do not require chezmoi. The CLI itself does not require root
-privileges or make network requests. Follow the
-[official chezmoi installation guide](https://www.chezmoi.io/install/) when the
-dependency is not already available.
+The CLI does not need root privileges or network access. Help and version work
+without chezmoi.
 
-## Get the repository
-
-~~~text
+~~~console
 git clone https://github.com/mlznlv/dotfiles.git
 cd dotfiles
-~~~
-
-The current CLI is run directly from the repository root:
-
-~~~text
 ./bin/dotfiles help
 ~~~
 
-There is no bootstrap or installation command in this release.
+There is no installation or bootstrap command yet. Run the CLI directly from
+the repository root.
 
-## Quick start
+## Five-minute check
 
-Check the CLI version:
+Confirm the version and validate the catalog:
 
-~~~text
-./bin/dotfiles version
+~~~console
+$ ./bin/dotfiles version
 dotfiles 0.1.0-dev
-~~~
-
-Review all available commands:
-
-~~~text
-./bin/dotfiles help
-~~~
-
-Validate the production catalog:
-
-~~~text
-./bin/dotfiles catalog validate
+$ ./bin/dotfiles catalog validate
 catalog valid: 0 modules, 0 profiles
 ~~~
 
-List every released module and profile:
+The zero counts are expected in the current phase.
 
-~~~text
-./bin/dotfiles module list --all
-./bin/dotfiles profile list --all
-~~~
+## Discover what is available
 
-Both list commands succeed without output because the production catalogs are
-currently empty.
+A **module** is one capability, such as a shell or prompt. A **profile** is a
+named set of modules.
 
-## Command model
+List entries compatible with the current machine:
 
-Every available command is read-only. Commands use three kinds of selection:
-
-- A module is one selectable capability, identified by a dotted name such as
-  shell.zsh.
-- A profile is a named composition of module identifiers, such as
-  shell.minimal.
-- An explicit composition is a comma-separated module set supplied for one
-  resolution without saving a profile.
-
-Module and profile identifiers are stable catalog data. Users are not expected
-to edit TOML to use the CLI.
-
-## Platform selection
-
-The values accepted by --platform are:
-
-- macos
-- debian
-
-The debian value represents the supported Debian family, including Debian,
-Ubuntu, and Kali.
-
-Without --platform, list and resolve commands detect the platform:
-
-- Darwin maps to macos.
-- Linux maps to debian when /etc/os-release identifies a Debian-family system.
-- Other operating systems fail as unsupported.
-
-Use an explicit platform to preview compatibility for a different supported
-target:
-
-~~~text
-./bin/dotfiles module list --platform debian
-./bin/dotfiles profile list --platform macos
-~~~
-
-Use --all to disable platform filtering:
-
-~~~text
-./bin/dotfiles module list --all
-./bin/dotfiles profile list --all
-~~~
-
-The --all and --platform flags cannot be combined.
-
-## Show help
-
-The help command prints the complete available command surface:
-
-~~~text
-./bin/dotfiles help
-./bin/dotfiles --help
-./bin/dotfiles -h
-~~~
-
-It reads no catalog or machine configuration and always remains safe to run.
-See the [help command reference](../cli/help.md).
-
-## Show the version
-
-Use either supported form:
-
-~~~text
-./bin/dotfiles version
-./bin/dotfiles --version
-~~~
-
-Current output:
-
-~~~text
-dotfiles 0.1.0-dev
-~~~
-
-See the [version command reference](../cli/version.md).
-
-## Validate the catalog
-
-Run validation before diagnosing discovery or resolution behavior:
-
-~~~text
-./bin/dotfiles catalog validate
-~~~
-
-Current output:
-
-~~~text
-catalog valid: 0 modules, 0 profiles
-~~~
-
-Validation checks:
-
-- Manifest locations and one catalog table per file.
-- TOML parsing and merged data through chezmoi.
-- Schema versions and required fields.
-- Module and profile identifiers.
-- Documentation path conventions.
-- Platforms, dependencies, conflicts, and exclusive groups.
-- Unknown references and dependency cycles.
-
-Validation never applies chezmoi state. See the
-[catalog validation reference](../cli/catalog/validate.md).
-
-## List modules
-
-Detect the local platform and list compatible modules:
-
-~~~text
+~~~console
 ./bin/dotfiles module list
-~~~
-
-Preview a supported platform explicitly:
-
-~~~text
-./bin/dotfiles module list --platform macos
-./bin/dotfiles module list --platform debian
-~~~
-
-List all modules without filtering:
-
-~~~text
-./bin/dotfiles module list --all
-~~~
-
-The current catalog produces no output and exits successfully. In a populated
-catalog, output is tab-separated and ordered by identifier:
-
-~~~text
-prompt.starship    Starship    Cross-shell prompt renderer
-shell.zsh    Zsh    Interactive Zsh shell experience
-shell.zsh.autosuggestions    Zsh autosuggestions    Interactive history suggestions
-~~~
-
-See the [module list reference](../cli/module/list.md).
-
-## Inspect a module
-
-Show one module by its dotted identifier:
-
-~~~text
-./bin/dotfiles module show shell.zsh.autosuggestions
-~~~
-
-Because Phase 2 has no production modules, the command currently reports:
-
-~~~text
-error: unknown module shell.zsh.autosuggestions
-~~~
-
-Once that planned entry is released, representative output is:
-
-~~~text
-id: shell.zsh.autosuggestions
-name: Zsh autosuggestions
-summary: Interactive history suggestions
-platforms: macos,debian
-depends: shell.zsh
-conflicts: -
-exclusive group: -
-docs: docs/modules/shell/zsh-autosuggestions.md
-~~~
-
-The command displays direct metadata; it does not expand dependencies. See the
-[module show reference](../cli/module/show.md).
-
-## List profiles
-
-Detect the local platform and list compatible profiles:
-
-~~~text
 ./bin/dotfiles profile list
 ~~~
 
-Preview one supported platform or list every profile:
+List every entry without platform filtering:
 
-~~~text
-./bin/dotfiles profile list --platform macos
-./bin/dotfiles profile list --platform debian
+~~~console
+./bin/dotfiles module list --all
 ./bin/dotfiles profile list --all
 ~~~
 
-The current catalog produces no output and exits successfully. A populated
-catalog uses tab-separated output:
+Both commands currently succeed without output because the production catalogs
+are empty. Once populated, each row contains an identifier, name, and summary.
 
-~~~text
-shell.minimal    Minimal shell    Zsh, autosuggestions, and Starship
-~~~
+Inspect one released identifier with `show`:
 
-See the [profile list reference](../cli/profile/list.md).
-
-## Inspect a profile
-
-Show one profile and its requested modules:
-
-~~~text
+~~~console
+./bin/dotfiles module show shell.zsh.autosuggestions
 ./bin/dotfiles profile show shell.minimal
 ~~~
 
-The current empty catalog reports:
+These identifiers are planned examples. Today they return `unknown module` or
+`unknown profile`. Use the list commands to discover identifiers that actually
+exist in the current catalog.
 
-~~~text
-error: unknown profile shell.minimal
-~~~
+## Preview a composition
 
-Representative output after the planned profile is released:
+The `resolve` command expands dependencies, removes duplicates, checks platform
+support, and rejects conflicts. It prints one module identifier per line and
+does not save or apply the result.
 
-~~~text
-id: shell.minimal
-name: Minimal shell
-summary: Zsh, autosuggestions, and Starship
-platforms: macos,debian
-modules: shell.zsh,shell.zsh.autosuggestions,prompt.starship
-docs: docs/profiles/shell/minimal.md
-~~~
+### Start from a profile
 
-Use resolve when dependency expansion or platform validation is required. See
-the [profile show reference](../cli/profile/show.md).
-
-## Resolve a profile
-
-Select exactly one profile and optionally override the platform:
-
-~~~text
-./bin/dotfiles resolve --profile shell.minimal --platform debian
-~~~
-
-The current empty catalog returns an unknown-profile error. With the planned
-profile present, the deterministic result is one module per line:
-
-~~~text
+~~~console
+$ ./bin/dotfiles resolve --profile shell.minimal --platform debian
 shell.zsh
 shell.zsh.autosuggestions
 prompt.starship
 ~~~
 
-Dependencies appear before the modules that require them.
+### Build a custom composition
 
-## Resolve a custom composition
-
-Supply a comma-separated module set instead of a profile:
-
-~~~text
+~~~console
 ./bin/dotfiles resolve \
-  --modules shell.zsh.autosuggestions,prompt.starship \
-  --platform macos
-~~~
-
-With those planned modules present, shell.zsh is included automatically because
-shell.zsh.autosuggestions depends on it:
-
-~~~text
+    --modules shell.zsh.autosuggestions,prompt.starship \
+    --platform macos
 shell.zsh
 shell.zsh.autosuggestions
 prompt.starship
 ~~~
 
-The command does not save the custom composition.
+`shell.zsh` appears automatically because autosuggestions depends on it.
 
-## Add modules to a composition
+### Add modules to a base
 
-Use --add with either a profile or an explicit base:
+Use `--add` with either a profile or a custom base:
 
-~~~text
-./bin/dotfiles resolve \
-  --profile shell.minimal \
-  --add prompt.starship \
-  --platform macos
+~~~console
+$ ./bin/dotfiles resolve \
+    --profile shell.minimal \
+    --add terminal.ghostty \
+    --platform macos
 ~~~
 
-~~~text
-./bin/dotfiles resolve \
-  --modules shell.zsh.autosuggestions \
-  --add prompt.starship \
-  --platform debian
+The examples in this section demonstrate the implemented resolution contract.
+They will become runnable when those catalog entries are released.
+
+## Preview another platform
+
+Without `--platform`, the CLI detects macOS or Debian-family Linux. Override it
+when checking compatibility for another machine:
+
+~~~console
+./bin/dotfiles module list --platform debian
+./bin/dotfiles profile list --platform macos
 ~~~
 
-Duplicate selections are de-duplicated. Dependencies still appear before their
-dependents. See the [resolve reference](../cli/resolve.md).
+Accepted values are `macos` and `debian`. The `debian` value covers Debian,
+Ubuntu, Kali, and other supported Debian-family distributions.
 
-## Resolution failures
+## Understand failures
 
-Resolution rejects unsafe or impossible combinations before printing a result.
+The CLI stops without partial output when a composition is invalid. Common
+causes include:
 
-An unknown identifier:
+- An unknown module or profile identifier.
+- A module that does not support the selected platform.
+- Conflicting modules or two modules in one exclusive group.
+- Missing dependencies or a dependency cycle.
+- Invalid catalog data.
 
-~~~text
-./bin/dotfiles resolve --modules shell.unknown --platform debian
-error: unknown module shell.unknown
-~~~
+Invalid syntax points back to help:
 
-A module that does not support the selected platform:
-
-~~~text
-error: module terminal.ghostty does not support platform debian
-~~~
-
-Two modules in one exclusive group:
-
-~~~text
-error: modules terminal.ghostty and terminal.wezterm share exclusive group terminal.primary
-~~~
-
-A dependency cycle, missing dependency, invalid catalog, or conflict also exits
-without a partial resolution.
-
-## Usage errors
-
-Invalid command syntax exits with status 2 and points to help:
-
-~~~text
-./bin/dotfiles resolve
+~~~console
+$ ./bin/dotfiles resolve
 error: resolve requires --profile or --modules
 Run dotfiles help for usage.
 ~~~
 
-Mutually exclusive base selections are rejected:
+Exit codes are stable:
 
-~~~text
-./bin/dotfiles resolve \
-  --profile shell.minimal \
-  --modules shell.zsh
-error: --profile and --modules are mutually exclusive
-Run dotfiles help for usage.
-~~~
-
-## Exit statuses
-
-| Status | Meaning |
+| Code | Meaning |
 | --- | --- |
-| 0 | Success, including an empty list |
-| 2 | Invalid command usage |
-| 3 | Unsupported platform, invalid catalog, or failed resolution |
-| 4 | Chezmoi or an internal implementation file is unavailable |
+| `0` | Success, including an empty list |
+| `2` | Invalid command syntax |
+| `3` | Unsupported platform, invalid catalog, or failed resolution |
+| `4` | Chezmoi or an internal CLI file is unavailable |
 
-Inspect the status immediately after a command when scripting:
+## Safety and current boundaries
 
-~~~text
-./bin/dotfiles catalog validate
-echo $?
-~~~
+Available commands do not:
 
-No stable machine-readable format is promised beyond the documented line and
-tab-separated outputs.
+- Install, remove, or upgrade packages.
+- Write home configuration or save a composition.
+- Invoke Homebrew, mise, or another provider.
+- Apply chezmoi state.
+- Read secrets or machine identity.
+- Request elevated privileges.
 
-## Troubleshooting
+Installation, saved profiles, planning, apply, rollback, sharing, and repair
+commands remain planned. Follow their delivery in the [roadmap](../roadmap.md).
 
-### Chezmoi is required
+## Command reference
 
-~~~text
-error: chezmoi is required for catalog commands
-~~~
-
-Install chezmoi, confirm chezmoi --version succeeds, and run the command again.
-Help and version remain available without it.
-
-### The module or profile list is empty
-
-This is expected in Phase 2. The production catalog intentionally contains zero
-modules and zero profiles.
-
-### The operating system is unsupported
-
-Pass --platform macos or --platform debian only when intentionally previewing a
-supported target. Automatic detection supports macOS and Debian-family Linux.
-
-### A module or profile is unknown
-
-Use module list --all or profile list --all to discover released identifiers.
-Planned identifiers in this guide remain unavailable until they enter the
-production catalog.
-
-### Catalog validation fails
-
-Read the first error, correct the versioned catalog entry, and rerun:
-
-~~~text
-./bin/dotfiles catalog validate
-~~~
-
-Catalog maintenance details are in the [catalog contract](../catalog.md).
-
-## Security and privacy
-
-The available CLI:
-
-- Does not install, remove, or upgrade packages.
-- Does not write home configuration.
-- Does not invoke Homebrew, mise, or a provider.
-- Does not apply chezmoi state.
-- Does not request elevated privileges.
-- Does not read secrets, hostnames, usernames, or private infrastructure.
-- Reads only versioned catalog data and factual operating-system information.
-
-Do not put credentials, hostnames, private addresses, machine identity, or local
-absolute paths in catalog or profile data. Report security issues according to
-the [security policy](../../SECURITY.md).
-
-## Not available yet
-
-The following user workflows remain planned:
-
-- Installing or bootstrapping the environment.
-- Selecting and saving a default profile.
-- Planning provider and home-state changes.
-- Applying or rolling back configuration.
-- Importing, exporting, or sharing custom profiles.
-- Diagnostics and repair commands.
-- Released production modules and profiles.
-
-Track delivery order in the [roadmap](../roadmap.md). The CLI reference documents
-only behavior that exists on the current default branch.
-
-## Detailed command reference
-
-- [help](../cli/help.md)
-- [version](../cli/version.md)
-- [catalog validate](../cli/catalog/validate.md)
-- [module list](../cli/module/list.md)
-- [module show](../cli/module/show.md)
-- [profile list](../cli/profile/list.md)
-- [profile show](../cli/profile/show.md)
-- [resolve](../cli/resolve.md)
+- [Command overview](../cli/README.md)
+- [Help](../cli/help.md)
+- [Version](../cli/version.md)
+- [Catalog validation](../cli/catalog/validate.md)
+- [List modules](../cli/module/list.md)
+- [Inspect a module](../cli/module/show.md)
+- [List profiles](../cli/profile/list.md)
+- [Inspect a profile](../cli/profile/show.md)
+- [Resolve a composition](../cli/resolve.md)

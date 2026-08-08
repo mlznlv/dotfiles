@@ -7,8 +7,9 @@ A modular, reproducible, and security-conscious developer environment for macOS 
 
 ## Start here
 
-The [user guide](docs/user-guide/README.md) covers requirements, every available
-command, platform behavior, examples, errors, and current safety boundaries.
+The [user guide](docs/user-guide/README.md) provides the shortest setup and
+composition workflow. Use the [command guide](docs/cli/README.md) for exact
+syntax and examples.
 
 ## Goals
 
@@ -58,7 +59,7 @@ apply home state.
 - [Repository structure](docs/repository-structure.md)
 - [Modules](docs/modules/README.md)
 - [Profiles](docs/profiles/README.md)
-- [CLI](docs/cli/README.md)
+- [Command guide](docs/cli/README.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security](SECURITY.md)
 
