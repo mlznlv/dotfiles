@@ -384,7 +384,7 @@ END {
     }
 
     if (action == "validate") {
-        print "catalog valid: " module_count " modules, " profile_count " profiles"
+        print "catalog valid: " (module_count + 0) " modules, " (profile_count + 0) " profiles"
     } else if (action == "list_modules") {
         for (i = 1; i <= module_count; i++) {
             id = module_order[i]

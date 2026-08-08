@@ -117,7 +117,7 @@ Resolution is read-only and does not invoke a provider or alter chezmoi state.
 
 ## Fixtures
 
-Catalog definitions below tests/fixtures/<case>/catalog exist only to test
+Catalog definitions below `tests/fixtures/<case>/catalog` exist only to test
 behavior. They are deliberately stored outside a directory named .chezmoidata
 because chezmoi recursively discovers those directories. The test runner copies
 each definition into an isolated temporary source before invoking the CLI.

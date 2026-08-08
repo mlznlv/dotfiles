@@ -41,7 +41,7 @@ apply behavior.
 └── public repository files
 ~~~
 
-Fixture modules and profiles exist only below tests/fixtures/<case>/catalog.
+Fixture modules and profiles exist only below `tests/fixtures/<case>/catalog`.
 The test runner stages them in isolated temporary chezmoi sources, so fixtures
 cannot merge into production catalog data. They are not production entries.
 
