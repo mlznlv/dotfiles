@@ -129,5 +129,5 @@ Run:
 bash scripts/check.sh
 ~~~
 
-The full check requires chezmoi. CI installs an exact pinned chezmoi commit and
-runs the suite on macOS and Ubuntu.
+The full check requires chezmoi. CI installs an exact tagged chezmoi release
+with its published checksum verification and runs the suite on macOS and Ubuntu.
