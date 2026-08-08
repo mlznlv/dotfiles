@@ -4,11 +4,20 @@ Contributions that improve portability, safety, documentation, or a clearly scop
 
 Follow the roadmap in dependency order. Do not implement work before its architecture and acceptance criteria are agreed.
 
+## Branches
+
+- `master` is the active default branch and the base for all new work.
+- `legacy` is a temporary, read-only snapshot of the previous implementation.
+  Do not target it with pull requests.
+
+The legacy branch may be removed after the new implementation has passed its
+recovery window and no rollback need remains.
+
 ## Workflow
 
 1. Read the [architecture](docs/architecture.md) and relevant [ADRs](docs/adr/README.md).
 2. Open an issue for material design changes or new module categories.
-3. Create a focused branch from the current integration branch.
+3. Create a focused branch from `master`.
 4. Keep the pull request limited to one roadmap outcome.
 5. Update documentation and tests in the same pull request as behavior.
 6. Use clear, English commit messages.
