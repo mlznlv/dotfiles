@@ -22,7 +22,7 @@ foundation.
 - The pull request contains no executable dotfiles implementation.
 - The legacy tree is absent from the replacement branch.
 - Documentation consistently describes planned behavior as planned.
-- Documentation checks pass.
+- Documentation and secret-scanning checks pass.
 
 **Non-goals:** installation, catalog parsing, provider integration, or home
 configuration.

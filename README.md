@@ -18,7 +18,8 @@ A modular, reproducible, and security-conscious developer environment for macOS 
 The planned targets are:
 
 - macOS
-- Debian-family Linux, including Debian, Ubuntu, Kali, and Proxmox
+- Debian-family Linux, including Debian, Ubuntu, and Kali
+- A narrowly scoped Proxmox host role in a later roadmap phase
 
 Support will be introduced incrementally and documented per module.
 
@@ -41,7 +42,7 @@ Read the [architecture](docs/architecture.md) and accepted [architecture decisio
 
 ## Project status
 
-Implementation begins after the architecture foundation is accepted. The [roadmap](docs/roadmap.md) divides the work into reviewable pull requests, starting with a read-only catalog and resolver.
+The architecture foundation is established, but the new solution is not installable. The next milestone is the read-only catalog and resolver described in the [roadmap](docs/roadmap.md).
 
 ## License
 
