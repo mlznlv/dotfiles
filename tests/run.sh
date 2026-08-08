@@ -5,7 +5,28 @@ set -u
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 PROJECT_ROOT=$(CDPATH= cd -- "${SCRIPT_DIR}/.." && pwd)
 CLI="${PROJECT_ROOT}/bin/dotfiles"
-FIXTURES="${PROJECT_ROOT}/tests/fixtures"
+FIXTURE_DEFINITIONS="${PROJECT_ROOT}/tests/fixtures"
+TEST_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-tests.XXXXXX")
+
+cleanup() {
+    rm -rf -- "${TEST_ROOT}"
+}
+trap cleanup EXIT
+
+stage_fixture() {
+    fixture_name=$1
+    fixture_source="${FIXTURE_DEFINITIONS}/${fixture_name}/catalog"
+    fixture_target="${TEST_ROOT}/${fixture_name}/.chezmoidata"
+
+    mkdir -p "${fixture_target}"
+    cp -R "${fixture_source}/." "${fixture_target}/"
+}
+
+for fixture_name in cycle invalid-layout missing-dependency unknown-field valid; do
+    stage_fixture "${fixture_name}"
+done
+
+FIXTURES="${TEST_ROOT}"
 VALID="${FIXTURES}/valid"
 
 failures=0

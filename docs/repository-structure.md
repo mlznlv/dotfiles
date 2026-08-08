@@ -36,12 +36,14 @@ apply behavior.
 │   └── check.sh
 ├── tests/
 │   ├── fixtures/
+│   │   └── <case>/catalog/
 │   └── run.sh
 └── public repository files
 ~~~
 
-Fixture modules and profiles exist only below tests/fixtures. They are not
-production catalog entries.
+Fixture modules and profiles exist only below tests/fixtures/<case>/catalog.
+The test runner stages them in isolated temporary chezmoi sources, so fixtures
+cannot merge into production catalog data. They are not production entries.
 
 ## Planned Phase 3 additions
 
