@@ -7,8 +7,8 @@ This command is a Phase 3 contract. It is not available in the current CLI.
 ## Synopsis
 
 ~~~text
-dotfiles apply (--profile <profile-id> | --module <module-id>...)
-               [--add <module-id>...] [--platform macos|debian] [--yes]
+dotfiles apply (--profile <profile-id> | --modules <id,id>)
+               [--add <id,id>] [--platform macos|debian] [--yes]
 ~~~
 
 ## Behavior

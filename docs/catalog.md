@@ -97,7 +97,7 @@ compose module identifiers and do not own resources.
 | providers.macos.homebrew.packages | String array | `[]` | Unique Homebrew formula names; allowed only when `platforms` contains `macos` |
 | providers.debian.mise.packages | String array | `[]` | Unique mise package identifiers; allowed only when `platforms` contains `debian` |
 | providers.debian.mise.tools | String array | `[]` | Unique mise tool identifiers; allowed only when `platforms` contains `debian` |
-| home.chezmoi.sources | String array | `[]` | Unique normalized paths below `home/`; selected on every supported platform |
+| home.chezmoi.sources | String array | `[]` | Unique regular-file source paths below `home/`; selected on every supported platform |
 
 All schema-1 fields are still required. Optional schema-2 tables may be omitted;
 their request arrays then default to empty. Present arrays may also be empty.
@@ -108,8 +108,12 @@ contain whitespace, shell metacharacters, flags, versions expressed as command
 arguments, URLs, or executable text. A chezmoi source is a slash-separated,
 repository-relative path beginning with `home/`; it must not be absolute,
 contain `.` or `..` segments, end in `/`, or name anything outside the planned
-chezmoi source tree. Values are data passed to the owning adapter, never shell
-source or command text.
+chezmoi source tree. It must name a regular file in the repository. Phase 3
+allows only the `dot_` prefix at the start of a path segment and the `.tmpl`
+suffix on the final segment. Directory entries, special entries, and all other
+chezmoi attributes and target types, including `exact_`, `modify_`, `remove_`,
+`run_`, and `symlink_`, fail validation. Values are data passed to the owning
+adapter, never shell source or command text.
 
 Explicit platform sections are required. A macOS request is never inferred on
 Debian and a Debian request is never inferred on macOS. Homebrew is the only
@@ -179,13 +183,17 @@ to one canonical key:
 | Homebrew formula | `homebrew:package:<formula-name>` |
 | Mise Debian package | `mise:package:<package-name>` |
 | Mise tool | `mise:tool:<tool-name>` |
-| Chezmoi source | `chezmoi:source:<normalized-source-path>` |
+| Chezmoi rendered target | `chezmoi:target:<normalized-home-relative-target>` |
 
 Provider, kind, and identifiers are already canonical lowercase data; chezmoi
-paths use `/` separators. Any repeated key across the resolved modules is a
+paths use `/` separators. A chezmoi target is derived by removing `home/`,
+removing the final `.tmpl` suffix, and translating a leading `dot_` in every
+path segment to `.`. The result must be a non-empty relative target path. For
+example, both `home/dot_zshrc` and `home/dot_zshrc.tmpl` normalize to `.zshrc`
+and therefore collide. Any repeated key across the resolved modules is a
 duplicate ownership error, even when the declarations are identical. The error
-names the key and every declaring module. This check completes before provider
-observation, planning, or mutation.
+names the key, source path, and every declaring module. This check completes
+before provider observation, planning, or mutation.
 
 ## Schema 1 profile fields
 
@@ -246,4 +254,6 @@ with its published checksum verification and runs the suite on macOS and Ubuntu.
 
 Planned schema-2 implementation tests must cover valid schema-1 and schema-2
 manifests, unknown fields and providers, incompatible platform sections,
-duplicate ownership keys, and values resembling executable shell text.
+duplicate ownership keys including distinct sources that normalize to one
+chezmoi target, directory selections, forbidden chezmoi attributes, and values
+resembling executable shell text.

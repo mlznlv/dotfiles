@@ -109,8 +109,11 @@ flowchart LR
 
 Resolved schema-2 modules contribute static requests for the detected or
 explicit target platform plus platform-neutral chezmoi source selections. The
-CLI converts them to canonical ownership keys and rejects every collision
-before asking a provider to inspect the target.
+CLI converts provider requests to canonical keys and chezmoi sources to their
+normalized rendered-target keys, then rejects every collision before asking a
+provider to inspect the target. Phase 3 source selection permits regular files
+and templates only; directory entries and non-minimal chezmoi attributes are
+rejected rather than expanded or executed.
 
 Provider adapters have two separate interfaces:
 

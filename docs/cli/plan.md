@@ -7,8 +7,8 @@ This command is a Phase 3 contract. It is not available in the current CLI.
 ## Synopsis
 
 ~~~text
-dotfiles plan (--profile <profile-id> | --module <module-id>...)
-              [--add <module-id>...] [--platform macos|debian]
+dotfiles plan (--profile <profile-id> | --modules <id,id>)
+              [--add <id,id>] [--platform macos|debian]
 ~~~
 
 ## Behavior
@@ -44,11 +44,11 @@ Homebrew
    network: yes; provider installation: no; privilege: possible Homebrew prompt; download: Homebrew-managed integrity
 
 chezmoi
-4. update prompt.starship chezmoi:source:home/dot_config/starship.toml
+4. update prompt.starship chezmoi:target:.config/starship.toml
    network: no; provider installation: no; privilege: none; download: none
-5. update shell.zsh.autosuggestions chezmoi:source:home/dot_config/zsh/autosuggestions.zsh.tmpl
+5. update shell.zsh.autosuggestions chezmoi:target:.config/zsh/autosuggestions.zsh
    network: no; provider installation: no; privilege: none; download: none
-6. update shell.zsh chezmoi:source:home/dot_zshrc.tmpl
+6. update shell.zsh chezmoi:target:.zshrc
    network: no; provider installation: no; privilege: none; download: none
 ~~~
 
@@ -65,9 +65,9 @@ mise
    network: yes; provider installation: no; privilege: possible package-manager prompt; download: mise-managed integrity
 
 chezmoi
-4. update prompt.starship chezmoi:source:home/dot_config/starship.toml
-5. update shell.zsh.autosuggestions chezmoi:source:home/dot_config/zsh/autosuggestions.zsh.tmpl
-6. update shell.zsh chezmoi:source:home/dot_zshrc.tmpl
+4. update prompt.starship chezmoi:target:.config/starship.toml
+5. update shell.zsh.autosuggestions chezmoi:target:.config/zsh/autosuggestions.zsh
+6. update shell.zsh chezmoi:target:.zshrc
 ~~~
 
 Repeated planning after successful convergence is explicit:

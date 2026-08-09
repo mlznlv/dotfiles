@@ -27,14 +27,19 @@ Each request produces a canonical ownership key:
 homebrew:package:<formula-name>
 mise:package:<package-name>
 mise:tool:<tool-name>
-chezmoi:source:<source-path>
+chezmoi:target:<home-relative-target-path>
 ~~~
 
 Provider and kind names are lowercase literals. Resource identifiers use the
-provider's normalized catalog identifier; chezmoi source paths use normalized,
-repository-relative slash-separated paths. Two requests with the same key are
-an error even when their values are identical. Ownership is checked after
-resolution and platform selection but before provider observation.
+provider's normalized catalog identifier. A selected chezmoi source is reduced
+to the home-relative target it renders: remove the leading `home/`, remove a
+final `.tmpl`, and translate a leading `dot_` in every path segment to `.`.
+Phase 3 permits only regular files and file templates using that `dot_`
+attribute; directories and every other chezmoi prefix, suffix, target type, and
+special entry are rejected. The normalized slash-separated target must remain
+relative and non-empty. Two requests with the same target key are an error even
+when their source paths differ. Ownership is checked after resolution and
+platform selection but before provider observation.
 
 Planning is read-only. The CLI resolves modules, validates ownership, asks only
 the selected providers to observe current state, and creates steps containing a
@@ -76,8 +81,8 @@ explicit and a later bootstrap decision cannot silently add that effect.
 | --- | --- | --- |
 | Catalog version | Extend schema 1; introduce schema 2 | Schema 2; schema 1 remains unchanged |
 | Requests | Commands; generic operations; provider-owned static data | Provider-owned static data in explicit platform sections |
-| Home state | Implicit paths; executable selectors; static source paths | Static chezmoi source paths consumed as data |
-| Ownership identity | Module plus resource; provider resource key | Canonical provider, kind, and normalized resource key |
+| Home state | Implicit paths; executable selectors; static source paths | Static sources with deterministic target normalization |
+| Ownership identity | Module plus source; provider resource key | Canonical provider, kind, and normalized rendered-target key |
 | Plan order | Discovery order; dependency order; stable provider/key order | Homebrew, mise, chezmoi; then key and module |
 | Apply lifetime | Saved/replayable artifact; fresh plan | Recompute and apply in one invocation |
 | Confirmation | Prompt only; implicit CI approval; prompt or `--yes` | Explicit `yes`, or explicit `--yes` non-interactively |
