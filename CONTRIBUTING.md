@@ -34,6 +34,13 @@ from `next` to `master` is a separate release decision, remains unmerged until
 the repository owner explicitly approves it, and must not include new work that
 has not already integrated through `next`.
 
+Merge an approved promotion pull request with a merge commit so `master`
+preserves the exact integrated commits from `next`. Never squash-merge or rebase
+a promotion. Afterward, verify that the promoted `next` commit is an ancestor of
+`master`; do not merge `master` back into `next` or reset `next`. Development
+continues from the existing `next` history, and its later commits form the next
+promotion.
+
 Catalog and CLI changes require chezmoi. Validate them with:
 
 ~~~text
