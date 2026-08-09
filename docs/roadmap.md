@@ -59,8 +59,7 @@ entries.
 
 ## Phase 3: Minimal shell vertical slice
 
-**Status:** Schema and catalog migration implemented; PR validation and owner
-review pending.
+**Status:** Schema and catalog migration complete; prerequisite validation next.
 
 **Objective:** prove end-to-end planning and safe application of explicitly
 selected configuration, without installing or converging software.
@@ -81,9 +80,9 @@ selected configuration, without installing or converging software.
    tool modules, static prerequisites, rendered-target ownership, and the
    explicit migration from provider requests. Documentation only. Blocks every
    later increment.
-4. **Schema and catalog migration (validation pending):** implement schema 3,
-   convert the three production modules and fixtures, and preserve schema-2
-   read-only compatibility without reinterpretation. Depends on ADR 0007.
+4. **Schema and catalog migration (complete):** implemented schema 3, converted
+   the three production modules and fixtures, and preserved schema-2 read-only
+   compatibility without reinterpretation. Depends on ADR 0007.
 5. **Prerequisite validation:** implement generic read-only command,
    application, and artifact presence checks with actionable, fail-closed
    errors for macOS and Debian. It never opens or invokes the prerequisite or
