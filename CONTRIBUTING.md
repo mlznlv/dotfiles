@@ -6,9 +6,13 @@ Follow the roadmap in dependency order. Do not implement work before its archite
 
 ## Branches
 
-- `master` is the active default branch and the base for all new work.
-- `legacy` is a temporary, read-only snapshot of the previous implementation.
-  Do not target it with pull requests.
+- `master` is the stable, released branch. It receives changes only through a
+  separate promotion pull request from `next` that the repository owner has
+  explicitly reviewed and approved.
+- `next` is the active integration branch. Create implementation branches from
+  its latest commit and target their pull requests to `next`.
+- `legacy` is a read-only recovery snapshot. Never modify it or target it with
+  pull requests.
 
 The legacy branch may be removed after the new implementation has passed its
 recovery window and no rollback need remains.
@@ -17,12 +21,18 @@ recovery window and no rollback need remains.
 
 1. Read the [architecture](docs/architecture.md) and relevant [ADRs](docs/adr/README.md).
 2. Open an issue for material design changes or new module categories.
-3. Create a focused branch from `master`.
-4. Keep the pull request limited to one roadmap outcome.
+3. Update `next`, then create a focused branch from its latest commit.
+4. Keep the pull request limited to one roadmap outcome and target it to
+   `next`.
 5. Update documentation and tests in the same pull request as behavior.
 6. Use clear, English commit messages.
 7. Run the repository checks.
 8. Complete the pull request checklist.
+
+Ordinary implementation and maintenance work never targets `master`. Promotion
+from `next` to `master` is a separate release decision, remains unmerged until
+the repository owner explicitly approves it, and must not include new work that
+has not already integrated through `next`.
 
 Catalog and CLI changes require chezmoi. Validate them with:
 

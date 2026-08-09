@@ -13,7 +13,10 @@ fi
 
 bash -n "${PROJECT_ROOT}/bin/dotfiles"
 bash -n "${PROJECT_ROOT}/scripts/check.sh"
+bash -n "${PROJECT_ROOT}/scripts/check-branch-policy.sh"
 bash -n "${PROJECT_ROOT}/tests/run.sh"
+
+bash "${PROJECT_ROOT}/scripts/check-branch-policy.sh"
 
 "${PROJECT_ROOT}/bin/dotfiles" help >/dev/null
 "${PROJECT_ROOT}/bin/dotfiles" version >/dev/null

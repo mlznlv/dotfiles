@@ -8,6 +8,12 @@ Describe the user-visible outcome and why this change is needed.
 
 List the included work and explicit non-goals.
 
+## Branch contract
+
+- [ ] This implementation pull request targets `next`, not `master` or
+      `legacy`.
+- [ ] The branch started from the latest `next` relevant to this work.
+
 ## Architecture and ownership
 
 - Relevant ADRs:

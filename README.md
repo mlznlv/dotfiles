@@ -69,6 +69,10 @@ The architecture foundation, schema-2 validation, and first shell composition
 are established. The solution remains read-only and non-installable. Provider
 observation is the next increment in the [roadmap](docs/roadmap.md).
 
+Development integrates through `next`; `master` remains the stable branch until
+an explicitly reviewed promotion. See [Contributing](CONTRIBUTING.md) for the
+branch workflow.
+
 ## License
 
 Licensed under the [MIT License](LICENSE).

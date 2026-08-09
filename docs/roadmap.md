@@ -73,6 +73,8 @@ useful composition.
    shell.zsh.autosuggestions, and prompt.starship plus profile shell.minimal
    under the accepted schema, with validation and resolution fixtures. Depends
    on the accepted execution contract.
+   Before the next product increment, formalize `next` as the integration
+   branch and retain `master` as the stable branch.
 3. **Provider observation adapters:** add read-only Homebrew, mise, and chezmoi
    observations and normalized fixture coverage for macOS and Debian. Depends
    on the shell catalog composition.
@@ -87,8 +89,10 @@ useful composition.
    reporting, and idempotency tests. Depends on all earlier Phase 3 increments.
 
 Each increment is one focused pull request and updates its command, module, or
-profile documentation in the same change. Saved plans, rollback, and removal
-remain outside every increment.
+profile documentation in the same change. Implementation increments branch from
+and integrate into `next`. Promotion from `next` to stable `master` is a
+separate, explicitly owner-reviewed release decision, not an implementation
+increment. Saved plans, rollback, and removal remain outside every increment.
 
 **Acceptance criteria:**
 
@@ -220,11 +224,12 @@ through explicit profiles.
 
 **Status:** Planned.
 
-**Objective:** prepare the implementation on the default branch for a stable
-public release.
+**Objective:** prepare the integrated implementation for explicit promotion to
+`master` and a stable public release.
 
-The development branch cutover is complete before this phase. The `legacy`
-branch remains only as a temporary recovery snapshot.
+Development continues to integrate through `next`. Stable releases reach
+`master` only through separate promotion pull requests. The `legacy` branch
+remains only as a read-only recovery snapshot.
 
 **Deliverables:**
 
