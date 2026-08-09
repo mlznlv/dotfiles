@@ -17,7 +17,7 @@ $ ./bin/dotfiles help
 $ ./bin/dotfiles version
 dotfiles 0.1.0-dev
 $ ./bin/dotfiles catalog validate
-catalog valid: 3 modules, 1 profiles
+catalog valid: 3 modules, 1 profile
 ~~~
 
 Catalog commands require [chezmoi](https://www.chezmoi.io/). Help and version do

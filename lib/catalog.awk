@@ -14,6 +14,10 @@ function fail(message) {
     errors++
 }
 
+function count_label(count, singular) {
+    return count " " singular (count == 1 ? "" : "s")
+}
+
 function valid_id(id) {
     return id ~ /^[a-z][a-z0-9]*(\.[a-z][a-z0-9-]*)+$/
 }
@@ -500,7 +504,7 @@ END {
     }
 
     if (action == "validate") {
-        print "catalog valid: " (module_count + 0) " modules, " (profile_count + 0) " profiles"
+        print "catalog valid: " count_label(module_count + 0, "module") ", " count_label(profile_count + 0, "profile")
     } else if (action == "list_modules") {
         for (i = 1; i <= module_count; i++) {
             id = module_order[i]

@@ -131,16 +131,17 @@ expected_with_terminal=$(printf '%s\n' \
 
 expect_exact "version is stable" 0 "dotfiles 0.1.0-dev" "$CLI" version
 expect_contains "help is available" 0 "All commands in this release are read-only." "$CLI" help
-expect_exact "production catalog validates" 0 "catalog valid: 3 modules, 1 profiles" "$CLI" catalog validate
+expect_exact "production catalog validates" 0 "catalog valid: 3 modules, 1 profile" "$CLI" catalog validate
 expect_contains "production module list exposes Zsh" 0 "shell.zsh" "$CLI" module list --platform macos
 expect_contains "production module list exposes Starship" 0 "prompt.starship" "$CLI" module list --platform debian
 expect_contains "production profile list exposes minimal shell" 0 "shell.minimal" "$CLI" profile list --platform debian
-expect_contains "production module show exposes dependency" 0 "depends: shell.zsh" "$CLI" module show prompt.starship
+expect_contains "production module show exposes dependency" 0 "depends: shell.zsh" "$CLI" module show shell.zsh.autosuggestions
 expect_contains "production profile show exposes composition" 0 "modules: shell.zsh,shell.zsh.autosuggestions,prompt.starship" "$CLI" profile show shell.minimal
 expect_exact "production profile resolves on macOS" 0 "$expected_profile" "$CLI" resolve --profile shell.minimal --platform macos
 expect_exact "production profile resolves on Debian" 0 "$expected_profile" "$CLI" resolve --profile shell.minimal --platform debian
 expect_exact "production explicit modules resolve deterministically" 0 "$expected_profile" "$CLI" resolve --modules shell.zsh.autosuggestions,prompt.starship --platform debian
-expect_exact "fixture catalog validates" 0 "catalog valid: 5 modules, 1 profiles" env DOTFILES_SOURCE_DIR="$VALID" "$CLI" catalog validate
+expect_exact "Starship resolves independently" 0 "prompt.starship" "$CLI" resolve --modules prompt.starship --platform debian
+expect_exact "fixture catalog validates" 0 "catalog valid: 5 modules, 1 profile" env DOTFILES_SOURCE_DIR="$VALID" "$CLI" catalog validate
 expect_contains "module list filters for Debian" 0 "shell.zsh" env DOTFILES_SOURCE_DIR="$VALID" "$CLI" module list --platform debian
 expect_not_contains "Debian list excludes macOS terminal" "terminal.ghostty" env DOTFILES_SOURCE_DIR="$VALID" "$CLI" module list --platform debian
 expect_contains "module list all includes terminal" 0 "terminal.ghostty" env DOTFILES_SOURCE_DIR="$VALID" "$CLI" module list --all
@@ -159,7 +160,7 @@ expect_contains "invalid identifier fails validation" 3 "contains invalid identi
 expect_contains "missing dependency fails validation" 3 "depends on unknown module shell.missing" env DOTFILES_SOURCE_DIR="${FIXTURES}/missing-dependency" "$CLI" catalog validate
 expect_contains "unknown manifest field fails validation" 3 "unsupported field unexpected" env DOTFILES_SOURCE_DIR="${FIXTURES}/unknown-field" "$CLI" catalog validate
 expect_contains "category path mismatch fails validation" 3 "must be stored at .chezmoidata/modules/shell/alpha.toml" env DOTFILES_SOURCE_DIR="${FIXTURES}/invalid-layout" "$CLI" catalog validate
-expect_exact "schema 2 validates provider and nested chezmoi data" 0 "catalog valid: 1 modules, 0 profiles" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema2-valid" "$CLI" catalog validate
+expect_exact "schema 2 validates provider and nested chezmoi data" 0 "catalog valid: 1 module, 0 profiles" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema2-valid" "$CLI" catalog validate
 expect_contains "unsafe provider identifier fails" 3 "unsafe provider identifier --formula" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema2-unsafe" "$CLI" catalog validate
 expect_contains "Homebrew requires macOS support" 3 "declares Homebrew packages without macos support" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema2-platform" "$CLI" catalog validate
 expect_contains "chezmoi traversal fails" 3 "unsafe chezmoi source home/../dot_zshrc" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema2-source" "$CLI" catalog validate

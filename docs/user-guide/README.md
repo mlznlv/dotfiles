@@ -40,7 +40,7 @@ Confirm the version and validate the catalog:
 $ ./bin/dotfiles version
 dotfiles 0.1.0-dev
 $ ./bin/dotfiles catalog validate
-catalog valid: 3 modules, 1 profiles
+catalog valid: 3 modules, 1 profile
 ~~~
 
 The counts represent the three released shell modules and one curated profile.
