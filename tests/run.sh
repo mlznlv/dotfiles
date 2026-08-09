@@ -22,12 +22,25 @@ stage_fixture() {
     cp -R "${fixture_source}/." "${fixture_target}/"
 }
 
-for fixture_name in cycle invalid-layout missing-dependency unknown-field valid; do
+for fixture_name in cycle invalid-identifier invalid-layout missing-dependency unknown-field valid; do
     stage_fixture "${fixture_name}"
 done
 
 FIXTURES="${TEST_ROOT}"
 VALID="${FIXTURES}/valid"
+PROVIDER_BIN="${TEST_ROOT}/provider-bin"
+PROVIDER_LOG="${TEST_ROOT}/provider.log"
+
+mkdir -p "${PROVIDER_BIN}"
+for provider in brew mise; do
+    printf '%s\n' \
+        '#!/bin/sh' \
+        'printf "%s\n" "$0 $*" >> "${DOTFILES_PROVIDER_LOG}"' \
+        'exit 97' > "${PROVIDER_BIN}/${provider}"
+    chmod +x "${PROVIDER_BIN}/${provider}"
+done
+export DOTFILES_PROVIDER_LOG="${PROVIDER_LOG}"
+export PATH="${PROVIDER_BIN}:${PATH}"
 
 failures=0
 checks=0
@@ -132,12 +145,24 @@ expect_exact "additional module is appended safely" 0 "$expected_with_terminal" 
 expect_contains "exclusive group conflict fails" 3 "share exclusive group terminal.primary" env DOTFILES_SOURCE_DIR="$VALID" "$CLI" resolve --modules terminal.ghostty,terminal.wezterm --platform macos
 expect_contains "unsupported platform fails" 3 "does not support platform debian" env DOTFILES_SOURCE_DIR="$VALID" "$CLI" resolve --modules terminal.ghostty --platform debian
 expect_contains "unknown module fails" 3 "unknown module shell.unknown" env DOTFILES_SOURCE_DIR="$VALID" "$CLI" resolve --modules shell.unknown --platform debian
+expect_contains "declared module conflict fails" 3 "module terminal.wezterm conflicts with shell.zsh" env DOTFILES_SOURCE_DIR="$VALID" "$CLI" resolve --modules shell.zsh,terminal.wezterm --platform macos
 expect_contains "dependency cycle fails validation" 3 "dependency cycle includes" env DOTFILES_SOURCE_DIR="${FIXTURES}/cycle" "$CLI" catalog validate
+expect_contains "invalid identifier fails validation" 3 "contains invalid identifier Shell.invalid" env DOTFILES_SOURCE_DIR="${FIXTURES}/invalid-identifier" "$CLI" catalog validate
 expect_contains "missing dependency fails validation" 3 "depends on unknown module shell.missing" env DOTFILES_SOURCE_DIR="${FIXTURES}/missing-dependency" "$CLI" catalog validate
 expect_contains "unknown manifest field fails validation" 3 "unsupported field unexpected" env DOTFILES_SOURCE_DIR="${FIXTURES}/unknown-field" "$CLI" catalog validate
 expect_contains "category path mismatch fails validation" 3 "must be stored at .chezmoidata/modules/shell/alpha.toml" env DOTFILES_SOURCE_DIR="${FIXTURES}/invalid-layout" "$CLI" catalog validate
 expect_contains "usage errors use status 2" 2 "unknown command unknown" "$CLI" unknown
 expect_contains "missing chezmoi uses status 4" 4 "chezmoi is required" env DOTFILES_CHEZMOI_BIN=does-not-exist "$CLI" catalog validate
+
+if [ ! -e "${PROVIDER_LOG}" ]; then
+    STATUS=0
+    OUTPUT=
+    pass "released commands invoke no package provider"
+else
+    STATUS=97
+    OUTPUT="a package provider was invoked"
+    fail "released commands invoke no package provider"
+fi
 
 if [ "$failures" -ne 0 ]; then
     printf '%s of %s checks failed\n' "$failures" "$checks" >&2
