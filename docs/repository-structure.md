@@ -48,6 +48,18 @@ Fixture modules and profiles exist only below `tests/fixtures/<case>/catalog`.
 The test runner stages them in isolated temporary chezmoi sources, so fixtures
 cannot merge into production catalog data. They are not production entries.
 
+## Branch responsibilities
+
+| Branch | Responsibility | Normal changes |
+| --- | --- | --- |
+| `master` | Stable and released state | Explicit owner-reviewed promotion from `next` only |
+| `next` | Active integration state | Focused implementation and maintenance pull requests |
+| `legacy` | Read-only recovery snapshot | None; never a pull-request target |
+
+Work branches start from the latest `next` and target `next`. Integrating an
+increment does not promote it to `master`; promotion is a separate release
+pull request and decision.
+
 ## Phase 3 layout
 
 Phase 3 is split into focused increments. The following target layout reserves
