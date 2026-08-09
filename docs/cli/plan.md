@@ -2,7 +2,8 @@
 
 ## Status
 
-This command is a Phase 3 contract. It is not available in the current CLI.
+This command is not available in the current CLI. Its configuration-only
+contract depends on owner acceptance of ADR 0007 and the schema migration.
 
 ## Synopsis
 
@@ -13,81 +14,64 @@ dotfiles plan (--profile <profile-id> | --modules <id,id>)
 
 ## Behavior
 
-The command resolves the requested composition, selects static requests for the
-target platform, rejects duplicate ownership, observes provider state without
-mutation, and prints one deterministic plan. It never installs a provider,
-updates metadata, downloads packages, writes home state, or saves a plan.
-If Homebrew, mise, or chezmoi is required but unavailable, the command names the
-missing prerequisite, discloses that separate provider installation is needed,
-and fails without producing a plan eligible for apply.
+The command resolves the explicit composition, rejects rendered-target
+collisions, and validates only the static prerequisites of selected modules.
+It checks command and application presence without running a prerequisite. A
+missing prerequisite names the module and identifier, tells the user to provide
+the tool outside this project, and fails before creating a plan eligible for
+apply.
 
-Steps are grouped Homebrew, mise, then chezmoi and sorted by canonical ownership
-key within each group. Every step shows its ordinal, declaring module, action,
-resource key, network use, possible privilege prompt, and download integrity
-owner. It also states whether the provider itself must be installed. Sensitive
-provider values are redacted.
+After preconditions pass, the command asks chezmoi for diffs limited to the
+selected module sources and prints one deterministic configuration plan. Every
+step contains an ordinal, module, normalized `chezmoi:target` key, action, and
+sanitized description. Steps sort by target and then module. `No changes.` is a
+successful plan.
+
+Planning never installs or updates software, invokes Homebrew or mise, calls an
+operating-system package manager, executes a prerequisite, writes home state,
+or saves a plan. Plans contain no secrets or machine identity.
 
 ## Examples
 
-Planned macOS output:
+Configuration-only plan:
 
 ~~~console
-$ dotfiles plan --profile shell.minimal --platform macos
-Plan: 6 changes for macos
+$ dotfiles plan --modules prompt.starship --platform macos
+Prerequisites: satisfied
+Plan: 1 configuration change for macos
 
-Homebrew
-1. install shell.zsh homebrew:package:zsh
-   network: yes; provider installation: no; privilege: possible Homebrew prompt; download: Homebrew-managed integrity
-2. install shell.zsh.autosuggestions homebrew:package:zsh-autosuggestions
-   network: yes; provider installation: no; privilege: possible Homebrew prompt; download: Homebrew-managed integrity
-3. install prompt.starship homebrew:package:starship
-   network: yes; provider installation: no; privilege: possible Homebrew prompt; download: Homebrew-managed integrity
-
-chezmoi
-4. update prompt.starship chezmoi:target:.config/starship.toml
-   network: no; provider installation: no; privilege: none; download: none
-5. update shell.zsh.autosuggestions chezmoi:target:.config/zsh/autosuggestions.zsh
-   network: no; provider installation: no; privilege: none; download: none
-6. update shell.zsh chezmoi:target:.zshrc
-   network: no; provider installation: no; privilege: none; download: none
+1. update prompt.starship chezmoi:target:.config/starship.toml
+   source: home/dot_config/starship.toml
+   network: no; privilege: none
 ~~~
 
-Planned Debian-family output uses mise as the package and tool owner:
+This selection does not select Zsh or another shell.
+
+Missing prerequisite:
 
 ~~~console
-$ dotfiles plan --profile shell.minimal --platform debian
-Plan: 6 changes for debian
-
-mise
-1. install shell.zsh mise:package:zsh
-2. install shell.zsh.autosuggestions mise:package:zsh-autosuggestions
-3. install prompt.starship mise:tool:starship
-   network: yes; provider installation: no; privilege: possible package-manager prompt; download: mise-managed integrity
-
-chezmoi
-4. update prompt.starship chezmoi:target:.config/starship.toml
-5. update shell.zsh.autosuggestions chezmoi:target:.config/zsh/autosuggestions.zsh
-6. update shell.zsh chezmoi:target:.zshrc
+$ dotfiles plan --modules terminal.ghostty --platform macos
+error: terminal.ghostty requires application com.mitchellh.ghostty on macos
+Provide the application outside this project, then run the plan again.
+No configuration changes were planned or applied.
 ~~~
 
-Repeated planning after successful convergence is explicit:
+Unsupported platform combinations and unsafe prerequisite data also fail
+before chezmoi diffing. Repeated planning after convergence is explicit:
 
 ~~~console
 $ dotfiles plan --profile shell.minimal
 No changes.
 ~~~
 
-The compact Debian example omits repeated disclosure lines for readability;
-the implemented command must print them for every step.
-
 ## Exit codes
 
 | Code | Planned meaning |
 | --- | --- |
-| `0` | Valid plan, including `No changes.` |
+| `0` | Valid configuration plan, including `No changes.` |
 | `2` | Invalid syntax |
-| `3` | Invalid catalog, composition, platform, or ownership |
-| `4` | Required CLI component or provider observer unavailable |
-| `5` | Provider observation failed; no actionable plan produced |
+| `3` | Invalid catalog, composition, platform, prerequisite data, or ownership |
+| `4` | Required CLI foundation component unavailable |
+| `5` | Prerequisite check or chezmoi diff failed; no actionable plan produced |
 
-Errors go to standard error. No failure path may mutate provider or home state.
+Errors go to standard error. No failure path mutates software or home state.

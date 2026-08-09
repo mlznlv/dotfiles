@@ -59,49 +59,68 @@ entries.
 
 ## Phase 3: Minimal shell vertical slice
 
-**Status:** Catalog composition implemented; provider observation next.
+**Status:** Catalog composition implemented; configuration-only contract
+proposed and awaiting owner acceptance.
 
-**Objective:** prove end-to-end planning and safe application with a small,
-useful composition.
+**Objective:** prove end-to-end planning and safe application of explicitly
+selected configuration, without installing or converging software.
 
 **Implementation increments:**
 
 1. **Execution contract:** accept ADR 0006 and specify schema 2, ownership,
    provider boundaries, plan ordering, apply safety, paths, and command
-   contracts. Documentation only. Depends on Phase 2.
+   contracts. Historical documentation increment, partially superseded if ADR
+   0007 is accepted. Depends on Phase 2.
 2. **Shell catalog composition (complete):** release modules shell.zsh,
    shell.zsh.autosuggestions, and prompt.starship plus profile shell.minimal
    under the accepted schema, with validation and resolution fixtures. Depends
    on the accepted execution contract.
    Before the next product increment, formalize `next` as the integration
    branch and retain `master` as the stable branch.
-3. **Provider observation adapters:** add read-only Homebrew, mise, and chezmoi
-   observations and normalized fixture coverage for macOS and Debian. Depends
-   on the shell catalog composition.
-4. **Deterministic planning:** implement `dotfiles plan`, ownership collision
-   checks, stable plan construction, disclosures, no-change behavior, and
-   failure tests. Depends on provider observation adapters.
-5. **Chezmoi shell state:** add the selected Zsh, autosuggestions, and Starship
-   source files and rendering tests without adding apply orchestration. Depends
-   on deterministic planning.
-6. **Safe application:** implement `dotfiles apply`, interactive and
-   non-interactive intent checks, ordered provider execution, stop-on-failure
-   reporting, and idempotency tests. Depends on all earlier Phase 3 increments.
+3. **Configuration-only contract:** accept ADR 0007, define optional tool
+   modules, static prerequisites, rendered-target ownership, and the explicit
+   migration from provider requests. Documentation only. Blocks every later
+   increment.
+4. **Schema and catalog migration:** implement the replacement prerequisite
+   schema, convert the three production modules and fixtures, and reject
+   unconverted provider fields explicitly for configuration commands. Depends
+   on accepted ADR 0007.
+5. **Prerequisite validation:** implement generic read-only command and
+   application presence checks with actionable, fail-closed errors for macOS
+   and Debian. It never invokes the prerequisite or an installer. Depends on
+   the schema migration.
+6. **Chezmoi shell configuration:** add selected Zsh, autosuggestions, and
+   Starship source files plus rendering and target-ownership tests. Depends on
+   the schema migration.
+7. **Deterministic configuration planning:** implement `dotfiles plan`, enforce
+   prerequisite and rendered-target preconditions, and show stable chezmoi-only
+   diffs and no-change behavior. Depends on prerequisite validation and shell
+   configuration.
+8. **Safe configuration apply:** implement `dotfiles apply`, interactive and
+   non-interactive intent checks, selected-source chezmoi application,
+   stop-on-failure reporting, and idempotency tests. Depends on all earlier
+   Phase 3 increments.
 
 Each increment is one focused pull request and updates its command, module, or
 profile documentation in the same change. Implementation increments branch from
 and integrate into `next`. Promotion from `next` to stable `master` is a
 separate, explicitly owner-reviewed release decision, not an implementation
-increment. Saved plans, rollback, and removal remain outside every increment.
+increment. The earlier provider-observation increment is superseded and must not
+be implemented. Saved plans, rollback, software installation, and destructive
+removal remain outside every increment.
 
 **Acceptance criteria:**
 
-- A clean supported target can preview and apply the profile.
-- Zsh, autosuggestions, and Starship work after a new shell starts.
+- A supported target with prerequisites already present can preview and apply
+  the explicitly selected configuration.
+- A missing prerequisite fails before a plan eligible for apply or mutation.
+- Zsh, autosuggestions, and Starship configuration works after a new shell
+  starts when those modules are selected.
 - A second apply is idempotent.
-- No unrelated files or packages are removed.
+- No software is installed, upgraded, or removed, and no unrelated file changes.
 
-**Non-goals:** workstation applications, remote access, or broad package sets.
+**Non-goals:** software installation, provider adapters, workstation
+applications, remote access, or broad configuration sets.
 
 **Depends on:** phase 2.
 
@@ -160,16 +179,18 @@ through explicit profiles.
 **Deliverables:**
 
 - Personal-client and developer-workstation profiles.
-- Curated CLI, version-control, editor, terminal, and runtime modules.
-- Homebrew, mise, chezmoi, Ghostty, and tmux integration within their ownership
-  boundaries.
+- Curated configuration modules for CLI, version-control, editors, terminals,
+  and runtimes.
+- Chezmoi-managed configuration and static prerequisite validation for
+  explicitly selected tools such as Ghostty and tmux.
 - Role-specific documentation and platform tests.
 
 **Acceptance criteria:**
 
 - Profiles share modules without duplicated configuration.
 - Personal and developer choices remain explicit and inspectable.
-- Provider ownership validation prevents duplicate resource management.
+- Rendered-target ownership validation prevents duplicate configuration
+  management.
 - Apply remains idempotent on supported macOS targets.
 
 **Depends on:** phase 5.
@@ -235,12 +256,12 @@ remains only as a read-only recovery snapshot.
 
 - End-to-end clean-machine tests and upgrade tests.
 - Versioning, changelog, release, and support policies.
-- Bootstrap integrity and failure-recovery tests.
+- Configuration-source integrity and failure-recovery tests.
 - Release-readiness checklist and legacy-branch removal decision.
 
 **Acceptance criteria:**
 
-- Supported targets pass installation and idempotency tests.
+- Supported targets pass configuration and idempotency tests.
 - Security and privacy review has no unresolved high-risk findings.
 - Documentation matches the released CLI.
 - A production release and legacy-branch removal each require an explicit

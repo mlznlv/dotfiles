@@ -8,7 +8,7 @@ Run commands from the repository root with `./bin/dotfiles`.
 
 > [!NOTE]
 > The production catalog contains three shell modules and the `shell.minimal`
-> profile. Provider observation, plan, and apply are not available yet.
+> profile. Prerequisite validation, plan, and apply are not available yet.
 
 ## Quick start
 
@@ -43,11 +43,12 @@ available in the current CLI:
 
 | I will be able to... | Planned command | Contract |
 | --- | --- | --- |
-| Build a read-only provider and home-state plan | `dotfiles plan ...` | [plan](plan.md) |
-| Recompute, confirm, and safely apply a plan | `dotfiles apply ...` | [apply](apply.md) |
+| Build a read-only configuration plan | `dotfiles plan ...` | [plan](plan.md) |
+| Recompute, confirm, and apply selected configuration | `dotfiles apply ...` | [apply](apply.md) |
 
-Neither command may be presented as released until its implementation and tests
-merge. Phase 3 will not support saved plans, replay, rollback, or removal.
+Neither command may be presented as released until ADR 0007 is accepted and its
+implementation and tests merge. Phase 3 will not install software or support
+saved plans, replay, automatic rollback, or destructive removal.
 
 ## Typical workflow
 

@@ -3,7 +3,8 @@
 A modular, reproducible, and security-conscious developer environment for macOS and Debian-family Linux.
 
 > [!IMPORTANT]
-> The read-only schema-2 shell catalog and resolver are available. Installation and apply behavior are not implemented yet.
+> The read-only schema-2 shell catalog and resolver are available. Managed
+> configuration and apply behavior are not implemented yet.
 
 ## Start here
 
@@ -15,7 +16,7 @@ syntax and examples.
 
 - Compose machines from independently selectable modules.
 - Provide curated profiles without preventing custom compositions.
-- Keep one authoritative provider for every capability.
+- Keep one owner for every rendered configuration target.
 - Make every change inspectable, repeatable, and safe to reapply.
 - Keep secrets, machine identity, and private infrastructure outside Git.
 
@@ -31,9 +32,14 @@ Support will be introduced incrementally and documented per module.
 
 ## Architecture
 
-The system will combine an automatically detected platform with a curated, saved, or explicit module composition and optional additional modules. Chezmoi will manage home configuration, while Homebrew and mise will retain explicit package and runtime ownership.
+The system will combine platform facts with an explicit module composition.
+Each tool configuration is optional, and chezmoi will remain the only managed
+home-configuration engine. The proposed direction verifies that selected tools
+already exist but never installs or updates software.
 
-Read the [architecture](docs/architecture.md) and accepted [architecture decisions](docs/adr/README.md) for the normative design.
+Read the [architecture](docs/architecture.md) and
+[architecture decisions](docs/adr/README.md) for the normative design and
+proposals under review.
 
 ## Read-only commands
 
@@ -66,8 +72,9 @@ apply home state.
 ## Project status
 
 The architecture foundation, schema-2 validation, and first shell composition
-are established. The solution remains read-only and non-installable. Provider
-observation is the next increment in the [roadmap](docs/roadmap.md).
+are established. The solution remains read-only. Proposed ADR 0007 defines a
+configuration-only, tool-neutral direction; owner acceptance and a focused
+schema migration are the next blockers in the [roadmap](docs/roadmap.md).
 
 Development integrates through `next`; `master` remains the stable branch until
 an explicitly reviewed promotion. See [Contributing](CONTRIBUTING.md) for the

@@ -63,8 +63,9 @@ pull request and decision.
 ## Phase 3 layout
 
 Phase 3 is split into focused increments. The following target layout reserves
-clear ownership boundaries. Catalog paths are released; home state, provider
-adapters, and planning paths remain planned for later increments.
+clear configuration ownership boundaries. Catalog paths are released; the
+replacement prerequisite schema, home state, and planning paths remain planned
+for later increments after ADR 0007 is accepted.
 
 ~~~text
 .chezmoidata/
@@ -85,33 +86,33 @@ home/
 │       └── autosuggestions.zsh.tmpl
 └── dot_zshrc.tmpl
 lib/
-├── plan.sh
-└── providers/
-    ├── chezmoi.sh
-    ├── homebrew.sh
-    └── mise.sh
+├── prerequisites.sh
+└── plan.sh
 tests/
 └── fixtures/
     └── phase3/
         ├── catalog/
-        ├── observations/
+        ├── prerequisites/
+        ├── rendered/
         └── plans/
 ~~~
 
-`lib/providers/` contains the provider adapter boundary: read-only observation
-and narrowly scoped application. `lib/plan.sh` contains normalized plan
-construction, stable ordering, rendering, and result classification; CLI
-dispatch and confirmation remain in `bin/dotfiles`.
+`lib/prerequisites.sh` contains generic, read-only command and application
+presence checks. It never runs a prerequisite or installer. `lib/plan.sh`
+constructs stable chezmoi-only configuration plans; CLI dispatch and
+confirmation remain in `bin/dotfiles`. No Homebrew, mise, package-manager, or
+application-provider adapter is planned.
 
 `home/` is the repository's planned chezmoi source root. Schema-2 module data
 selects paths below that root; it does not contain file bodies or executable
 selection logic. Chezmoi remains the sole owner of the rendered home targets.
 
 Phase 3 fixtures remain non-production data. `catalog/` covers schema and
-ownership, `observations/` contains sanitized provider facts, and `plans/`
-contains deterministic expected output for macOS, Debian, no-change,
-cancellation, non-interactive refusal, and partial failure cases. Fixtures must
-not contact providers or use real machine identity.
+rendered-target ownership, `prerequisites/` contains sanitized presence facts,
+`rendered/` contains expected chezmoi output, and `plans/` contains deterministic
+configuration-only output for macOS, Debian, no-change, cancellation,
+non-interactive refusal, and failure cases. Fixtures must not inspect real
+software or use machine identity.
 
 ## Naming rules
 

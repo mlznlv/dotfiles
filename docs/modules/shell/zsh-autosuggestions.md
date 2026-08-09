@@ -16,10 +16,12 @@ enabled.
 The module depends on `shell.zsh`, has no declared conflicts, and has no
 exclusive group.
 
-## Provider requests and managed home state
+## Current catalog and planned configuration
 
-Homebrew owns `zsh-autosuggestions` on macOS and mise owns it on Debian. No
-chezmoi sources or shell initialization files are selected yet.
+The released schema-2 manifest contains historical Homebrew and mise requests;
+no command acts on them. The schema migration must define a portable, testable
+presence prerequisite without inferring it from those package names. No chezmoi
+source or shell initialization file is selected yet.
 
 ## Options
 
@@ -35,8 +37,8 @@ shell.zsh
 shell.zsh.autosuggestions
 ~~~
 
-The command is read-only and needs no recovery. Installation and startup-file
-recovery are deferred with their implementations.
+The command is read-only and needs no recovery. Planned startup-file recovery
+will cover configuration only.
 
 ## Platform, security, and privacy notes
 
@@ -46,5 +48,5 @@ privilege, provider process, secret, command history, or machine identity.
 ## Tests and known limitations
 
 Schema, dependency, ownership, discovery, profile resolution, and macOS/Ubuntu
-CI cover this module. Installation, initialization, configuration, provider
-observation, plan, apply, and removal are deferred.
+CI cover this module. Prerequisite migration, initialization, configuration
+plan, and apply are deferred.

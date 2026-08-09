@@ -171,7 +171,87 @@ home.chezmoi.sources = []
 These declarations establish ownership intent. No released command observes or
 invokes a provider, installs packages, or writes home state.
 
-## Ownership validation
+### Proposed configuration-only replacement
+
+[ADR 0007](adr/0007-define-configuration-only-modules.md) proposes a new module
+schema version. It is not released and does not change how the current CLI
+validates schema 2. The focused migration after ADR acceptance will choose the
+version number, implement validation, and update production entries.
+
+The planned replacement keeps every schema-1 field and
+`home.chezmoi.sources`, removes every `providers` field, and adds these optional
+arrays:
+
+| Field | Type | Default | Planned validation |
+| --- | --- | --- | --- |
+| `prerequisites.macos.commands` | String array | `[]` | Unique executable names; module must support `macos` |
+| `prerequisites.macos.applications` | String array | `[]` | Unique stable application identifiers; module must support `macos` |
+| `prerequisites.debian.commands` | String array | `[]` | Unique executable names; module must support `debian` |
+| `prerequisites.debian.applications` | String array | `[]` | Unique stable application identifiers; module must support `debian` |
+| `home.chezmoi.sources` | String array | `[]` | Existing safe source-path and rendered-target rules |
+
+Command names must match `^[A-Za-z0-9][A-Za-z0-9._+-]*$`; they contain no path
+separator and are located without running them. Application identifiers must
+match `^[A-Za-z0-9][A-Za-z0-9._-]*$` and are passed only to a generic platform
+presence check. Both forms reject whitespace, arguments, shell metacharacters,
+URLs, hooks, scripts, package-manager instructions, provider data, and
+credentials. Unknown tables, fields, prerequisite kinds, and platform names
+fail validation.
+
+Planned examples show optionality; they are not production manifests:
+
+~~~toml
+# Zsh configuration
+prerequisites.macos.commands = ["zsh"]
+prerequisites.debian.commands = ["zsh"]
+home.chezmoi.sources = ["home/dot_zshrc.tmpl"]
+
+# Zsh autosuggestions configuration; the module also depends on shell.zsh
+prerequisites.macos.commands = ["zsh"]
+prerequisites.debian.commands = ["zsh"]
+home.chezmoi.sources = ["home/dot_config/zsh/autosuggestions.zsh.tmpl"]
+
+# Starship remains independent from every shell
+prerequisites.macos.commands = ["starship"]
+prerequisites.debian.commands = ["starship"]
+home.chezmoi.sources = ["home/dot_config/starship.toml"]
+
+# Future Ghostty configuration
+prerequisites.macos.applications = ["com.mitchellh.ghostty"]
+home.chezmoi.sources = ["home/dot_config/ghostty/config"]
+
+# Future VS Code configuration
+prerequisites.macos.applications = ["com.microsoft.VSCode"]
+prerequisites.debian.commands = ["code"]
+home.chezmoi.sources = ["home/dot_config/Code/User/settings.json"]
+~~~
+
+Presence is a precondition, not desired software state. A missing value names
+the module and identifier and fails before a configuration plan or apply. No
+prerequisite is an ownership key, and no profile may declare prerequisites.
+
+### Planned schema-2 migration
+
+The migration must not silently reinterpret provider request fields.
+
+| Current schema-2 data | Planned treatment |
+| --- | --- |
+| Homebrew package arrays | Remove; add platform command or application prerequisites only where presence is required |
+| Mise package and tool arrays | Remove; add platform command prerequisites only where presence is required |
+| `home.chezmoi.sources` | Retain under the new schema and validate rendered targets unchanged |
+| Zsh requests | Replace with the `zsh` command prerequisite on both platforms |
+| Zsh autosuggestions requests | Determine a portable, testable presence identifier during migration; do not infer one from package names |
+| Starship requests | Replace with the `starship` command prerequisite on both platforms |
+| Provider collision fixtures | Replace with unsafe-prerequisite and rendered-target collision coverage |
+
+On ADR acceptance, schema-2 provider fields are deprecated for new catalog
+work. The focused migration adds the replacement schema and converts production
+modules and fixtures atomically. Until converted, discovery and resolution may
+continue using schema 2, but planned configuration commands must fail with an
+explicit migration-required error. A later cleanup may remove schema-2 support
+after no production entry uses it.
+
+## Released schema-2 ownership validation
 
 After module resolution and target-platform selection, each request is reduced
 to one canonical key:
@@ -192,6 +272,10 @@ and therefore collide. Any repeated key across the resolved modules is a
 duplicate ownership error, even when the declarations are identical. The error
 names the key, source path, and every declaring module. This check completes
 before provider observation, planning, or mutation.
+
+Under the proposed contract, only the normalized chezmoi target key remains.
+Its ownership record names the declaring module, and any duplicate across the
+resolved composition fails before prerequisite checks, planning, or apply.
 
 ## Schema 1 profile fields
 
