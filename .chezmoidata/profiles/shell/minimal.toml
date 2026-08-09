@@ -1,0 +1,8 @@
+[dotfiles.profiles."shell.minimal"]
+schema = 1
+id = "shell.minimal"
+name = "Minimal shell"
+summary = "Zsh, autosuggestions, and Starship catalog composition"
+docs = "docs/profiles/shell/minimal.md"
+platforms = ["macos", "debian"]
+modules = ["shell.zsh", "shell.zsh.autosuggestions", "prompt.starship"]

@@ -16,7 +16,7 @@ dotfiles catalog validate
 
 ~~~console
 $ ./bin/dotfiles catalog validate
-catalog valid: 0 modules, 0 profiles
+catalog valid: 3 modules, 1 profiles
 ~~~
 
 The zero counts are expected until Phase 3.

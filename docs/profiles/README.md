@@ -1,7 +1,7 @@
 # Profiles
 
 Profiles are transparent, named compositions of module identifiers. This page
-defines their contract. The production catalog remains empty until Phase 3.
+defines their contract. The production catalog releases `shell.minimal`.
 Catalog entries below tests/fixtures are test data, not curated profiles.
 
 ## Composition types
@@ -14,7 +14,7 @@ Catalog entries below tests/fixtures are test data, not curated profiles.
 Profiles use composition, not inheritance. They contain no executable code and
 do not silently select another profile based on a machine name.
 
-## Planned layout
+## Layout
 
 Profiles are grouped by intent.
 
@@ -27,7 +27,7 @@ Profiles are grouped by intent.
 └── homelab/
 ~~~
 
-The first planned profile is shell.minimal, containing shell.zsh,
+The first released profile is shell.minimal, containing shell.zsh,
 shell.zsh.autosuggestions, and prompt.starship.
 
 Later curated profiles can represent:

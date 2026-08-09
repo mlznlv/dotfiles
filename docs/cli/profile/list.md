@@ -29,9 +29,7 @@ Do not combine `--platform` and `--all`.
 ./bin/dotfiles profile list --all
 ~~~
 
-The production catalog is currently empty, so these commands succeed without
-printing rows. A populated catalog prints tab-separated rows in identifier
-order:
+The production catalog prints the released profile as a tab-separated row:
 
 ~~~text
 shell.minimal    Minimal shell    Zsh, autosuggestions, and Starship

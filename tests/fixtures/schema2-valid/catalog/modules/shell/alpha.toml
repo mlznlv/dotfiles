@@ -1,0 +1,14 @@
+[dotfiles.modules."shell.alpha"]
+schema = 2
+id = "shell.alpha"
+name = "Alpha"
+summary = "Valid schema 2 fixture"
+docs = "docs/modules/shell/alpha.md"
+platforms = ["macos", "debian"]
+depends = []
+conflicts = []
+exclusive_group = ""
+providers.macos.homebrew.packages = ["alpha"]
+providers.debian.mise.packages = ["alpha"]
+providers.debian.mise.tools = ["alpha-tool"]
+home.chezmoi.sources = ["home/dot_config/dot_alpha/config.toml.tmpl"]

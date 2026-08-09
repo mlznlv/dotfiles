@@ -1,0 +1,11 @@
+[dotfiles.modules."shell.alpha"]
+schema = 2
+id = "shell.alpha"
+name = "Alpha"
+summary = "Platform mismatch fixture"
+docs = "docs/modules/shell/alpha.md"
+platforms = ["debian"]
+depends = []
+conflicts = []
+exclusive_group = ""
+providers.macos.homebrew.packages = ["alpha"]

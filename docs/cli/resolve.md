@@ -47,8 +47,8 @@ Add a module to a profile:
     --platform macos
 ~~~
 
-These identifiers are planned and remain unavailable while the production
-catalog is empty.
+The shell identifiers are released. `terminal.ghostty` remains a planned
+example and is not available.
 
 ## What it returns
 

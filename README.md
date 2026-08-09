@@ -3,7 +3,7 @@
 A modular, reproducible, and security-conscious developer environment for macOS and Debian-family Linux.
 
 > [!IMPORTANT]
-> The Phase 2 read-only catalog and resolver are available. Installation and apply behavior are not implemented yet.
+> The read-only schema-2 shell catalog and resolver are available. Installation and apply behavior are not implemented yet.
 
 ## Start here
 
@@ -37,14 +37,14 @@ Read the [architecture](docs/architecture.md) and accepted [architecture decisio
 
 ## Read-only commands
 
-With chezmoi available, users and contributors can inspect the empty production
-catalog and the command surface:
+With chezmoi available, users and contributors can inspect and resolve the shell catalog:
 
 ~~~text
 ./bin/dotfiles help
 ./bin/dotfiles catalog validate
 ./bin/dotfiles module list --all
 ./bin/dotfiles profile list --all
+./bin/dotfiles resolve --profile shell.minimal --platform debian
 ~~~
 
 These commands do not install packages, change configuration, call providers, or
@@ -65,7 +65,9 @@ apply home state.
 
 ## Project status
 
-The architecture foundation and read-only catalog resolver are established. The production catalog is empty, and the solution remains non-installable. The next milestone is the minimal shell vertical slice described in the [roadmap](docs/roadmap.md).
+The architecture foundation, schema-2 validation, and first shell composition
+are established. The solution remains read-only and non-installable. Provider
+observation is the next increment in the [roadmap](docs/roadmap.md).
 
 ## License
 

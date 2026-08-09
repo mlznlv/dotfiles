@@ -1,9 +1,8 @@
 # Catalog
 
-The catalog is the read-only source of module and profile metadata. Phase 2
-implements catalog loading, validation, discovery, and resolution. The
-production catalog is intentionally empty until the minimal shell modules arrive
-in Phase 3.
+The catalog is the read-only source of module and profile metadata. Schema 1
+and schema 2 validation, discovery, ownership checks, and resolution are
+available. The production catalog contains the minimal shell composition.
 
 ## Representation
 
@@ -66,7 +65,7 @@ The identifier determines the only valid path. For example:
 
 Schema 1 remains the released Phase 2 resolution contract. It accepts exactly
 the fields below and implies no provider or home-state requests. Schema 2 is the
-planned Phase 3 contract. It requires all schema-1 fields and permits the
+released Phase 3 catalog contract. It requires all schema-1 fields and permits the
 additional fields defined below. A manifest must use one supported integer
 schema version; fields from a later schema fail validation in an earlier one.
 
@@ -86,7 +85,7 @@ schema version; fields from a later schema fail validation in an earlier one.
 
 Schema 1 contains resolution metadata only.
 
-### Planned schema 2 module fields
+### Schema 2 module fields
 
 Schema 2 changes only module manifests. Profiles remain schema 1 because they
 compose module identifiers and do not own resources.
@@ -120,10 +119,10 @@ Debian and a Debian request is never inferred on macOS. Homebrew is the only
 macOS package owner. Mise is the only Debian-family package, tool, and managed
 repository owner. Chezmoi is the only home-file and template owner.
 
-### Planned shell module examples
+### Released shell modules
 
-These examples specify ownership for every Phase 3 module but are not
-production manifests.
+These examples mirror the production manifests. Home-state source arrays remain
+empty until the later chezmoi shell-state increment.
 
 ~~~toml
 [dotfiles.modules."shell.zsh"]
@@ -138,7 +137,7 @@ conflicts = []
 exclusive_group = "shell.primary"
 providers.macos.homebrew.packages = ["zsh"]
 providers.debian.mise.packages = ["zsh"]
-home.chezmoi.sources = ["home/dot_zshrc.tmpl"]
+home.chezmoi.sources = []
 
 [dotfiles.modules."shell.zsh.autosuggestions"]
 schema = 2
@@ -152,7 +151,7 @@ conflicts = []
 exclusive_group = ""
 providers.macos.homebrew.packages = ["zsh-autosuggestions"]
 providers.debian.mise.packages = ["zsh-autosuggestions"]
-home.chezmoi.sources = ["home/dot_config/zsh/autosuggestions.zsh.tmpl"]
+home.chezmoi.sources = []
 
 [dotfiles.modules."prompt.starship"]
 schema = 2
@@ -166,14 +165,13 @@ conflicts = []
 exclusive_group = "prompt.primary"
 providers.macos.homebrew.packages = ["starship"]
 providers.debian.mise.tools = ["starship"]
-home.chezmoi.sources = ["home/dot_config/starship.toml"]
+home.chezmoi.sources = []
 ~~~
 
-The exact package availability and integrity behavior must be verified when the
-modules are implemented. These declarations establish ownership, not release
-availability.
+These declarations establish ownership intent. No released command observes or
+invokes a provider, installs packages, or writes home state.
 
-## Planned ownership validation
+## Ownership validation
 
 After module resolution and target-platform selection, each request is reduced
 to one canonical key:
@@ -252,7 +250,7 @@ bash scripts/check.sh
 The full check requires chezmoi. CI installs an exact tagged chezmoi release
 with its published checksum verification and runs the suite on macOS and Ubuntu.
 
-Planned schema-2 implementation tests must cover valid schema-1 and schema-2
+Schema-2 implementation tests cover valid schema-1 and schema-2
 manifests, unknown fields and providers, incompatible platform sections,
 duplicate ownership keys including distinct sources that normalize to one
 chezmoi target, directory selections, forbidden chezmoi attributes, and values
