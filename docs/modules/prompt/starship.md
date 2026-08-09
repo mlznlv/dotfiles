@@ -20,7 +20,7 @@ shell module.
 ## Current catalog and planned configuration
 
 The released schema-2 manifest contains historical Homebrew and mise requests;
-no command acts on them. ADR 0007 proposes migrating them to a static
+no command acts on them. ADR 0007 requires migrating them to a static
 `starship` command prerequisite. No chezmoi source or managed file is selected.
 
 ## Options
@@ -43,7 +43,7 @@ data and rerun them. Configuration recovery is deferred with apply.
 
 Only macOS and Debian-family Linux are supported. Discovery uses no network,
 privilege, provider process, secret, or machine identity. Software installation
-is outside the proposed product boundary.
+is outside the product boundary.
 
 ## Tests and known limitations
 

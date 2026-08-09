@@ -171,12 +171,12 @@ home.chezmoi.sources = []
 These declarations establish ownership intent. No released command observes or
 invokes a provider, installs packages, or writes home state.
 
-### Proposed configuration-only replacement
+### Accepted configuration-only replacement
 
-[ADR 0007](adr/0007-define-configuration-only-modules.md) proposes a new module
-schema version. It is not released and does not change how the current CLI
-validates schema 2. The focused migration after ADR acceptance will choose the
-version number, implement validation, and update production entries.
+[ADR 0007](adr/0007-define-configuration-only-modules.md) defines module schema
+3. It is not released and does not change how the current CLI validates schema
+2. The focused migration will implement validation and update production
+entries.
 
 The planned replacement keeps every schema-1 field and
 `home.chezmoi.sources`, removes every `providers` field, and adds these optional
@@ -186,17 +186,29 @@ arrays:
 | --- | --- | --- | --- |
 | `prerequisites.macos.commands` | String array | `[]` | Unique executable names; module must support `macos` |
 | `prerequisites.macos.applications` | String array | `[]` | Unique stable application identifiers; module must support `macos` |
+| `prerequisites.macos.artifacts` | String array | `[]` | Unique safe artifact locators; module must support `macos` |
 | `prerequisites.debian.commands` | String array | `[]` | Unique executable names; module must support `debian` |
 | `prerequisites.debian.applications` | String array | `[]` | Unique stable application identifiers; module must support `debian` |
+| `prerequisites.debian.artifacts` | String array | `[]` | Unique safe artifact locators; module must support `debian` |
 | `home.chezmoi.sources` | String array | `[]` | Existing safe source-path and rendered-target rules |
 
 Command names must match `^[A-Za-z0-9][A-Za-z0-9._+-]*$`; they contain no path
 separator and are located without running them. Application identifiers must
 match `^[A-Za-z0-9][A-Za-z0-9._-]*$` and are passed only to a generic platform
-presence check. Both forms reject whitespace, arguments, shell metacharacters,
-URLs, hooks, scripts, package-manager instructions, provider data, and
-credentials. Unknown tables, fields, prerequisite kinds, and platform names
-fail validation.
+presence check. Artifact locators have the form `<root>:<relative-path>`.
+Schema 3 accepts the `share` root, which searches `/opt/homebrew/share` and
+`/usr/local/share` on macOS and `/usr/share` and `/usr/local/share` on Debian.
+The exact path must be a regular file. Symlinks must resolve to a regular file
+below `/opt/homebrew` or `/usr/local` on macOS, or `/usr` or `/usr/local` on
+Debian. Broken or escaping links fail; the checker never opens or executes the
+file.
+
+All forms reject whitespace, arguments, shell metacharacters, URLs, hooks,
+executable payloads, package-manager instructions, provider data, and
+credentials. Artifact relative paths additionally reject absolute paths, empty,
+`.` and `..` segments, globs, variables, tildes, and control characters.
+Unknown tables, fields, prerequisite kinds, roots, and platform names fail
+validation.
 
 Planned examples show optionality; they are not production manifests:
 
@@ -208,7 +220,9 @@ home.chezmoi.sources = ["home/dot_zshrc.tmpl"]
 
 # Zsh autosuggestions configuration; the module also depends on shell.zsh
 prerequisites.macos.commands = ["zsh"]
+prerequisites.macos.artifacts = ["share:zsh-autosuggestions/zsh-autosuggestions.zsh"]
 prerequisites.debian.commands = ["zsh"]
+prerequisites.debian.artifacts = ["share:zsh-autosuggestions/zsh-autosuggestions.zsh"]
 home.chezmoi.sources = ["home/dot_config/zsh/autosuggestions.zsh.tmpl"]
 
 # Starship remains independent from every shell
@@ -240,16 +254,16 @@ The migration must not silently reinterpret provider request fields.
 | Mise package and tool arrays | Remove; add platform command prerequisites only where presence is required |
 | `home.chezmoi.sources` | Retain under the new schema and validate rendered targets unchanged |
 | Zsh requests | Replace with the `zsh` command prerequisite on both platforms |
-| Zsh autosuggestions requests | Determine a portable, testable presence identifier during migration; do not infer one from package names |
+| Zsh autosuggestions requests | Replace with the `zsh` command and `share:zsh-autosuggestions/zsh-autosuggestions.zsh` artifact prerequisites on both platforms |
 | Starship requests | Replace with the `starship` command prerequisite on both platforms |
 | Provider collision fixtures | Replace with unsafe-prerequisite and rendered-target collision coverage |
 
-On ADR acceptance, schema-2 provider fields are deprecated for new catalog
-work. The focused migration adds the replacement schema and converts production
-modules and fixtures atomically. Until converted, discovery and resolution may
-continue using schema 2, but planned configuration commands must fail with an
-explicit migration-required error. A later cleanup may remove schema-2 support
-after no production entry uses it.
+Schema-2 provider fields are deprecated for new catalog work. The focused
+migration adds schema 3 and converts production modules and fixtures atomically.
+Until converted, discovery and resolution may continue using schema 2, but
+planned configuration commands must fail with an explicit migration-required
+error. A later cleanup may remove schema-2 support after no production entry
+uses it.
 
 ## Released schema-2 ownership validation
 
@@ -273,7 +287,8 @@ duplicate ownership error, even when the declarations are identical. The error
 names the key, source path, and every declaring module. This check completes
 before provider observation, planning, or mutation.
 
-Under the proposed contract, only the normalized chezmoi target key remains.
+Under the accepted configuration-only contract, only the normalized chezmoi
+target key remains.
 Its ownership record names the declaring module, and any duplicate across the
 resolved composition fails before prerequisite checks, planning, or apply.
 

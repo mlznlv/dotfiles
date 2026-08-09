@@ -4,7 +4,7 @@ Modules are the smallest documented, selectable units of capability. This page
 defines their contract. The production catalog releases three shell modules.
 Catalog entries below tests/fixtures are test data, not product modules.
 
-Under the configuration-only contract proposed by ADR 0007, a module is one
+Under the configuration-only contract accepted in ADR 0007, a module is one
 optional, tool-specific configuration capability. The core selects none by
 default: Zsh, Starship, Ghostty, VS Code, tmux, and every other tool require an
 explicit module selection.
@@ -79,10 +79,10 @@ Schema 2 adds provider requests and chezmoi source selection. Released modules
 contain package intent but no managed home sources yet. See the
 [catalog contract](../catalog.md).
 
-ADR 0007 proposes replacing provider requests in a new schema with static
-platform command or application prerequisites plus chezmoi source selections.
-This replacement is planned, not implemented; production manifests remain
-unchanged until the focused migration.
+ADR 0007 replaces provider requests in schema 3 with static platform command,
+application, or artifact prerequisites plus chezmoi source selections. Schema 3
+is planned, not implemented; production manifests remain unchanged until the
+focused migration.
 
 ## Module boundaries
 

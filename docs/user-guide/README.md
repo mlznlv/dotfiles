@@ -8,8 +8,8 @@ dotfiles composition. For exact syntax, use the [command guide](../cli/README.md
 > data, but it cannot install packages, save a profile, or apply configuration.
 >
 > The production catalog exposes the minimal shell composition. Prerequisite
-> validation, managed home state, plan, and apply remain unavailable. Proposed
-> future apply manages configuration only and never installs software.
+> validation, managed home state, plan, and apply remain unavailable. Future
+> apply manages configuration only and never installs software.
 
 ## Before you start
 
@@ -170,7 +170,7 @@ Available commands do not:
 - Request elevated privileges.
 
 Saved profiles, configuration planning, apply, recovery, sharing, and repair
-commands remain planned. Software installation is outside the proposed product
+commands remain planned. Software installation is outside the product
 boundary. Follow delivery in the [roadmap](../roadmap.md).
 
 ## Command reference

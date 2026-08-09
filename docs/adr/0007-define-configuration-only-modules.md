@@ -1,6 +1,6 @@
 # ADR 0007: Define configuration-only modules
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-08-09
 - Supersedes: ADR 0004 (part), ADR 0006 (part)
 - Superseded by: None
@@ -20,8 +20,8 @@ managers, and applications.
 
 ## Decision
 
-If accepted, this ADR defines the contract for the schema and catalog migration
-that must precede further Phase 3 implementation.
+This ADR defines the contract for the schema and catalog migration that must
+precede further Phase 3 implementation.
 
 ### Product boundary
 
@@ -50,27 +50,47 @@ contain no prerequisite, installation, or application logic.
 
 ### Static prerequisites
 
-A module may declare platform-specific arrays of required command names and
-application identifiers. They are static data used only for read-only presence
-checks. Values are single identifiers, not commands: arguments, whitespace,
-paths, shell syntax, URLs, hooks, scripts, package names tied to an installation
-provider, credentials, and registry data are forbidden.
+A module may declare platform-specific arrays of required command names,
+application identifiers, and artifact locators. They are static data used only
+for read-only presence checks. Values are single identifiers, not commands:
+arguments, whitespace, shell syntax, URLs, hooks, executable payloads, package
+names tied to an installation provider, credentials, and registry data are
+forbidden.
 
-The planned replacement schema is a new schema version rather than a changed
-interpretation of schema 2. Its additional fields are:
+The replacement is schema 3 rather than a changed interpretation of schema 2.
+Its additional fields are:
 
 ~~~toml
 prerequisites.macos.commands = ["zsh"]
 prerequisites.macos.applications = []
+prerequisites.macos.artifacts = []
 prerequisites.debian.commands = ["zsh"]
 prerequisites.debian.applications = []
+prerequisites.debian.artifacts = []
 home.chezmoi.sources = ["home/dot_zshrc.tmpl"]
 ~~~
 
 Command checks use an exact executable name and do not run the executable.
 Application checks use a stable platform application identifier through a
-generic presence-check interface. Adding a future platform extends the platform
-registry and generic prerequisite checker; it does not add application-specific
+generic presence-check interface.
+
+An artifact locator has the form `<root>:<relative-path>`. Schema 3 defines the
+generic `share` root. On macOS it searches `/opt/homebrew/share` and
+`/usr/local/share`; on Debian it searches `/usr/share` and `/usr/local/share`,
+in that order. Presence succeeds when the exact relative path is a regular file
+under any root. A symlink is accepted only when its fully resolved target is a
+regular file below `/opt/homebrew` or `/usr/local` on macOS, or below `/usr` or
+`/usr/local` on Debian. Broken links and targets outside those roots fail. The
+checker does not open, read, source, or execute the file.
+The relative path must use `/`, remain non-empty, and contain no empty, `.`, or
+`..` segment, glob, variable, tilde, control character, or shell metacharacter.
+Absolute paths and unknown roots fail catalog validation. A locator may name an
+externally installed script file as evidence; the ban on scripts prohibits
+catalog-supplied executable payloads or instructions, not a presence-only file
+identifier.
+
+Adding a future platform extends the platform registry and generic command,
+application, and artifact-root checks; it does not add application-specific
 logic to the core.
 
 ### Validation, planning, and apply
@@ -106,8 +126,8 @@ username, machine identity, or hidden profile.
 ### Schema-2 migration
 
 Schema 2 remains historical released input until a focused migration implements
-the replacement schema. Acceptance of this ADR deprecates its Homebrew and mise
-fields immediately for new manifests; it does not reinterpret them.
+schema 3. This ADR deprecates its Homebrew and mise fields immediately for new
+manifests; it does not reinterpret them.
 
 The migration must atomically add the new schema validator, convert the three
 production modules and relevant fixtures, and produce an explicit
@@ -120,19 +140,14 @@ remove schema-2 provider fields after no production entry uses them.
 | --- | --- |
 | `providers.macos.homebrew.packages = ["zsh"]` | `prerequisites.macos.commands = ["zsh"]` |
 | `providers.debian.mise.packages = ["zsh"]` | `prerequisites.debian.commands = ["zsh"]` |
-| Homebrew/mise `zsh-autosuggestions` request | Command prerequisite chosen and tested by the migration; no provider retained |
+| Homebrew/mise `zsh-autosuggestions` request | `share:zsh-autosuggestions/zsh-autosuggestions.zsh` artifact prerequisite on both platforms; no provider retained |
 | Homebrew/mise `starship` request | Platform command prerequisite `starship`; no provider retained |
 | `home.chezmoi.sources` | Retained with rendered-target ownership validation |
 | Schema-2 provider collision fixtures | Replaced by prerequisite-safety and rendered-target collision fixtures |
 
-The autosuggestions prerequisite needs platform evidence during migration
-because the current package identifier does not prove a portable executable
-name. The migration must not guess or preserve a package-manager abstraction.
-
 ## Supersession
 
-This ADR is Proposed and changes no accepted decision until the repository owner
-accepts it. On acceptance, it supersedes only these clauses:
+This ADR supersedes only these clauses:
 
 | Earlier ADR | Superseded clauses | Clauses that remain binding |
 | --- | --- | --- |
@@ -151,8 +166,8 @@ orchestration where their historical text mentions providers or packages.
 - Profiles resolve exactly their identifiers plus explicit dependencies.
 - Present prerequisites allow configuration planning to continue.
 - Missing prerequisites fail before a configuration plan or mutation.
-- Prerequisite data containing arguments, URLs, paths, or shell syntax fails
-  validation.
+- Prerequisite data containing arguments, URLs, unsafe artifact paths, or shell
+  syntax fails validation.
 - Two modules that render one target fail deterministically.
 - Unsupported module/platform pairs fail before changes.
 - Plans contain only chezmoi-managed configuration effects.
@@ -162,6 +177,8 @@ orchestration where their historical text mentions providers or packages.
 ## Consequences
 
 - Users keep responsibility for installing and updating their chosen tools.
+- The repository converges a reproducible configuration layer, not a complete
+  developer environment or its externally installed software baseline.
 - Modules are portable configuration units rather than software bundles.
 - The core needs generic, read-only prerequisite checks but no package-provider
   adapters.

@@ -2,8 +2,8 @@
 
 ## Status
 
-This command is not available in the current CLI. Its configuration-only
-contract depends on owner acceptance of ADR 0007 and the schema migration.
+This command is not available in the current CLI. Its accepted
+configuration-only contract depends on the schema migration.
 
 ## Synopsis
 

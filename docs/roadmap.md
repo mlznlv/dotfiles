@@ -59,8 +59,8 @@ entries.
 
 ## Phase 3: Minimal shell vertical slice
 
-**Status:** Catalog composition implemented; configuration-only contract
-proposed and awaiting owner acceptance.
+**Status:** Configuration-only contract accepted; schema and catalog migration
+next.
 
 **Objective:** prove end-to-end planning and safe application of explicitly
 selected configuration, without installing or converging software.
@@ -69,26 +69,26 @@ selected configuration, without installing or converging software.
 
 1. **Execution contract:** accept ADR 0006 and specify schema 2, ownership,
    provider boundaries, plan ordering, apply safety, paths, and command
-   contracts. Historical documentation increment, partially superseded if ADR
-   0007 is accepted. Depends on Phase 2.
+   contracts. Historical documentation increment, partially superseded by ADR
+   0007. Depends on Phase 2.
 2. **Shell catalog composition (complete):** release modules shell.zsh,
    shell.zsh.autosuggestions, and prompt.starship plus profile shell.minimal
    under the accepted schema, with validation and resolution fixtures. Depends
    on the accepted execution contract.
    Before the next product increment, formalize `next` as the integration
    branch and retain `master` as the stable branch.
-3. **Configuration-only contract:** accept ADR 0007, define optional tool
-   modules, static prerequisites, rendered-target ownership, and the explicit
-   migration from provider requests. Documentation only. Blocks every later
-   increment.
+3. **Configuration-only contract (complete):** accept ADR 0007, define optional
+   tool modules, static prerequisites, rendered-target ownership, and the
+   explicit migration from provider requests. Documentation only. Blocks every
+   later increment.
 4. **Schema and catalog migration:** implement the replacement prerequisite
    schema, convert the three production modules and fixtures, and reject
    unconverted provider fields explicitly for configuration commands. Depends
-   on accepted ADR 0007.
-5. **Prerequisite validation:** implement generic read-only command and
-   application presence checks with actionable, fail-closed errors for macOS
-   and Debian. It never invokes the prerequisite or an installer. Depends on
-   the schema migration.
+   on ADR 0007.
+5. **Prerequisite validation:** implement generic read-only command,
+   application, and artifact presence checks with actionable, fail-closed
+   errors for macOS and Debian. It never opens or invokes the prerequisite or
+   an installer. Depends on the schema migration.
 6. **Chezmoi shell configuration:** add selected Zsh, autosuggestions, and
    Starship source files plus rendering and target-ownership tests. Depends on
    the schema migration.

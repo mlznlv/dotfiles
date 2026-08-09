@@ -1,6 +1,7 @@
 # dotfiles
 
-A modular, reproducible, and security-conscious developer environment for macOS and Debian-family Linux.
+A modular, reproducible, and security-conscious configuration layer for macOS
+and Debian-family Linux.
 
 > [!IMPORTANT]
 > The read-only schema-2 shell catalog and resolver are available. Managed
@@ -14,7 +15,7 @@ syntax and examples.
 
 ## Goals
 
-- Compose machines from independently selectable modules.
+- Compose managed configuration from independently selectable modules.
 - Provide curated profiles without preventing custom compositions.
 - Keep one owner for every rendered configuration target.
 - Make every change inspectable, repeatable, and safe to reapply.
@@ -33,9 +34,10 @@ Support will be introduced incrementally and documented per module.
 ## Architecture
 
 The system will combine platform facts with an explicit module composition.
-Each tool configuration is optional, and chezmoi will remain the only managed
-home-configuration engine. The proposed direction verifies that selected tools
-already exist but never installs or updates software.
+Each tool configuration is optional, and chezmoi remains the only managed
+home-configuration engine. Selected modules verify that their tools already
+exist but never install or update software. The repository reproduces managed
+configuration, not the external software baseline of a complete environment.
 
 Read the [architecture](docs/architecture.md) and
 [architecture decisions](docs/adr/README.md) for the normative design and
@@ -72,9 +74,9 @@ apply home state.
 ## Project status
 
 The architecture foundation, schema-2 validation, and first shell composition
-are established. The solution remains read-only. Proposed ADR 0007 defines a
-configuration-only, tool-neutral direction; owner acceptance and a focused
-schema migration are the next blockers in the [roadmap](docs/roadmap.md).
+are established. The solution remains read-only. Accepted ADR 0007 defines a
+configuration-only, tool-neutral direction; a focused schema migration is the
+next blocker in the [roadmap](docs/roadmap.md).
 
 Development integrates through `next`; `master` remains the stable branch until
 an explicitly reviewed promotion. See [Contributing](CONTRIBUTING.md) for the

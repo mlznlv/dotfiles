@@ -19,8 +19,9 @@ List required module identifiers, conflicts, and the exclusive group, if any.
 
 ## Prerequisites
 
-List static platform command or application identifiers. Confirm that no value
-contains executable or installation instructions.
+List static platform command, application, or artifact identifiers. Confirm
+that no value contains executable or installation instructions and that
+artifact locators use only accepted roots and safe relative paths.
 
 ## Managed home state
 

@@ -6,11 +6,10 @@ This document defines the target architecture. The read-only catalog,
 discovery commands, and deterministic resolver are released. Configuration
 planning, prerequisite validation, managed home state, and apply are planned.
 
-[ADR 0007](adr/0007-define-configuration-only-modules.md) proposes changing the
-unimplemented Phase 3 direction to configuration-only modules. Until the owner
-accepts it and a focused migration lands, the released schema-2 provider fields
-remain historical catalog data and no command interprets them as installation
-behavior.
+[ADR 0007](adr/0007-define-configuration-only-modules.md) changes the
+unimplemented Phase 3 direction to configuration-only modules. Until a focused
+migration lands, the released schema-2 provider fields remain historical
+catalog data and no command interprets them as installation behavior.
 
 ## Product boundary
 
@@ -22,7 +21,9 @@ applications.
 Chezmoi is the sole rendering, diff, and application engine for managed home
 configuration. The repository CLI provides tool-neutral discovery,
 composition, validation, prerequisite checking, planning, and explicit apply.
-It does not maintain a second state engine or invoke software installers.
+It does not maintain a second state engine or invoke software installers. This
+boundary reproduces repository-managed configuration, not the externally
+assembled software baseline of a complete developer environment.
 
 ## System model
 
@@ -52,8 +53,8 @@ The core knows these generic concepts:
   module-declared platform data.
 - **Module:** one optional, documented configuration capability.
 - **Profile:** a transparent list of module identifiers.
-- **Prerequisite:** a static command or application identifier checked without
-  execution.
+- **Prerequisite:** a static command, application, or artifact identifier
+  checked without execution.
 - **Rendered target:** a home-relative file path produced by a selected chezmoi
   source.
 - **Plan:** an ordered, read-only description of configuration diffs.
@@ -88,11 +89,22 @@ explicit dependency before planning.
 
 ## Prerequisite validation
 
-The planned replacement for provider-install requests is static,
-platform-specific prerequisite data. Command names are checked for presence
-without running them. Application identifiers are checked through a generic
-platform presence interface. Values cannot contain arguments, paths, URLs,
-shell syntax, hooks, scripts, provider instructions, or credentials.
+The replacement for provider-install requests is static, platform-specific
+prerequisite data. Command names are checked for presence without running them.
+Application identifiers use a generic platform presence interface. Artifact
+locators use a validated root and relative path and are checked for regular-file
+presence without opening, reading, sourcing, or executing the file. Values
+cannot contain arguments, unsafe paths, URLs, shell syntax, hooks, executable
+payloads, provider instructions, or credentials.
+
+Schema 3 defines `share:<relative-path>` artifact locators. The generic `share`
+root searches `/opt/homebrew/share` then `/usr/local/share` on macOS, and
+`/usr/share` then `/usr/local/share` on Debian. Relative paths reject empty,
+`.` and `..` segments, globs, variables, tildes, control characters, and shell
+metacharacters. Symlinks must resolve to regular files inside the accepted
+platform software roots; broken or escaping links fail. This supports the Zsh
+autosuggestions prerequisite without adding package observation or
+tool-specific logic to the core.
 
 Prerequisite validation is part of both plan and apply preconditions. A missing
 tool produces an error naming the module, platform, prerequisite kind, and
@@ -121,8 +133,8 @@ planning, or apply, even when their source paths or intended content differ.
 
 ## Planned configuration flow
 
-The flow below depends on owner acceptance of ADR 0007 and the schema migration.
-It is not available in the current CLI.
+The flow below depends on the schema migration. It is not available in the
+current CLI.
 
 1. Resolve the explicit composition for the detected or requested platform.
 2. Validate static catalog data, platform compatibility, and dependencies.
@@ -177,4 +189,4 @@ in [repository structure](repository-structure.md), and delivery order in the
 - [ADR 0004: Enforce single-provider ownership](adr/0004-enforce-single-provider-ownership.md)
 - [ADR 0005: Provide a thin dotfiles CLI](adr/0005-provide-a-thin-dotfiles-cli.md)
 - [ADR 0006: Define the Phase 3 execution contract](adr/0006-define-phase-3-execution-contract.md)
-- [ADR 0007: Define configuration-only modules](adr/0007-define-configuration-only-modules.md) (Proposed)
+- [ADR 0007: Define configuration-only modules](adr/0007-define-configuration-only-modules.md)

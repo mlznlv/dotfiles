@@ -19,9 +19,9 @@ exclusive group.
 ## Current catalog and planned configuration
 
 The released schema-2 manifest contains historical Homebrew and mise requests;
-no command acts on them. The schema migration must define a portable, testable
-presence prerequisite without inferring it from those package names. No chezmoi
-source or shell initialization file is selected yet.
+no command acts on them. ADR 0007 defines the portable, presence-only artifact
+locator `share:zsh-autosuggestions/zsh-autosuggestions.zsh` for schema 3. No
+chezmoi source or shell initialization file is selected yet.
 
 ## Options
 

@@ -18,7 +18,7 @@ The module has no dependencies or declared conflicts and belongs to the
 ## Current catalog and planned configuration
 
 The released schema-2 manifest contains historical Homebrew and mise requests;
-no command acts on them. ADR 0007 proposes migrating them to a static `zsh`
+no command acts on them. ADR 0007 requires migrating them to a static `zsh`
 command prerequisite. No chezmoi source or startup file is selected yet.
 
 ## Options
@@ -41,7 +41,7 @@ explicitly selected configuration and will not change the login shell.
 
 Only macOS and Debian-family Linux are supported. Discovery uses no network,
 privilege, provider process, secret, or machine identity. Software installation
-and login-shell changes are outside the proposed product boundary.
+and login-shell changes are outside the product boundary.
 
 ## Tests and known limitations
 
