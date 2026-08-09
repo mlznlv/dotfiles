@@ -36,6 +36,19 @@ not.
 | Inspect one profile | `dotfiles profile show <profile-id>` | [profile show](profile/show.md) |
 | Preview a composition | `dotfiles resolve ...` | [resolve](resolve.md) |
 
+## Planned Phase 3 commands
+
+The following contracts are documented for implementation but are not
+available in the current CLI:
+
+| I will be able to... | Planned command | Contract |
+| --- | --- | --- |
+| Build a read-only provider and home-state plan | `dotfiles plan ...` | [plan](plan.md) |
+| Recompute, confirm, and safely apply a plan | `dotfiles apply ...` | [apply](apply.md) |
+
+Neither command may be presented as released until its implementation and tests
+merge. Phase 3 will not support saved plans, replay, rollback, or removal.
+
 ## Typical workflow
 
 1. List available modules or profiles.
