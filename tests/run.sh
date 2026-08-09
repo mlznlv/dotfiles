@@ -153,6 +153,18 @@ else
     OUTPUT="production Zsh manifest layout is incorrect"
     fail "production Zsh manifests use hierarchical layout only"
 fi
+if [ -f "${PROJECT_ROOT}/docs/modules/shell/zsh/zsh.md" ] && \
+   [ -f "${PROJECT_ROOT}/docs/modules/shell/zsh/autosuggestions.md" ] && \
+   [ ! -e "${PROJECT_ROOT}/docs/modules/shell/zsh.md" ] && \
+   [ ! -e "${PROJECT_ROOT}/docs/modules/shell/zsh-autosuggestions.md" ]; then
+    STATUS=0
+    OUTPUT=
+    pass "production Zsh documentation uses hierarchical layout only"
+else
+    STATUS=1
+    OUTPUT="production Zsh documentation layout is incorrect"
+    fail "production Zsh documentation uses hierarchical layout only"
+fi
 if ! find "${PROJECT_ROOT}/.chezmoidata/modules" -type f -name '*.toml' -exec grep -E -l 'providers|homebrew|mise' {} + | grep -q .; then
     STATUS=0
     OUTPUT=

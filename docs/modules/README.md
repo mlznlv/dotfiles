@@ -46,6 +46,18 @@ Manifests are grouped by category.
     └── starship.toml
 ~~~
 
+Module pages mirror that identifier hierarchy.
+
+~~~text
+docs/modules/
+├── shell/
+│   └── zsh/
+│       ├── zsh.md
+│       └── autosuggestions.md
+└── prompt/
+    └── starship.md
+~~~
+
 The released initial modules are:
 
 - shell.zsh
@@ -69,7 +81,7 @@ schema = 1
 id = "shell.zsh"
 name = "Zsh"
 summary = "Interactive Zsh shell experience"
-docs = "docs/modules/shell/zsh.md"
+docs = "docs/modules/shell/zsh/zsh.md"
 platforms = ["macos", "debian"]
 depends = []
 conflicts = []
@@ -86,9 +98,11 @@ When one module identifier is the namespace prefix of another, manifests use a
 matching directory hierarchy. `shell.zsh` is stored at
 `.chezmoidata/modules/shell/zsh/zsh.toml`, while its
 `shell.zsh.autosuggestions` descendant is stored beside it as
-`autosuggestions.toml`. This changes no public identifier. A module without a
-module namespace prefix, such as `prompt.starship`, remains directly below its
-category directory.
+`autosuggestions.toml`. Their pages use the corresponding
+`docs/modules/shell/zsh/zsh.md` and `docs/modules/shell/zsh/autosuggestions.md`
+paths. This changes no public identifier. A module without a module namespace
+prefix, such as `prompt.starship`, remains directly below its category
+directory.
 
 ## Module boundaries
 

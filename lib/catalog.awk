@@ -193,12 +193,40 @@ function validate_sources(value, label,    values, count, i, previous, parts, pa
     }
 }
 
-function expected_docs(kind, id,    parts, count, i, filename, directory) {
+function expected_docs(kind, id,    parts, count, i, filename, directory, namespace, candidate, namespace_parts, namespace_count) {
     count = split(id, parts, ".")
     directory = parts[1]
     filename = parts[2]
     for (i = 3; i <= count; i++) {
         filename = filename "-" parts[i]
+    }
+
+    if (kind == "modules") {
+        namespace = ""
+        for (candidate in module_exists) {
+            if (candidate == id) {
+                continue
+            }
+            if (index(candidate, id ".") == 1) {
+                namespace = id
+            }
+            if (index(id, candidate ".") == 1 && length(candidate) > length(namespace)) {
+                namespace = candidate
+            }
+        }
+        if (namespace != "") {
+            namespace_count = split(namespace, namespace_parts, ".")
+            directory = namespace_parts[1]
+            for (i = 2; i <= namespace_count; i++) {
+                directory = directory "/" namespace_parts[i]
+            }
+            if (id == namespace) {
+                filename = namespace_parts[namespace_count]
+            } else {
+                filename = substr(id, length(namespace) + 2)
+                gsub(/\./, "-", filename)
+            }
+        }
     }
     return "docs/" kind "/" directory "/" filename ".md"
 }

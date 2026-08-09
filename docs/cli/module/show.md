@@ -31,7 +31,7 @@ platforms: macos,debian
 depends: shell.zsh
 conflicts: -
 exclusive group: -
-docs: docs/modules/shell/zsh-autosuggestions.md
+docs: docs/modules/shell/zsh/autosuggestions.md
 ~~~
 
 This command shows direct metadata. It does not expand dependencies, locate

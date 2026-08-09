@@ -17,7 +17,7 @@ schema = 1
 id = "shell.zsh"
 name = "Zsh"
 summary = "Interactive Zsh shell experience"
-docs = "docs/modules/shell/zsh.md"
+docs = "docs/modules/shell/zsh/zsh.md"
 platforms = ["macos", "debian"]
 depends = []
 conflicts = []
@@ -61,6 +61,8 @@ The identifier determines the only valid path. For example:
 - shell.zsh maps to .chezmoidata/modules/shell/zsh/zsh.toml.
 - shell.zsh.autosuggestions maps to
   .chezmoidata/modules/shell/zsh/autosuggestions.toml.
+- The same identifiers map to docs/modules/shell/zsh/zsh.md and
+  docs/modules/shell/zsh/autosuggestions.md.
 - shell.minimal maps to .chezmoidata/profiles/shell/minimal.toml.
 
 ## Module schema versions
@@ -133,7 +135,7 @@ schema = 2
 id = "shell.zsh"
 name = "Zsh"
 summary = "Interactive Zsh shell experience"
-docs = "docs/modules/shell/zsh.md"
+docs = "docs/modules/shell/zsh/zsh.md"
 platforms = ["macos", "debian"]
 depends = []
 conflicts = []
@@ -147,7 +149,7 @@ schema = 2
 id = "shell.zsh.autosuggestions"
 name = "Zsh autosuggestions"
 summary = "Interactive command suggestions for Zsh"
-docs = "docs/modules/shell/zsh-autosuggestions.md"
+docs = "docs/modules/shell/zsh/autosuggestions.md"
 platforms = ["macos", "debian"]
 depends = ["shell.zsh"]
 conflicts = []

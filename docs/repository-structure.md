@@ -25,7 +25,7 @@ home files, planning, or apply behavior.
 ├── docs/
 │   ├── adr/
 │   ├── cli/
-│   ├── modules/
+│   ├── modules/{shell/zsh,prompt}/
 │   ├── profiles/
 │   ├── user-guide/
 │   ├── architecture.md
@@ -126,7 +126,7 @@ software or use machine identity.
 - Profile identifiers follow the same category-first rule.
 - A manifest's identifier must equal its TOML table key.
 - Duplicate flattened compatibility manifests are not allowed.
-- Documentation follows the existing module-ID mapping independently of catalog nesting.
+- Module documentation mirrors the same identifier hierarchy as its manifest.
 - CLI command documentation mirrors command groups below docs/cli.
 - Shell files and commands use portable, descriptive names.
 
@@ -134,7 +134,7 @@ For example, shell.zsh.autosuggestions maps to:
 
 ~~~text
 .chezmoidata/modules/shell/zsh/autosuggestions.toml
-docs/modules/shell/zsh-autosuggestions.md
+docs/modules/shell/zsh/autosuggestions.md
 ~~~
 
 ## Category boundaries
