@@ -1,0 +1,13 @@
+[dotfiles.modules."prompt.starship"]
+schema = 2
+id = "prompt.starship"
+name = "Starship"
+summary = "Cross-shell prompt rendering"
+docs = "docs/modules/prompt/starship.md"
+platforms = ["macos", "debian"]
+depends = []
+conflicts = []
+exclusive_group = "prompt.primary"
+providers.macos.homebrew.packages = ["starship"]
+providers.debian.mise.tools = ["starship"]
+home.chezmoi.sources = []

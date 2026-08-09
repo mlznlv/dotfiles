@@ -7,8 +7,9 @@ dotfiles composition. For exact syntax, use the [command guide](../cli/README.md
 > The current release is read-only. It can inspect, validate, and resolve catalog
 > data, but it cannot install packages, save a profile, or apply configuration.
 >
-> The production catalog is empty until Phase 3. List commands currently return
-> no rows, and planned identifiers used in examples are not available yet.
+> The production catalog exposes the minimal shell composition. Provider
+> observation, package installation, managed home state, plan, and apply remain
+> unavailable.
 
 ## Before you start
 
@@ -39,10 +40,10 @@ Confirm the version and validate the catalog:
 $ ./bin/dotfiles version
 dotfiles 0.1.0-dev
 $ ./bin/dotfiles catalog validate
-catalog valid: 0 modules, 0 profiles
+catalog valid: 3 modules, 1 profile
 ~~~
 
-The zero counts are expected in the current phase.
+The counts represent the three released shell modules and one curated profile.
 
 ## Discover what is available
 
@@ -63,8 +64,7 @@ List every entry without platform filtering:
 ./bin/dotfiles profile list --all
 ~~~
 
-Both commands currently succeed without output because the production catalogs
-are empty. Once populated, each row contains an identifier, name, and summary.
+Each row contains an identifier, name, and summary.
 
 Inspect one released identifier with `show`:
 
@@ -73,9 +73,7 @@ Inspect one released identifier with `show`:
 ./bin/dotfiles profile show shell.minimal
 ~~~
 
-These identifiers are planned examples. Today they return `unknown module` or
-`unknown profile`. Use the list commands to discover identifiers that actually
-exist in the current catalog.
+These identifiers are released and can be inspected directly.
 
 ## Preview a composition
 
@@ -116,8 +114,8 @@ $ ./bin/dotfiles resolve \
     --platform macos
 ~~~
 
-The examples in this section demonstrate the implemented resolution contract.
-They will become runnable when those catalog entries are released.
+The shell examples in this section are runnable. `terminal.ghostty` remains
+unreleased, so the optional-addition example is illustrative only.
 
 ## Preview another platform
 

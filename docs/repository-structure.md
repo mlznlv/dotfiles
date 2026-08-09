@@ -1,15 +1,17 @@
 # Repository structure
 
-## Current Phase 2 layout
+## Current layout
 
-The repository contains a read-only catalog and resolver. It does not contain
-production modules, provider adapters, package requests, managed home files, or
-apply behavior.
+The repository contains a read-only schema-2 catalog and resolver with three
+production modules and one profile. It contains no provider adapters, managed
+home files, planning, or apply behavior.
 
 ~~~text
 .
 ├── .chezmoidata/
-│   └── catalog.toml
+│   ├── catalog.toml
+│   ├── modules/{shell,prompt}/
+│   └── profiles/shell/
 ├── .github/
 │   ├── ISSUE_TEMPLATE/
 │   ├── workflows/
@@ -46,11 +48,11 @@ Fixture modules and profiles exist only below `tests/fixtures/<case>/catalog`.
 The test runner stages them in isolated temporary chezmoi sources, so fixtures
 cannot merge into production catalog data. They are not production entries.
 
-## Planned Phase 3 additions
+## Phase 3 layout
 
 Phase 3 is split into focused increments. The following target layout reserves
-clear ownership boundaries; none of these paths exists as released behavior
-until its implementation increment merges.
+clear ownership boundaries. Catalog paths are released; home state, provider
+adapters, and planning paths remain planned for later increments.
 
 ~~~text
 .chezmoidata/

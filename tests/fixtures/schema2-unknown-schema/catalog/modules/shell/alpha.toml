@@ -1,0 +1,10 @@
+[dotfiles.modules."shell.alpha"]
+schema = 3
+id = "shell.alpha"
+name = "Alpha"
+summary = "Unknown schema fixture"
+docs = "docs/modules/shell/alpha.md"
+platforms = ["debian"]
+depends = []
+conflicts = []
+exclusive_group = ""

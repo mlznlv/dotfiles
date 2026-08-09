@@ -7,8 +7,8 @@ applied.
 Run commands from the repository root with `./bin/dotfiles`.
 
 > [!NOTE]
-> The production catalog is empty until Phase 3. List commands therefore return
-> no rows, and example module or profile identifiers are not available yet.
+> The production catalog contains three shell modules and the `shell.minimal`
+> profile. Provider observation, plan, and apply are not available yet.
 
 ## Quick start
 
@@ -17,7 +17,7 @@ $ ./bin/dotfiles help
 $ ./bin/dotfiles version
 dotfiles 0.1.0-dev
 $ ./bin/dotfiles catalog validate
-catalog valid: 0 modules, 0 profiles
+catalog valid: 3 modules, 1 profile
 ~~~
 
 Catalog commands require [chezmoi](https://www.chezmoi.io/). Help and version do
@@ -61,8 +61,7 @@ merge. Phase 3 will not support saved plans, replay, rollback, or removal.
 ./bin/dotfiles resolve --profile shell.minimal
 ~~~
 
-The example identifier above is planned and remains unavailable while the
-production catalog is empty.
+The example identifier above is released on macOS and Debian-family Linux.
 
 ## Choose a platform
 
@@ -96,10 +95,10 @@ Errors are written to standard error. Invalid syntax also suggests
 
 ## Common problems
 
-### A list command prints nothing
+### A list command omits an identifier
 
-This is expected while the production catalog is empty. The command still exits
-successfully.
+Use `--all` to determine whether an identifier exists but does not support the
+selected platform.
 
 ### `chezmoi is required for catalog commands`
 
@@ -109,7 +108,7 @@ remain available.
 ### A module or profile is unknown
 
 Use `module list --all` or `profile list --all` to find released identifiers.
-Identifiers shown as planned examples are not released yet.
+The shell identifiers documented in this guide are released.
 
 ## Safety
 

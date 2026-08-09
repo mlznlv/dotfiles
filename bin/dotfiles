@@ -139,11 +139,14 @@ validate_manifest_shape() {
             headers++
             next
         }
-        /^[[:space:]]*[a-z_]+[[:space:]]*=/ {
+        /^[[:space:]]*[a-z_.]+[[:space:]]*=/ {
             line = $0
             sub(/^[[:space:]]*/, "", line)
             key = line
             sub(/[[:space:]]*=.*$/, "", key)
+            if (kind == "modules" && (key == "providers.macos.homebrew.packages" || key == "providers.debian.mise.packages" || key == "providers.debian.mise.tools" || key == "home.chezmoi.sources")) {
+                next
+            }
             if (!allowed[key]) {
                 print "error: unsupported field " key " in " manifest > "/dev/stderr"
                 invalid = 1

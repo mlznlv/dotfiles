@@ -1,7 +1,7 @@
 # Modules
 
 Modules are the smallest documented, selectable units of capability. This page
-defines their contract. The production catalog remains empty until Phase 3.
+defines their contract. The production catalog releases three shell modules.
 Catalog entries below tests/fixtures are test data, not product modules.
 
 ## Categories
@@ -40,14 +40,13 @@ Manifests are grouped by category.
     └── starship.toml
 ~~~
 
-The planned initial modules are:
+The released initial modules are:
 
 - shell.zsh
 - shell.zsh.autosuggestions, depending on shell.zsh
 - prompt.starship
 
-These identifiers and relationships are design targets for the minimal shell
-vertical slice, not released functionality.
+Their metadata and dependencies are available for discovery and resolution.
 
 ## Manifest contract
 
@@ -71,8 +70,9 @@ conflicts = []
 exclusive_group = "shell.primary"
 ~~~
 
-Provider requests, chezmoi home-state selection, and module options arrive with
-the Phase 3 schema extension. See the [catalog contract](../catalog.md).
+Schema 2 adds provider requests and chezmoi source selection. Released modules
+contain package intent but no managed home sources yet. See the
+[catalog contract](../catalog.md).
 
 ## Module boundaries
 

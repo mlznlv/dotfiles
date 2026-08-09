@@ -59,7 +59,7 @@ entries.
 
 ## Phase 3: Minimal shell vertical slice
 
-**Status:** Contract accepted; implementation next.
+**Status:** Catalog composition implemented; provider observation next.
 
 **Objective:** prove end-to-end planning and safe application with a small,
 useful composition.
@@ -69,7 +69,7 @@ useful composition.
 1. **Execution contract:** accept ADR 0006 and specify schema 2, ownership,
    provider boundaries, plan ordering, apply safety, paths, and command
    contracts. Documentation only. Depends on Phase 2.
-2. **Shell catalog composition:** release modules shell.zsh,
+2. **Shell catalog composition (complete):** release modules shell.zsh,
    shell.zsh.autosuggestions, and prompt.starship plus profile shell.minimal
    under the accepted schema, with validation and resolution fixtures. Depends
    on the accepted execution contract.
