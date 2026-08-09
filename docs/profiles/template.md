@@ -27,7 +27,8 @@ Show sanitized CLI examples for selecting and previewing the profile.
 
 ## Expected result
 
-Describe the user-visible result without hiding provider effects.
+Describe the user-visible configuration result and confirm that every tool
+module is explicitly listed.
 
 ## Security and privacy
 

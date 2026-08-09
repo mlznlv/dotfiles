@@ -17,10 +17,11 @@ The module has no dependencies or declared conflicts and belongs to the
 `prompt.primary` exclusive group. A profile may combine it with any compatible
 shell module.
 
-## Provider requests and managed home state
+## Current catalog and planned configuration
 
-Homebrew owns the `starship` formula on macOS. Mise owns the `starship` tool on
-Debian. No chezmoi sources or managed files are selected in this increment.
+The released schema-2 manifest contains historical Homebrew and mise requests;
+no command acts on them. ADR 0007 requires migrating them to a static
+`starship` command prerequisite. No chezmoi source or managed file is selected.
 
 ## Options
 
@@ -36,17 +37,16 @@ Plan and apply are unavailable. Verify metadata with:
 ~~~
 
 These commands are read-only. They require no recovery; correct invalid catalog
-data and rerun them. Package or configuration recovery is deferred with apply.
+data and rerun them. Configuration recovery is deferred with apply.
 
 ## Platform, security, and privacy notes
 
 Only macOS and Debian-family Linux are supported. Discovery uses no network,
-privilege, provider process, secret, or machine identity. Future installation
-may use the network and remains outside this release.
+privilege, provider process, secret, or machine identity. Software installation
+is outside the product boundary.
 
 ## Tests and known limitations
 
-Schema, provider ownership, discovery, explicit resolution, profile resolution,
-and macOS/Ubuntu CI cover this module. Installation, shell initialization,
-managed configuration, provider observation, plan, apply, and removal are
-deferred.
+Schema, current ownership, discovery, explicit resolution, profile resolution,
+and macOS/Ubuntu CI cover this module. Prerequisite migration, shell
+initialization, managed configuration, plan, and apply are deferred.

@@ -45,14 +45,14 @@ Discovery and resolution are available:
 ./bin/dotfiles resolve --profile shell.minimal --platform debian
 ~~~
 
-Provider observation and `dotfiles plan` are unavailable.
+Prerequisite validation and `dotfiles plan` are unavailable.
 
 ## Security, privacy, and connectivity
 
 Released commands invoke no providers, network access, privilege escalation,
-home-state writes, secrets, or machine identity. The catalog declares future
-Homebrew and mise requests; their effects will be disclosed when planning is
-implemented.
+home-state writes, secrets, or machine identity. Current provider fields are
+historical schema-2 data scheduled for explicit prerequisite migration; planned
+configuration never installs the named tools.
 
 ## Verification and recovery
 
@@ -63,6 +63,6 @@ invalid catalog or selection input and retrying. No rollback or removal exists.
 ## Tests and known limitations
 
 Production discovery, show, macOS and Debian resolution, dependency ordering,
-provider non-invocation, and macOS/Ubuntu CI cover the profile. Package
-installation, managed home state, provider observation, plan, apply, saving,
-rollback, and removal are deferred.
+provider non-invocation, and macOS/Ubuntu CI cover the profile. Prerequisite
+migration, managed home state, configuration plan, apply, saving, and recovery
+are deferred.

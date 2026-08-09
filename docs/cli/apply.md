@@ -2,7 +2,8 @@
 
 ## Status
 
-This command is a Phase 3 contract. It is not available in the current CLI.
+This command is not available in the current CLI. Its accepted
+configuration-only contract depends on the schema migration.
 
 ## Synopsis
 
@@ -13,62 +14,56 @@ dotfiles apply (--profile <profile-id> | --modules <id,id>)
 
 ## Behavior
 
-Apply recomputes a fresh plan from current observations during the invocation.
-It cannot load or replay a saved plan. The complete plan, network and download
-effects, integrity owner, and possible privilege prompts are printed before any
-mutation.
+Apply recomputes resolution, rendered-target ownership, static prerequisite
+checks, and the selected-source chezmoi diff during one invocation. It cannot
+load or replay a saved plan. A missing prerequisite or invalid platform fails
+before mutation and tells the user to provide the tool outside this project.
 
-With an interactive terminal, the exact answer `yes` confirms. Any other
-answer, EOF, or interruption cancels successfully without invoking an apply
-adapter. With non-interactive input, the command refuses before mutation unless
-`--yes` is present. `--yes` is explicit acknowledgement and does not suppress
-the plan or disclosures.
+The complete configuration plan is printed before any change. With an
+interactive terminal, the exact answer `yes` confirms. Any other answer, EOF,
+or interruption cancels without invoking chezmoi apply. Non-interactive input
+fails closed unless `--yes` is present; the flag does not hide the plan.
 
-Steps run in displayed order. Apply stops at the first failure and reports each
-step as completed, failed, or unattempted. It performs no rollback, removal,
-uninstall, prune, or cleanup. Retrying recomputes state. Providers are expected
-to be idempotent, so a second successful apply produces `No changes.`
+Chezmoi applies only source paths owned by the selected modules. Apply never
+invokes Homebrew, mise, a package manager, an application installer, or a
+prerequisite executable. It performs no software installation, upgrade,
+uninstall, removal, prune, broad cleanup, or automatic rollback. A failure
+reports completed, failed, and unattempted configuration targets. Retrying
+recomputes state, and a second successful apply converges to `No changes.`
 
 ## Examples
 
-Interactive confirmation:
+Interactive configuration apply:
 
 ~~~console
-$ dotfiles apply --profile shell.minimal
-Plan: 6 changes for macos
-...
-Network access: required by Homebrew
-Provider installation: not required
-Privilege prompts: possible during Homebrew operations
-Apply these changes? Type yes to continue: yes
-Apply complete: 6 completed, 0 failed, 0 unattempted
+$ dotfiles apply --modules prompt.starship
+Prerequisites: satisfied
+Plan: 1 configuration change for macos
+1. update prompt.starship chezmoi:target:.config/starship.toml
+Software installation: none
+Apply this configuration? Type yes to continue: yes
+Apply complete: 1 completed, 0 failed, 0 unattempted
 ~~~
 
-Cancellation:
+Missing prerequisite:
 
 ~~~console
-$ dotfiles apply --profile shell.minimal
-Plan: 6 changes for macos
+$ dotfiles apply --modules editor.vscode --platform debian
+error: editor.vscode requires command code on debian
+Provide the command outside this project, then run apply again.
+No configuration changes were applied.
+~~~
+
+Cancellation and non-interactive refusal remain explicit:
+
+~~~console
+$ dotfiles apply --modules prompt.starship
 ...
-Apply these changes? Type yes to continue: no
+Apply this configuration? Type yes to continue: no
 Cancelled. No changes were applied.
-~~~
 
-Non-interactive refusal:
-
-~~~console
-$ dotfiles apply --profile shell.minimal </dev/null
+$ dotfiles apply --modules prompt.starship </dev/null
 error: non-interactive apply requires --yes
-~~~
-
-Partial failure:
-
-~~~text
-Apply failed at step 2: mise:package:zsh-autosuggestions
-completed: 1 (mise:package:zsh)
-failed: 1 (mise:package:zsh-autosuggestions)
-unattempted: 4
-No rollback was attempted. Re-run apply to recompute current state.
 ~~~
 
 No-change apply succeeds without prompting because there is nothing to mutate:
@@ -84,7 +79,7 @@ No changes.
 | --- | --- |
 | `0` | Applied, cancelled before mutation, or already converged |
 | `2` | Invalid syntax or non-interactive use without `--yes` |
-| `3` | Invalid catalog, composition, platform, or ownership |
-| `4` | Required CLI component or provider unavailable |
-| `5` | Observation failed before confirmation |
-| `6` | Apply failed; report identifies completed, failed, and unattempted steps |
+| `3` | Invalid catalog, composition, platform, prerequisite data, or ownership |
+| `4` | Required CLI foundation component unavailable |
+| `5` | Prerequisite check or chezmoi diff failed before confirmation |
+| `6` | Chezmoi apply failed; report identifies configuration target states |

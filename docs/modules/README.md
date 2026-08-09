@@ -4,6 +4,11 @@ Modules are the smallest documented, selectable units of capability. This page
 defines their contract. The production catalog releases three shell modules.
 Catalog entries below tests/fixtures are test data, not product modules.
 
+Under the configuration-only contract accepted in ADR 0007, a module is one
+optional, tool-specific configuration capability. The core selects none by
+default: Zsh, Starship, Ghostty, VS Code, tmux, and every other tool require an
+explicit module selection.
+
 ## Categories
 
 Initial categories are:
@@ -74,10 +79,21 @@ Schema 2 adds provider requests and chezmoi source selection. Released modules
 contain package intent but no managed home sources yet. See the
 [catalog contract](../catalog.md).
 
+ADR 0007 replaces provider requests in schema 3 with static platform command,
+application, or artifact prerequisites plus chezmoi source selections. Schema 3
+is planned, not implemented; production manifests remain unchanged until the
+focused migration.
+
 ## Module boundaries
 
-A module represents user-visible capability, not every file or package needed
-to provide it. Provider requests remain implementation details shown in plans.
+A module represents one user-visible configuration capability, not software
+installation. A selected module may verify that its tool already exists, but it
+never installs, updates, or removes that tool.
+
+Dependencies express configuration requirements only. `prompt.starship` does
+not depend on `shell.zsh`; future `terminal.ghostty` and `editor.vscode` modules
+must not select a shell, prompt, multiplexer, terminal, or editor implicitly.
+Platform-specific prerequisites and templates stay inside the selected module.
 
 Use a profile when the only purpose is to group selectable modules. Do not
 create a grouping module with no capability of its own.
@@ -85,7 +101,10 @@ create a grouping module with no capability of its own.
 A module must not:
 
 - Select itself from a hostname, username, or hidden machine rule.
-- Own resources assigned to another provider.
+- Install or update packages, runtimes, providers, or applications.
+- Encode commands, arguments, URLs, hooks, scripts, or credentials as
+  prerequisites.
+- Own a rendered target assigned to another module.
 - Include secrets, tokens, private keys, or machine identity.
 - Run imported or catalog-supplied executable text.
 - Remove unmanaged resources.
@@ -99,9 +118,9 @@ directory. The page must include:
 - Purpose and user-visible result.
 - Dependencies, conflicts, and exclusive group.
 - Supported and unsupported platforms.
-- Provider requests and files managed.
+- Static prerequisites and chezmoi-managed rendered targets.
 - Options, defaults, and privacy notes.
-- Plan, apply, verification, rollback, and known limitations.
+- Configuration plan, apply, verification, rollback, and known limitations.
 - Test coverage and examples.
 
 Start from [the module documentation template](template.md).

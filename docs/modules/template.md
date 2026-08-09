@@ -17,9 +17,11 @@ Describe the expected state after a successful apply.
 
 List required module identifiers, conflicts, and the exclusive group, if any.
 
-## Provider requests
+## Prerequisites
 
-List each requested resource and its single owning provider.
+List static platform command, application, or artifact identifiers. Confirm
+that no value contains executable or installation instructions and that
+artifact locators use only accepted roots and safe relative paths.
 
 ## Managed home state
 
@@ -49,7 +51,8 @@ Describe supported-platform differences and explicitly unsupported targets.
 
 ## Security and privacy
 
-Describe privileges, network access, remote downloads, and sensitive local data.
+Describe prerequisite checks, privileges, network access, and sensitive local
+configuration data. Configuration apply must not download or install software.
 
 ## Tests
 
