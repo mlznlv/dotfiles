@@ -22,9 +22,10 @@ catalog valid: 3 modules, 1 profile
 These counts represent the released shell composition.
 
 Validation checks manifest paths, TOML structure, schema fields, identifiers,
-documentation paths, platforms, provider identifiers, chezmoi sources,
-dependencies, conflicts, ownership, profile references, and dependency cycles.
-It never applies chezmoi state or calls a provider.
+documentation paths, platforms, static prerequisite identifiers, compatibility
+provider fields, chezmoi sources, dependencies, conflicts, ownership, profile
+references, and dependency cycles. It never locates or invokes a prerequisite,
+applies chezmoi state, or calls a provider.
 
 ## Exit codes
 

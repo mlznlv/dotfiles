@@ -39,10 +39,23 @@ Manifests are grouped by category.
 ~~~text
 .chezmoidata/modules/
 ├── shell/
-│   ├── zsh.toml
-│   └── zsh-autosuggestions.toml
+│   └── zsh/
+│       ├── zsh.toml
+│       └── autosuggestions.toml
 └── prompt/
     └── starship.toml
+~~~
+
+Module pages mirror that identifier hierarchy.
+
+~~~text
+docs/modules/
+├── shell/
+│   └── zsh/
+│       ├── zsh.md
+│       └── autosuggestions.md
+└── prompt/
+    └── starship.md
 ~~~
 
 The released initial modules are:
@@ -68,21 +81,33 @@ schema = 1
 id = "shell.zsh"
 name = "Zsh"
 summary = "Interactive Zsh shell experience"
-docs = "docs/modules/shell/zsh.md"
+docs = "docs/modules/shell/zsh/zsh.md"
 platforms = ["macos", "debian"]
 depends = []
 conflicts = []
 exclusive_group = "shell.primary"
 ~~~
 
-Schema 2 adds provider requests and chezmoi source selection. Released modules
-contain package intent but no managed home sources yet. See the
+Schema 3 is the released production contract. It adds static platform command,
+application, or artifact prerequisite identifiers and chezmoi source
+selections. All three production modules use schema 3 with empty managed-source
+arrays. Schema 1 and schema 2 remain read-only compatibility contracts. See the
 [catalog contract](../catalog.md).
 
-ADR 0007 replaces provider requests in schema 3 with static platform command,
-application, or artifact prerequisites plus chezmoi source selections. Schema 3
-is planned, not implemented; production manifests remain unchanged until the
-focused migration.
+When one module identifier is the namespace prefix of another, manifests use a
+matching directory hierarchy. `shell.zsh` is stored at
+`.chezmoidata/modules/shell/zsh/zsh.toml`, while its
+`shell.zsh.autosuggestions` descendant is stored beside it as
+`autosuggestions.toml`. Their pages use the corresponding
+`docs/modules/shell/zsh/zsh.md` and `docs/modules/shell/zsh/autosuggestions.md`
+paths. This changes no public identifier. A module without a module namespace
+prefix, such as `prompt.starship`, remains directly below its category
+directory.
+
+This namespace is an explicit schema-3 mapping, not an inference from the set
+of modules currently present. Schema-1 and schema-2 catalogs keep their legacy
+category-plus-kebab manifest and documentation paths. Future namespace roots
+require an explicit, versioned contract change before use.
 
 ## Module boundaries
 

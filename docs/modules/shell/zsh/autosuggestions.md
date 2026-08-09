@@ -16,12 +16,13 @@ enabled.
 The module depends on `shell.zsh`, has no declared conflicts, and has no
 exclusive group.
 
-## Current catalog and planned configuration
+## Prerequisites and managed configuration
 
-The released schema-2 manifest contains historical Homebrew and mise requests;
-no command acts on them. ADR 0007 defines the portable, presence-only artifact
-locator `share:zsh-autosuggestions/zsh-autosuggestions.zsh` for schema 3. No
-chezmoi source or shell initialization file is selected yet.
+The released schema-3 manifest declares `zsh` and the artifact locator
+`share:zsh-autosuggestions/zsh-autosuggestions.zsh` on macOS and Debian.
+Catalog validation checks only these static identifiers; it never locates or
+reads them, and prerequisite presence checking is not available. No chezmoi
+source or shell initialization file is selected yet.
 
 ## Options
 
@@ -48,5 +49,5 @@ privilege, provider process, secret, command history, or machine identity.
 ## Tests and known limitations
 
 Schema, dependency, ownership, discovery, profile resolution, and macOS/Ubuntu
-CI cover this module. Prerequisite migration, initialization, configuration
-plan, and apply are deferred.
+CI cover this module. Prerequisite presence checks, initialization,
+configuration plan, and apply are deferred.

@@ -22,25 +22,25 @@ stage_fixture() {
     cp -R "${fixture_source}/." "${fixture_target}/"
 }
 
-for fixture_name in cycle invalid-identifier invalid-layout missing-dependency unknown-field valid schema2-valid schema2-collision schema2-unsafe schema2-platform schema2-source schema2-unknown-schema schema2-unknown-provider; do
+for fixture_name in cycle invalid-identifier invalid-layout missing-dependency unknown-field valid schema2-valid schema2-collision schema2-unsafe schema2-platform schema2-source schema2-unknown-schema schema2-unknown-provider schema2-zsh-legacy schema3-valid schema3-invalid-identifiers schema3-control schema3-unsupported-platform schema3-unknown-table schema3-unknown-field schema3-provider schema3-collision schema3-zsh-solo; do
     stage_fixture "${fixture_name}"
 done
 
 FIXTURES="${TEST_ROOT}"
 VALID="${FIXTURES}/valid"
-PROVIDER_BIN="${TEST_ROOT}/provider-bin"
-PROVIDER_LOG="${TEST_ROOT}/provider.log"
+PROBE_BIN="${TEST_ROOT}/probe-bin"
+PROBE_LOG="${TEST_ROOT}/probe.log"
 
-mkdir -p "${PROVIDER_BIN}"
-for provider in brew mise; do
+mkdir -p "${PROBE_BIN}"
+for probe in brew mise apt apt-get dnf yum pacman apk installer zsh starship; do
     printf '%s\n' \
         '#!/bin/sh' \
-        'printf "%s\n" "$0 $*" >> "${DOTFILES_PROVIDER_LOG}"' \
-        'exit 97' > "${PROVIDER_BIN}/${provider}"
-    chmod +x "${PROVIDER_BIN}/${provider}"
+        'printf "%s\n" "$0 $*" >> "${DOTFILES_PROBE_LOG}"' \
+        'exit 97' > "${PROBE_BIN}/${probe}"
+    chmod +x "${PROBE_BIN}/${probe}"
 done
-export DOTFILES_PROVIDER_LOG="${PROVIDER_LOG}"
-export PATH="${PROVIDER_BIN}:${PATH}"
+export DOTFILES_PROBE_LOG="${PROBE_LOG}"
+export PATH="${PROBE_BIN}:${PATH}"
 
 failures=0
 checks=0
@@ -141,6 +141,39 @@ expect_exact "production profile resolves on macOS" 0 "$expected_profile" "$CLI"
 expect_exact "production profile resolves on Debian" 0 "$expected_profile" "$CLI" resolve --profile shell.minimal --platform debian
 expect_exact "production explicit modules resolve deterministically" 0 "$expected_profile" "$CLI" resolve --modules shell.zsh.autosuggestions,prompt.starship --platform debian
 expect_exact "Starship resolves independently" 0 "prompt.starship" "$CLI" resolve --modules prompt.starship --platform debian
+if [ -f "${PROJECT_ROOT}/.chezmoidata/modules/shell/zsh/zsh.toml" ] && \
+   [ -f "${PROJECT_ROOT}/.chezmoidata/modules/shell/zsh/autosuggestions.toml" ] && \
+   [ ! -e "${PROJECT_ROOT}/.chezmoidata/modules/shell/zsh.toml" ] && \
+   [ ! -e "${PROJECT_ROOT}/.chezmoidata/modules/shell/zsh-autosuggestions.toml" ]; then
+    STATUS=0
+    OUTPUT=
+    pass "production Zsh manifests use hierarchical layout only"
+else
+    STATUS=1
+    OUTPUT="production Zsh manifest layout is incorrect"
+    fail "production Zsh manifests use hierarchical layout only"
+fi
+if [ -f "${PROJECT_ROOT}/docs/modules/shell/zsh/zsh.md" ] && \
+   [ -f "${PROJECT_ROOT}/docs/modules/shell/zsh/autosuggestions.md" ] && \
+   [ ! -e "${PROJECT_ROOT}/docs/modules/shell/zsh.md" ] && \
+   [ ! -e "${PROJECT_ROOT}/docs/modules/shell/zsh-autosuggestions.md" ]; then
+    STATUS=0
+    OUTPUT=
+    pass "production Zsh documentation uses hierarchical layout only"
+else
+    STATUS=1
+    OUTPUT="production Zsh documentation layout is incorrect"
+    fail "production Zsh documentation uses hierarchical layout only"
+fi
+if ! find "${PROJECT_ROOT}/.chezmoidata/modules" -type f -name '*.toml' -exec grep -E -l 'providers|homebrew|mise' {} + | grep -q .; then
+    STATUS=0
+    OUTPUT=
+    pass "production modules contain no provider fields"
+else
+    STATUS=1
+    OUTPUT="a production provider field remains"
+    fail "production modules contain no provider fields"
+fi
 expect_exact "fixture catalog validates" 0 "catalog valid: 5 modules, 1 profile" env DOTFILES_SOURCE_DIR="$VALID" "$CLI" catalog validate
 expect_contains "module list filters for Debian" 0 "shell.zsh" env DOTFILES_SOURCE_DIR="$VALID" "$CLI" module list --platform debian
 expect_not_contains "Debian list excludes macOS terminal" "terminal.ghostty" env DOTFILES_SOURCE_DIR="$VALID" "$CLI" module list --platform debian
@@ -168,19 +201,53 @@ expect_contains "Homebrew ownership collision fails on macOS" 3 "duplicate owner
 expect_contains "mise ownership collision fails on Debian" 3 "duplicate ownership key mise:package:shared" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema2-collision" "$CLI" resolve --modules shell.alpha,shell.beta --platform debian
 expect_contains "rendered target collision is normalized" 3 "duplicate ownership key chezmoi:target:.zshrc" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema2-collision" "$CLI" resolve --modules shell.alpha,shell.beta --platform debian
 expect_contains "mise tool ownership collision fails" 3 "duplicate ownership key mise:tool:shared-tool" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema2-collision" "$CLI" resolve --modules shell.alpha,shell.beta --platform debian
-expect_contains "unknown module schema fails" 3 "unsupported schema 3" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema2-unknown-schema" "$CLI" catalog validate
+expect_contains "unknown module schema fails" 3 "unsupported schema 4" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema2-unknown-schema" "$CLI" catalog validate
 expect_contains "unknown schema 2 provider fails" 3 "unsupported field providers.macos.apt.packages" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema2-unknown-provider" "$CLI" catalog validate
+expect_exact "schema 2 keeps the intrinsic legacy Zsh layout" 0 "catalog valid: 1 module, 0 profiles" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema2-zsh-legacy" "$CLI" catalog validate
+expect_exact "schema 3 Zsh layout does not depend on a child module" 0 "catalog valid: 1 module, 0 profiles" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-zsh-solo" "$CLI" catalog validate
+expect_exact "schema 3 validates every prerequisite kind and optional arrays" 0 "catalog valid: 3 modules, 0 profiles" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-valid" "$CLI" catalog validate
+expect_exact "schema 3 resolution remains read-only" 0 "shell.alpha" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-valid" "$CLI" resolve --modules shell.alpha --platform macos
+expect_contains "unsafe command path fails" 3 "unsafe command identifier ./zsh" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
+expect_contains "unsafe command arguments fail" 3 "unsafe command identifier zsh --version" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
+expect_contains "unsafe command URL fails" 3 "unsafe command identifier https://example.com/zsh" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
+expect_contains "unsafe command shell syntax fails" 3 "unsafe command identifier zsh;id" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
+expect_contains "duplicate command fails" 3 "macos commands contains duplicate identifier duplicate" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
+expect_contains "unsafe application identifier fails" 3 "unsafe application identifier bad app" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
+expect_contains "unsafe application URL fails" 3 "unsafe application identifier https://example.com/app" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
+expect_contains "unsafe application shell syntax fails" 3 "unsafe application identifier app;id" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
+expect_contains "duplicate application fails" 3 "macos applications contains duplicate identifier duplicate.app" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact without root fails" 3 "artifact locator without root missing-root" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
+expect_contains "unknown artifact root fails" 3 "unknown artifact root unknown" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
+expect_contains "unsafe artifact locator fails" 3 "unsafe artifact locator share:/absolute" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact traversal fails" 3 "unsafe artifact locator share:../traversal" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact empty segment fails" 3 "unsafe artifact locator share:path//empty" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact dot segment fails" 3 "unsafe artifact locator share:." env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact dot-dot segment fails" 3 "unsafe artifact locator share:.." env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact glob fails" 3 "unsafe artifact locator share:path/*" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact variable fails" 3 'unsafe artifact locator share:$HOME/file' env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact tilde fails" 3 "unsafe artifact locator share:~/file" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact URL fails" 3 "unknown artifact root https" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact whitespace fails" 3 "unsafe artifact locator share:path with-space" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact shell syntax fails" 3 "unsafe artifact locator share:path;id" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
+expect_contains "duplicate artifact fails" 3 "macos artifacts contains duplicate identifier share:duplicate/file" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact control character fails" 3 "malformed module record" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-control" "$CLI" catalog validate
+expect_contains "unsupported prerequisite platform fails" 3 "declares macos prerequisites without macos support" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-unsupported-platform" "$CLI" catalog validate
+expect_contains "unknown prerequisite table fails" 3 "unsupported field prerequisites.windows.commands" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-unknown-table" "$CLI" catalog validate
+expect_contains "unknown prerequisite field fails" 3 "unsupported field prerequisites.debian.packages" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-unknown-field" "$CLI" catalog validate
+expect_contains "schema 3 provider fields fail" 3 "cannot declare provider requests" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-provider" "$CLI" catalog validate
+expect_contains "schema 3 rendered target collision is normalized" 3 "duplicate ownership key chezmoi:target:.zshrc" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-collision" "$CLI" resolve --modules shell.alpha,shell.beta --platform debian
+expect_exact "schema 2 remains compatible without prerequisite reinterpretation" 0 "shell.alpha" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema2-valid" "$CLI" resolve --modules shell.alpha --platform debian
 expect_contains "usage errors use status 2" 2 "unknown command unknown" "$CLI" unknown
 expect_contains "missing chezmoi uses status 4" 4 "chezmoi is required" env DOTFILES_CHEZMOI_BIN=does-not-exist "$CLI" catalog validate
 
-if [ ! -e "${PROVIDER_LOG}" ]; then
+if [ ! -e "${PROBE_LOG}" ]; then
     STATUS=0
     OUTPUT=
-    pass "released commands invoke no package provider"
+    pass "validation and resolution invoke no provider, installer, or prerequisite"
 else
     STATUS=97
-    OUTPUT="a package provider was invoked"
-    fail "released commands invoke no package provider"
+    OUTPUT="a provider, installer, or prerequisite was invoked"
+    fail "validation and resolution invoke no provider, installer, or prerequisite"
 fi
 
 if [ "$failures" -ne 0 ]; then

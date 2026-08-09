@@ -15,11 +15,12 @@ expose its catalog intent but do not install Zsh or change the active shell.
 The module has no dependencies or declared conflicts and belongs to the
 `shell.primary` exclusive group.
 
-## Current catalog and planned configuration
+## Prerequisites and managed configuration
 
-The released schema-2 manifest contains historical Homebrew and mise requests;
-no command acts on them. ADR 0007 requires migrating them to a static `zsh`
-command prerequisite. No chezmoi source or startup file is selected yet.
+The released schema-3 manifest declares the static `zsh` command prerequisite
+on macOS and Debian. Catalog validation checks only the identifier; prerequisite
+presence checking is not available. No chezmoi source or startup file is
+selected yet.
 
 ## Options
 
@@ -46,5 +47,5 @@ and login-shell changes are outside the product boundary.
 ## Tests and known limitations
 
 Schema, ownership, exclusive-group, discovery, dependency resolution, profile
-resolution, and macOS/Ubuntu CI cover this module. Prerequisite migration,
+resolution, and macOS/Ubuntu CI cover this module. Prerequisite presence checks,
 `.zshrc`, configuration plan, and apply are deferred.

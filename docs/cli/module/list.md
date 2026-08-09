@@ -35,6 +35,7 @@ rows in identifier order:
 ~~~text
 prompt.starship    Starship    Cross-shell prompt renderer
 shell.zsh          Zsh         Interactive Zsh shell experience
+shell.zsh.autosuggestions    Zsh autosuggestions    Interactive command suggestions for Zsh
 ~~~
 
 ## Exit codes

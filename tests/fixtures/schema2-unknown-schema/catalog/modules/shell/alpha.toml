@@ -1,5 +1,5 @@
 [dotfiles.modules."shell.alpha"]
-schema = 3
+schema = 4
 id = "shell.alpha"
 name = "Alpha"
 summary = "Unknown schema fixture"

@@ -17,11 +17,12 @@ The module has no dependencies or declared conflicts and belongs to the
 `prompt.primary` exclusive group. A profile may combine it with any compatible
 shell module.
 
-## Current catalog and planned configuration
+## Prerequisites and managed configuration
 
-The released schema-2 manifest contains historical Homebrew and mise requests;
-no command acts on them. ADR 0007 requires migrating them to a static
-`starship` command prerequisite. No chezmoi source or managed file is selected.
+The released schema-3 manifest declares the static `starship` command
+prerequisite on macOS and Debian. Catalog validation checks only the identifier;
+prerequisite presence checking is not available. No chezmoi source or managed
+file is selected.
 
 ## Options
 
@@ -48,5 +49,5 @@ is outside the product boundary.
 ## Tests and known limitations
 
 Schema, current ownership, discovery, explicit resolution, profile resolution,
-and macOS/Ubuntu CI cover this module. Prerequisite migration, shell
+and macOS/Ubuntu CI cover this module. Prerequisite presence checks, shell
 initialization, managed configuration, plan, and apply are deferred.

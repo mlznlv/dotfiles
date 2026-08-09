@@ -6,10 +6,10 @@ This document defines the target architecture. The read-only catalog,
 discovery commands, and deterministic resolver are released. Configuration
 planning, prerequisite validation, managed home state, and apply are planned.
 
-[ADR 0007](adr/0007-define-configuration-only-modules.md) changes the
-unimplemented Phase 3 direction to configuration-only modules. Until a focused
-migration lands, the released schema-2 provider fields remain historical
-catalog data and no command interprets them as installation behavior.
+[ADR 0007](adr/0007-define-configuration-only-modules.md) defines the
+configuration-only direction. Schema 3 and the migrated production catalog are
+released. Schema 2 remains compatibility-only historical input, and no command
+interprets its provider fields as prerequisites.
 
 ## Product boundary
 
@@ -97,14 +97,12 @@ presence without opening, reading, sourcing, or executing the file. Values
 cannot contain arguments, unsafe paths, URLs, shell syntax, hooks, executable
 payloads, provider instructions, or credentials.
 
-Schema 3 defines `share:<relative-path>` artifact locators. The generic `share`
-root searches `/opt/homebrew/share` then `/usr/local/share` on macOS, and
-`/usr/share` then `/usr/local/share` on Debian. Relative paths reject empty,
-`.` and `..` segments, globs, variables, tildes, control characters, and shell
-metacharacters. Symlinks must resolve to regular files inside the accepted
-platform software roots; broken or escaping links fail. This supports the Zsh
-autosuggestions prerequisite without adding package observation or
-tool-specific logic to the core.
+Schema 3 defines `share:<relative-path>` artifact locators. Relative paths
+reject empty, `.` and `..` segments, globs, variables, tildes, control
+characters, and shell metacharacters. [ADR 0008](adr/0008-define-portable-share-artifact-discovery.md)
+proposes deterministic XDG, user-override, platform, and Nix search roots with
+strict containment and disclosure rules. Presence validation must not be
+implemented until that provider-neutral discovery contract is accepted.
 
 Prerequisite validation is part of both plan and apply preconditions. A missing
 tool produces an error naming the module, platform, prerequisite kind, and

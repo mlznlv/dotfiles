@@ -1,8 +1,9 @@
 # Catalog
 
-The catalog is the read-only source of module and profile metadata. Schema 1
-and schema 2 validation, discovery, ownership checks, and resolution are
-available. The production catalog contains the minimal shell composition.
+The catalog is the read-only source of module and profile metadata. Schema 1,
+schema 2 compatibility, and schema 3 validation, discovery, ownership checks,
+and resolution are available. The production catalog uses schema 3 for the
+minimal shell composition.
 
 ## Representation
 
@@ -16,7 +17,7 @@ schema = 1
 id = "shell.zsh"
 name = "Zsh"
 summary = "Interactive Zsh shell experience"
-docs = "docs/modules/shell/zsh.md"
+docs = "docs/modules/shell/zsh/zsh.md"
 platforms = ["macos", "debian"]
 depends = []
 conflicts = []
@@ -45,8 +46,9 @@ data namespace.
 ├── catalog.toml
 ├── modules/
 │   ├── shell/
-│   │   ├── zsh.toml
-│   │   └── zsh-autosuggestions.toml
+│   │   └── zsh/
+│   │       ├── zsh.toml
+│   │       └── autosuggestions.toml
 │   └── prompt/
 │       └── starship.toml
 └── profiles/
@@ -56,18 +58,26 @@ data namespace.
 
 The identifier determines the only valid path. For example:
 
-- shell.zsh maps to .chezmoidata/modules/shell/zsh.toml.
+- shell.zsh maps to .chezmoidata/modules/shell/zsh/zsh.toml.
 - shell.zsh.autosuggestions maps to
-  .chezmoidata/modules/shell/zsh-autosuggestions.toml.
+  .chezmoidata/modules/shell/zsh/autosuggestions.toml.
+- The same identifiers map to docs/modules/shell/zsh/zsh.md and
+  docs/modules/shell/zsh/autosuggestions.md.
 - shell.minimal maps to .chezmoidata/profiles/shell/minimal.toml.
+
+The `shell.zsh` namespace mapping is intrinsic to schema 3: it applies even
+when no descendant module is present. Schema-1 and schema-2 catalogs retain the
+legacy category-plus-kebab mapping, including `shell/zsh.toml` and
+`shell/zsh-autosuggestions.toml`. Adding or removing another catalog entry
+therefore never changes the valid path of an existing manifest or page.
 
 ## Module schema versions
 
-Schema 1 remains the released Phase 2 resolution contract. It accepts exactly
-the fields below and implies no provider or home-state requests. Schema 2 is the
-released Phase 3 catalog contract. It requires all schema-1 fields and permits the
-additional fields defined below. A manifest must use one supported integer
-schema version; fields from a later schema fail validation in an earlier one.
+Schema 1 remains the Phase 2 resolution contract. Schema 2 remains
+compatibility-only for external and historical read-only catalogs and is never
+reinterpreted. Schema 3 is the released production contract. A manifest must
+use one supported integer schema version; fields from another schema fail
+validation.
 
 ### Schema 1 module fields
 
@@ -85,10 +95,11 @@ schema version; fields from a later schema fail validation in an earlier one.
 
 Schema 1 contains resolution metadata only.
 
-### Schema 2 module fields
+### Schema 2 compatibility fields
 
-Schema 2 changes only module manifests. Profiles remain schema 1 because they
-compose module identifiers and do not own resources.
+Schema 2 changes only module manifests. It remains accepted for read-only
+validation and resolution compatibility, but no production module uses it.
+Profiles remain schema 1 because they compose module identifiers.
 
 | Field | Type | Default | Validation and platform rule |
 | --- | --- | --- | --- |
@@ -119,10 +130,10 @@ Debian and a Debian request is never inferred on macOS. Homebrew is the only
 macOS package owner. Mise is the only Debian-family package, tool, and managed
 repository owner. Chezmoi is the only home-file and template owner.
 
-### Released shell modules
+### Historical schema-2 shell examples
 
-These examples mirror the production manifests. Home-state source arrays remain
-empty until the later chezmoi shell-state increment.
+These examples record the pre-migration declarations. They are not production
+manifests and are never interpreted as prerequisites.
 
 ~~~toml
 [dotfiles.modules."shell.zsh"]
@@ -130,7 +141,7 @@ schema = 2
 id = "shell.zsh"
 name = "Zsh"
 summary = "Interactive Zsh shell experience"
-docs = "docs/modules/shell/zsh.md"
+docs = "docs/modules/shell/zsh/zsh.md"
 platforms = ["macos", "debian"]
 depends = []
 conflicts = []
@@ -144,7 +155,7 @@ schema = 2
 id = "shell.zsh.autosuggestions"
 name = "Zsh autosuggestions"
 summary = "Interactive command suggestions for Zsh"
-docs = "docs/modules/shell/zsh-autosuggestions.md"
+docs = "docs/modules/shell/zsh/autosuggestions.md"
 platforms = ["macos", "debian"]
 depends = ["shell.zsh"]
 conflicts = []
@@ -168,21 +179,17 @@ providers.debian.mise.tools = ["starship"]
 home.chezmoi.sources = []
 ~~~
 
-These declarations establish ownership intent. No released command observes or
-invokes a provider, installs packages, or writes home state.
+Schema-2 compatibility validation preserves these field meanings. No released
+command observes or invokes a provider, installs packages, or writes home state.
 
-### Accepted configuration-only replacement
+### Schema 3 module fields
 
-[ADR 0007](adr/0007-define-configuration-only-modules.md) defines module schema
-3. It is not released and does not change how the current CLI validates schema
-2. The focused migration will implement validation and update production
-entries.
+[ADR 0007](adr/0007-define-configuration-only-modules.md) defines released
+module schema 3. It keeps every schema-1 field and
+`home.chezmoi.sources`, removes every `providers` field, and adds optional
+prerequisite arrays.
 
-The planned replacement keeps every schema-1 field and
-`home.chezmoi.sources`, removes every `providers` field, and adds these optional
-arrays:
-
-| Field | Type | Default | Planned validation |
+| Field | Type | Default | Validation |
 | --- | --- | --- | --- |
 | `prerequisites.macos.commands` | String array | `[]` | Unique executable names; module must support `macos` |
 | `prerequisites.macos.applications` | String array | `[]` | Unique stable application identifiers; module must support `macos` |
@@ -196,12 +203,12 @@ Command names must match `^[A-Za-z0-9][A-Za-z0-9._+-]*$`; they contain no path
 separator and are located without running them. Application identifiers must
 match `^[A-Za-z0-9][A-Za-z0-9._-]*$` and are passed only to a generic platform
 presence check. Artifact locators have the form `<root>:<relative-path>`.
-Schema 3 accepts the `share` root, which searches `/opt/homebrew/share` and
-`/usr/local/share` on macOS and `/usr/share` and `/usr/local/share` on Debian.
-The exact path must be a regular file. Symlinks must resolve to a regular file
-below `/opt/homebrew` or `/usr/local` on macOS, or `/usr` or `/usr/local` on
-Debian. Broken or escaping links fail; the checker never opens or executes the
-file.
+Schema 3 accepts the `share` root.
+[ADR 0008](adr/0008-define-portable-share-artifact-discovery.md) proposes its
+deterministic XDG, explicit override, platform compatibility, and Nix search
+order plus strict root-containment and disclosure rules. Presence validation
+is blocked until that provider-neutral contract is accepted; this increment
+only validates the static locator.
 
 All forms reject whitespace, arguments, shell metacharacters, URLs, hooks,
 executable payloads, package-manager instructions, provider data, and
@@ -210,45 +217,37 @@ credentials. Artifact relative paths additionally reject absolute paths, empty,
 Unknown tables, fields, prerequisite kinds, roots, and platform names fail
 validation.
 
-Planned examples show optionality; they are not production manifests:
+The production declarations are:
 
 ~~~toml
 # Zsh configuration
 prerequisites.macos.commands = ["zsh"]
 prerequisites.debian.commands = ["zsh"]
-home.chezmoi.sources = ["home/dot_zshrc.tmpl"]
+home.chezmoi.sources = []
 
 # Zsh autosuggestions configuration; the module also depends on shell.zsh
 prerequisites.macos.commands = ["zsh"]
 prerequisites.macos.artifacts = ["share:zsh-autosuggestions/zsh-autosuggestions.zsh"]
 prerequisites.debian.commands = ["zsh"]
 prerequisites.debian.artifacts = ["share:zsh-autosuggestions/zsh-autosuggestions.zsh"]
-home.chezmoi.sources = ["home/dot_config/zsh/autosuggestions.zsh.tmpl"]
+home.chezmoi.sources = []
 
 # Starship remains independent from every shell
 prerequisites.macos.commands = ["starship"]
 prerequisites.debian.commands = ["starship"]
-home.chezmoi.sources = ["home/dot_config/starship.toml"]
+home.chezmoi.sources = []
 
-# Future Ghostty configuration
-prerequisites.macos.applications = ["com.mitchellh.ghostty"]
-home.chezmoi.sources = ["home/dot_config/ghostty/config"]
-
-# Future VS Code configuration
-prerequisites.macos.applications = ["com.microsoft.VSCode"]
-prerequisites.debian.commands = ["code"]
-home.chezmoi.sources = ["home/dot_config/Code/User/settings.json"]
 ~~~
 
-Presence is a precondition, not desired software state. A missing value names
-the module and identifier and fails before a configuration plan or apply. No
-prerequisite is an ownership key, and no profile may declare prerequisites.
+These arrays are validated as static data only. Presence checking is the next
+Phase 3 increment and is not available. No prerequisite is an ownership key,
+and no profile may declare prerequisites.
 
-### Planned schema-2 migration
+### Schema-2 migration result
 
 The migration must not silently reinterpret provider request fields.
 
-| Current schema-2 data | Planned treatment |
+| Historical schema-2 data | Released schema-3 treatment |
 | --- | --- |
 | Homebrew package arrays | Remove; add platform command or application prerequisites only where presence is required |
 | Mise package and tool arrays | Remove; add platform command prerequisites only where presence is required |
@@ -258,14 +257,12 @@ The migration must not silently reinterpret provider request fields.
 | Starship requests | Replace with the `starship` command prerequisite on both platforms |
 | Provider collision fixtures | Replace with unsafe-prerequisite and rendered-target collision coverage |
 
-Schema-2 provider fields are deprecated for new catalog work. The focused
-migration adds schema 3 and converts production modules and fixtures atomically.
-Until converted, discovery and resolution may continue using schema 2, but
-planned configuration commands must fail with an explicit migration-required
-error. A later cleanup may remove schema-2 support after no production entry
-uses it.
+Schema-2 provider fields are forbidden in schema 3. Schema 2 remains accepted
+only for read-only validation, discovery, and resolution compatibility. Future
+configuration commands must reject unconverted schema-2 provider requests
+explicitly rather than reinterpret them.
 
-## Released schema-2 ownership validation
+## Ownership validation
 
 After module resolution and target-platform selection, each request is reduced
 to one canonical key:
@@ -287,10 +284,10 @@ duplicate ownership error, even when the declarations are identical. The error
 names the key, source path, and every declaring module. This check completes
 before provider observation, planning, or mutation.
 
-Under the accepted configuration-only contract, only the normalized chezmoi
-target key remains.
-Its ownership record names the declaring module, and any duplicate across the
-resolved composition fails before prerequisite checks, planning, or apply.
+For schema 3, only the normalized chezmoi target key remains. Its ownership
+record names the declaring module, and any duplicate across the resolved
+composition fails before prerequisite checks, planning, or apply. Compatibility
+schema-2 catalogs retain their historical provider ownership checks.
 
 ## Schema 1 profile fields
 
@@ -349,8 +346,8 @@ bash scripts/check.sh
 The full check requires chezmoi. CI installs an exact tagged chezmoi release
 with its published checksum verification and runs the suite on macOS and Ubuntu.
 
-Schema-2 implementation tests cover valid schema-1 and schema-2
-manifests, unknown fields and providers, incompatible platform sections,
-duplicate ownership keys including distinct sources that normalize to one
-chezmoi target, directory selections, forbidden chezmoi attributes, and values
-resembling executable shell text.
+Tests cover schema 1 and schema 2 compatibility; schema 3 valid, empty, and
+omitted prerequisite arrays; unsafe identifiers and artifact locators; mixed
+provider fields; platform mismatches; recursive discovery; duplicate values;
+and rendered-target collisions. Trap executables verify that validation and
+resolution invoke no provider, installer, command prerequisite, or artifact.
