@@ -21,13 +21,12 @@ stable dotted name such as `shell.zsh.autosuggestions`.
 ./bin/dotfiles module show shell.zsh.autosuggestions
 ~~~
 
-The example identifier is planned and currently returns `unknown module`. Once
-released, output follows this format:
+The example identifier is released. Output follows this format:
 
 ~~~text
 id: shell.zsh.autosuggestions
 name: Zsh autosuggestions
-summary: Interactive history suggestions
+summary: Interactive command suggestions for Zsh
 platforms: macos,debian
 depends: shell.zsh
 conflicts: -
@@ -35,8 +34,9 @@ exclusive group: -
 docs: docs/modules/shell/zsh-autosuggestions.md
 ~~~
 
-This command shows direct metadata. It does not expand dependencies or call a
-provider; use [`resolve`](../resolve.md) to preview the final composition.
+This command shows direct metadata. It does not expand dependencies, locate
+prerequisites, or call a provider; use [`resolve`](../resolve.md) to preview the
+final composition.
 
 ## Exit codes
 

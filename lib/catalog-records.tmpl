@@ -10,6 +10,12 @@
 {{- $brewPackages := "-" -}}
 {{- $misePackages := "-" -}}
 {{- $miseTools := "-" -}}
+{{- $macosCommands := "-" -}}
+{{- $macosApplications := "-" -}}
+{{- $macosArtifacts := "-" -}}
+{{- $debianCommands := "-" -}}
+{{- $debianApplications := "-" -}}
+{{- $debianArtifacts := "-" -}}
 {{- $chezmoiSources := "-" -}}
 {{- if hasKey $module "providers" -}}
 {{- if hasKey $module.providers "macos" -}}
@@ -30,12 +36,36 @@
 {{- end -}}
 {{- end -}}
 {{- end -}}
+{{- if hasKey $module "prerequisites" -}}
+{{- if hasKey $module.prerequisites "macos" -}}
+{{- if hasKey $module.prerequisites.macos "commands" -}}
+{{- $macosCommands = default "~" (join "," $module.prerequisites.macos.commands) -}}
+{{- end -}}
+{{- if hasKey $module.prerequisites.macos "applications" -}}
+{{- $macosApplications = default "~" (join "," $module.prerequisites.macos.applications) -}}
+{{- end -}}
+{{- if hasKey $module.prerequisites.macos "artifacts" -}}
+{{- $macosArtifacts = default "~" (join "," $module.prerequisites.macos.artifacts) -}}
+{{- end -}}
+{{- end -}}
+{{- if hasKey $module.prerequisites "debian" -}}
+{{- if hasKey $module.prerequisites.debian "commands" -}}
+{{- $debianCommands = default "~" (join "," $module.prerequisites.debian.commands) -}}
+{{- end -}}
+{{- if hasKey $module.prerequisites.debian "applications" -}}
+{{- $debianApplications = default "~" (join "," $module.prerequisites.debian.applications) -}}
+{{- end -}}
+{{- if hasKey $module.prerequisites.debian "artifacts" -}}
+{{- $debianArtifacts = default "~" (join "," $module.prerequisites.debian.artifacts) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
 {{- if hasKey $module "home" -}}
 {{- if hasKey $module.home "chezmoi" -}}
 {{- $chezmoiSources = default "-" (join "," $module.home.chezmoi.sources) -}}
 {{- end -}}
 {{- end -}}
-{{ printf "M\t%s\t%s\t%s\t%v\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" $key $keys $module.id $module.schema $module.name $module.summary $module.docs $platforms $depends $conflicts $group $brewPackages $misePackages $miseTools $chezmoiSources -}}
+{{ printf "M\t%s\t%s\t%s\t%v\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" $key $keys $module.id $module.schema $module.name $module.summary $module.docs $platforms $depends $conflicts $group $brewPackages $misePackages $miseTools $macosCommands $macosApplications $macosArtifacts $debianCommands $debianApplications $debianArtifacts $chezmoiSources -}}
 {{- end -}}
 {{- range $key := keys .dotfiles.profiles | sortAlpha -}}
 {{- $profile := index $.dotfiles.profiles $key -}}

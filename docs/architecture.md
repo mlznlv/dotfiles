@@ -6,10 +6,10 @@ This document defines the target architecture. The read-only catalog,
 discovery commands, and deterministic resolver are released. Configuration
 planning, prerequisite validation, managed home state, and apply are planned.
 
-[ADR 0007](adr/0007-define-configuration-only-modules.md) changes the
-unimplemented Phase 3 direction to configuration-only modules. Until a focused
-migration lands, the released schema-2 provider fields remain historical
-catalog data and no command interprets them as installation behavior.
+[ADR 0007](adr/0007-define-configuration-only-modules.md) defines the
+configuration-only direction. Schema 3 and the migrated production catalog are
+released. Schema 2 remains compatibility-only historical input, and no command
+interprets its provider fields as prerequisites.
 
 ## Product boundary
 

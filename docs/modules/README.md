@@ -39,8 +39,9 @@ Manifests are grouped by category.
 ~~~text
 .chezmoidata/modules/
 ├── shell/
-│   ├── zsh.toml
-│   └── zsh-autosuggestions.toml
+│   └── zsh/
+│       ├── zsh.toml
+│       └── autosuggestions.toml
 └── prompt/
     └── starship.toml
 ~~~
@@ -75,14 +76,19 @@ conflicts = []
 exclusive_group = "shell.primary"
 ~~~
 
-Schema 2 adds provider requests and chezmoi source selection. Released modules
-contain package intent but no managed home sources yet. See the
+Schema 3 is the released production contract. It adds static platform command,
+application, or artifact prerequisite identifiers and chezmoi source
+selections. All three production modules use schema 3 with empty managed-source
+arrays. Schema 1 and schema 2 remain read-only compatibility contracts. See the
 [catalog contract](../catalog.md).
 
-ADR 0007 replaces provider requests in schema 3 with static platform command,
-application, or artifact prerequisites plus chezmoi source selections. Schema 3
-is planned, not implemented; production manifests remain unchanged until the
-focused migration.
+When one module identifier is the namespace prefix of another, manifests use a
+matching directory hierarchy. `shell.zsh` is stored at
+`.chezmoidata/modules/shell/zsh/zsh.toml`, while its
+`shell.zsh.autosuggestions` descendant is stored beside it as
+`autosuggestions.toml`. This changes no public identifier. A module without a
+module namespace prefix, such as `prompt.starship`, remains directly below its
+category directory.
 
 ## Module boundaries
 

@@ -1,5 +1,5 @@
 [dotfiles.modules."shell.zsh"]
-schema = 2
+schema = 3
 id = "shell.zsh"
 name = "Zsh"
 summary = "Interactive Zsh shell experience"
@@ -8,6 +8,6 @@ platforms = ["macos", "debian"]
 depends = []
 conflicts = []
 exclusive_group = "shell.primary"
-providers.macos.homebrew.packages = ["zsh"]
-providers.debian.mise.packages = ["zsh"]
+prerequisites.macos.commands = ["zsh"]
+prerequisites.debian.commands = ["zsh"]
 home.chezmoi.sources = []

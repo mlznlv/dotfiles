@@ -63,7 +63,7 @@ prompt.starship
 ~~~
 
 The result is deterministic for the same catalog and options. It is not saved,
-and no provider or home-state operation runs.
+and no provider, prerequisite presence check, or home-state operation runs.
 
 ## Common failures
 

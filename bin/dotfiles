@@ -144,7 +144,7 @@ validate_manifest_shape() {
             sub(/^[[:space:]]*/, "", line)
             key = line
             sub(/[[:space:]]*=.*$/, "", key)
-            if (kind == "modules" && (key == "providers.macos.homebrew.packages" || key == "providers.debian.mise.packages" || key == "providers.debian.mise.tools" || key == "home.chezmoi.sources")) {
+            if (kind == "modules" && (key == "providers.macos.homebrew.packages" || key == "providers.debian.mise.packages" || key == "providers.debian.mise.tools" || key == "prerequisites.macos.commands" || key == "prerequisites.macos.applications" || key == "prerequisites.macos.artifacts" || key == "prerequisites.debian.commands" || key == "prerequisites.debian.applications" || key == "prerequisites.debian.artifacts" || key == "home.chezmoi.sources")) {
                 next
             }
             if (!allowed[key]) {
@@ -181,6 +181,7 @@ validate_manifest_layout() {
         return 3
     fi
 
+    catalog_ids=
     while IFS= read -r manifest; do
         [ -n "$manifest" ] || continue
         validate_manifest_shape "$manifest" "$kind" || return $?
@@ -197,11 +198,59 @@ validate_manifest_layout() {
             return 3
         fi
 
+        catalog_ids="${catalog_ids}${table_id}
+"
+    done < <(find "$directory" -type f -name '*.toml' -print | LC_ALL=C sort)
+
+    while IFS= read -r manifest; do
+        [ -n "$manifest" ] || continue
+
+        if [ "$kind" = "modules" ]; then
+            table_id=$(sed -n 's/^\[dotfiles\.modules\."\([^"]*\)"\]$/\1/p' "$manifest")
+        else
+            table_id=$(sed -n 's/^\[dotfiles\.profiles\."\([^"]*\)"\]$/\1/p' "$manifest")
+        fi
+
         category=${table_id%%.*}
         remainder=${table_id#*.}
         filename=${remainder//./-}
         relative=${manifest#"${SOURCE_DIR}/"}
         expected=".chezmoidata/${kind}/${category}/${filename}.toml"
+
+        if [ "$kind" = "modules" ]; then
+            namespace=
+            while IFS= read -r candidate; do
+                [ -n "$candidate" ] || continue
+                if [ "$candidate" = "$table_id" ]; then
+                    continue
+                fi
+                case "$candidate" in
+                    "${table_id}".*)
+                        namespace=$table_id
+                        ;;
+                esac
+                case "$table_id" in
+                    "${candidate}".*)
+                        if [ "${#candidate}" -gt "${#namespace}" ]; then
+                            namespace=$candidate
+                        fi
+                        ;;
+                esac
+            done <<EOF
+${catalog_ids}
+EOF
+
+            if [ -n "$namespace" ]; then
+                namespace_path=${namespace//./\/}
+                if [ "$table_id" = "$namespace" ]; then
+                    filename=${namespace##*.}
+                else
+                    filename=${table_id#"${namespace}."}
+                    filename=${filename//./-}
+                fi
+                expected=".chezmoidata/modules/${namespace_path}/${filename}.toml"
+            fi
+        fi
         if [ "$relative" != "$expected" ]; then
             printf 'error: %s must be stored at %s\n' "$table_id" "$expected" >&2
             return 3

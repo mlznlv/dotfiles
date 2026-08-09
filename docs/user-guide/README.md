@@ -8,8 +8,9 @@ dotfiles composition. For exact syntax, use the [command guide](../cli/README.md
 > data, but it cannot install packages, save a profile, or apply configuration.
 >
 > The production catalog exposes the minimal shell composition. Prerequisite
-> validation, managed home state, plan, and apply remain unavailable. Future
-> apply manages configuration only and never installs software.
+> identifiers use schema 3 and are validated as static data. Prerequisite
+> presence checks, managed home state, plan, and apply remain unavailable.
+> Future apply manages configuration only and never installs software.
 
 ## Before you start
 
@@ -165,6 +166,7 @@ Available commands do not:
 - Install, remove, or upgrade packages.
 - Write home configuration or save a composition.
 - Invoke Homebrew, mise, or another provider.
+- Locate, read, or invoke declared prerequisites.
 - Apply chezmoi state.
 - Read secrets or machine identity.
 - Request elevated privileges.

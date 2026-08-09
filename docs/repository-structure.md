@@ -2,7 +2,7 @@
 
 ## Current layout
 
-The repository contains a read-only schema-2 catalog and resolver with three
+The repository contains a read-only schema-3 catalog and resolver with three
 production modules and one profile. It contains no provider adapters, managed
 home files, planning, or apply behavior.
 
@@ -63,17 +63,17 @@ pull request and decision.
 ## Phase 3 layout
 
 Phase 3 is split into focused increments. The following target layout reserves
-clear configuration ownership boundaries. Catalog paths are released; the
-replacement prerequisite schema, home state, and planning paths remain planned
-for later increments after ADR 0007 is accepted.
+clear configuration ownership boundaries. Schema 3 catalog paths are released;
+prerequisite presence checks, home state, and planning remain later increments.
 
 ~~~text
 .chezmoidata/
 ├── catalog.toml
 ├── modules/
 │   ├── shell/
-│   │   ├── zsh.toml
-│   │   └── zsh-autosuggestions.toml
+│   │   └── zsh/
+│   │       ├── zsh.toml
+│   │       └── autosuggestions.toml
 │   └── prompt/
 │       └── starship.toml
 └── profiles/
@@ -97,13 +97,13 @@ tests/
         └── plans/
 ~~~
 
-`lib/prerequisites.sh` contains generic, read-only command and application
+`lib/prerequisites.sh` contains generic, read-only command, application, and artifact
 presence checks. It never runs a prerequisite or installer. `lib/plan.sh`
 constructs stable chezmoi-only configuration plans; CLI dispatch and
 confirmation remain in `bin/dotfiles`. No Homebrew, mise, package-manager, or
 application-provider adapter is planned.
 
-`home/` is the repository's planned chezmoi source root. Schema-2 module data
+`home/` is the repository's planned chezmoi source root. Schema-3 module data
 selects paths below that root; it does not contain file bodies or executable
 selection logic. Chezmoi remains the sole owner of the rendered home targets.
 
@@ -118,18 +118,22 @@ software or use machine identity.
 
 - Module identifiers use dotted category names, such as shell.zsh.
 - The first identifier segment equals the category directory.
-- Remaining identifier segments map to one lowercase kebab-case filename.
+- A module identifier that is also a namespace prefix gets a matching nested
+  directory. Its own manifest repeats the final namespace segment as the
+  filename; descendants use their remaining identifier as the filename.
+- Modules without a module namespace prefix remain directly below their
+  category directory.
 - Profile identifiers follow the same category-first rule.
 - A manifest's identifier must equal its TOML table key.
-- Flat module and profile manifest directories are not allowed.
-- Documentation mirrors catalog paths.
+- Duplicate flattened compatibility manifests are not allowed.
+- Documentation follows the existing module-ID mapping independently of catalog nesting.
 - CLI command documentation mirrors command groups below docs/cli.
 - Shell files and commands use portable, descriptive names.
 
 For example, shell.zsh.autosuggestions maps to:
 
 ~~~text
-.chezmoidata/modules/shell/zsh-autosuggestions.toml
+.chezmoidata/modules/shell/zsh/autosuggestions.toml
 docs/modules/shell/zsh-autosuggestions.md
 ~~~
 

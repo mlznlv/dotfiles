@@ -4,7 +4,7 @@ A modular, reproducible, and security-conscious configuration layer for macOS
 and Debian-family Linux.
 
 > [!IMPORTANT]
-> The read-only schema-2 shell catalog and resolver are available. Managed
+> The read-only schema-3 shell catalog and resolver are available. Managed
 > configuration and apply behavior are not implemented yet.
 
 ## Start here
@@ -73,10 +73,10 @@ apply home state.
 
 ## Project status
 
-The architecture foundation, schema-2 validation, and first shell composition
-are established. The solution remains read-only. Accepted ADR 0007 defines a
-configuration-only, tool-neutral direction; a focused schema migration is the
-next blocker in the [roadmap](docs/roadmap.md).
+The architecture foundation, schema-3 validation, and migrated shell
+composition are established. The solution remains read-only. Generic,
+read-only prerequisite presence validation is the next increment in the
+[roadmap](docs/roadmap.md).
 
 Development integrates through `next`; `master` remains the stable branch until
 an explicitly reviewed promotion. See [Contributing](CONTRIBUTING.md) for the

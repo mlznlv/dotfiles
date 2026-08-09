@@ -1,5 +1,5 @@
 [dotfiles.modules."shell.zsh.autosuggestions"]
-schema = 2
+schema = 3
 id = "shell.zsh.autosuggestions"
 name = "Zsh autosuggestions"
 summary = "Interactive command suggestions for Zsh"
@@ -8,6 +8,8 @@ platforms = ["macos", "debian"]
 depends = ["shell.zsh"]
 conflicts = []
 exclusive_group = ""
-providers.macos.homebrew.packages = ["zsh-autosuggestions"]
-providers.debian.mise.packages = ["zsh-autosuggestions"]
+prerequisites.macos.commands = ["zsh"]
+prerequisites.macos.artifacts = ["share:zsh-autosuggestions/zsh-autosuggestions.zsh"]
+prerequisites.debian.commands = ["zsh"]
+prerequisites.debian.artifacts = ["share:zsh-autosuggestions/zsh-autosuggestions.zsh"]
 home.chezmoi.sources = []
