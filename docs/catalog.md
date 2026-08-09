@@ -62,7 +62,15 @@ The identifier determines the only valid path. For example:
   .chezmoidata/modules/shell/zsh-autosuggestions.toml.
 - shell.minimal maps to .chezmoidata/profiles/shell/minimal.toml.
 
-## Schema 1 module fields
+## Module schema versions
+
+Schema 1 remains the released Phase 2 resolution contract. It accepts exactly
+the fields below and implies no provider or home-state requests. Schema 2 is the
+planned Phase 3 contract. It requires all schema-1 fields and permits the
+additional fields defined below. A manifest must use one supported integer
+schema version; fields from a later schema fail validation in an earlier one.
+
+### Schema 1 module fields
 
 | Field | Type | Rule |
 | --- | --- | --- |
@@ -76,9 +84,108 @@ The identifier determines the only valid path. For example:
 | conflicts | String array | Existing module identifiers |
 | exclusive_group | String | Empty or a dotted group identifier |
 
-Schema 1 contains resolution metadata only. Provider requests and home-state
-selection arrive with the Phase 3 vertical slice and require a documented
-schema extension.
+Schema 1 contains resolution metadata only.
+
+### Planned schema 2 module fields
+
+Schema 2 changes only module manifests. Profiles remain schema 1 because they
+compose module identifiers and do not own resources.
+
+| Field | Type | Default | Validation and platform rule |
+| --- | --- | --- | --- |
+| schema | Integer | None | Required and must equal 2 |
+| providers.macos.homebrew.packages | String array | `[]` | Unique Homebrew formula names; allowed only when `platforms` contains `macos` |
+| providers.debian.mise.packages | String array | `[]` | Unique mise package identifiers; allowed only when `platforms` contains `debian` |
+| providers.debian.mise.tools | String array | `[]` | Unique mise tool identifiers; allowed only when `platforms` contains `debian` |
+| home.chezmoi.sources | String array | `[]` | Unique normalized paths below `home/`; selected on every supported platform |
+
+All schema-1 fields are still required. Optional schema-2 tables may be omitted;
+their request arrays then default to empty. Present arrays may also be empty.
+Unknown tables, providers, kinds, fields, or platform names fail validation.
+
+Package and tool identifiers must match `^[a-z0-9][a-z0-9@+._-]*$` and must not
+contain whitespace, shell metacharacters, flags, versions expressed as command
+arguments, URLs, or executable text. A chezmoi source is a slash-separated,
+repository-relative path beginning with `home/`; it must not be absolute,
+contain `.` or `..` segments, end in `/`, or name anything outside the planned
+chezmoi source tree. Values are data passed to the owning adapter, never shell
+source or command text.
+
+Explicit platform sections are required. A macOS request is never inferred on
+Debian and a Debian request is never inferred on macOS. Homebrew is the only
+macOS package owner. Mise is the only Debian-family package, tool, and managed
+repository owner. Chezmoi is the only home-file and template owner.
+
+### Planned shell module examples
+
+These examples specify ownership for every Phase 3 module but are not
+production manifests.
+
+~~~toml
+[dotfiles.modules."shell.zsh"]
+schema = 2
+id = "shell.zsh"
+name = "Zsh"
+summary = "Interactive Zsh shell experience"
+docs = "docs/modules/shell/zsh.md"
+platforms = ["macos", "debian"]
+depends = []
+conflicts = []
+exclusive_group = "shell.primary"
+providers.macos.homebrew.packages = ["zsh"]
+providers.debian.mise.packages = ["zsh"]
+home.chezmoi.sources = ["home/dot_zshrc.tmpl"]
+
+[dotfiles.modules."shell.zsh.autosuggestions"]
+schema = 2
+id = "shell.zsh.autosuggestions"
+name = "Zsh autosuggestions"
+summary = "Interactive command suggestions for Zsh"
+docs = "docs/modules/shell/zsh-autosuggestions.md"
+platforms = ["macos", "debian"]
+depends = ["shell.zsh"]
+conflicts = []
+exclusive_group = ""
+providers.macos.homebrew.packages = ["zsh-autosuggestions"]
+providers.debian.mise.packages = ["zsh-autosuggestions"]
+home.chezmoi.sources = ["home/dot_config/zsh/autosuggestions.zsh.tmpl"]
+
+[dotfiles.modules."prompt.starship"]
+schema = 2
+id = "prompt.starship"
+name = "Starship"
+summary = "Cross-shell prompt rendering"
+docs = "docs/modules/prompt/starship.md"
+platforms = ["macos", "debian"]
+depends = ["shell.zsh"]
+conflicts = []
+exclusive_group = "prompt.primary"
+providers.macos.homebrew.packages = ["starship"]
+providers.debian.mise.tools = ["starship"]
+home.chezmoi.sources = ["home/dot_config/starship.toml"]
+~~~
+
+The exact package availability and integrity behavior must be verified when the
+modules are implemented. These declarations establish ownership, not release
+availability.
+
+## Planned ownership validation
+
+After module resolution and target-platform selection, each request is reduced
+to one canonical key:
+
+| Request | Canonical key |
+| --- | --- |
+| Homebrew formula | `homebrew:package:<formula-name>` |
+| Mise Debian package | `mise:package:<package-name>` |
+| Mise tool | `mise:tool:<tool-name>` |
+| Chezmoi source | `chezmoi:source:<normalized-source-path>` |
+
+Provider, kind, and identifiers are already canonical lowercase data; chezmoi
+paths use `/` separators. Any repeated key across the resolved modules is a
+duplicate ownership error, even when the declarations are identical. The error
+names the key and every declaring module. This check completes before provider
+observation, planning, or mutation.
 
 ## Schema 1 profile fields
 
@@ -136,3 +243,7 @@ bash scripts/check.sh
 
 The full check requires chezmoi. CI installs an exact tagged chezmoi release
 with its published checksum verification and runs the suite on macOS and Ubuntu.
+
+Planned schema-2 implementation tests must cover valid schema-1 and schema-2
+manifests, unknown fields and providers, incompatible platform sections,
+duplicate ownership keys, and values resembling executable shell text.

@@ -89,6 +89,98 @@ Each capability has exactly one owner.
 A module can request resources from several providers, but it cannot introduce
 a competing owner. Provider overlap is a validation error.
 
+## Planned Phase 3 execution flow
+
+ADR 0006 proposes the following boundary. It is a contract for later Phase 3
+implementation, not behavior available in the current CLI.
+
+~~~mermaid
+flowchart LR
+    A["CLI composition and target platform"] --> B["Schema validation and module resolution"]
+    B --> C["Platform request selection"]
+    C --> D["Ownership-key validation"]
+    D --> E["Read-only provider observation"]
+    E --> F["Deterministic in-memory plan"]
+    F --> G["Display effects and request confirmation"]
+    G -->|"yes or --yes"| H["Ordered provider apply"]
+    G -->|"cancel"| I["No mutation"]
+    H --> J["Completed, failed, and unattempted report"]
+~~~
+
+Resolved schema-2 modules contribute static requests for the detected or
+explicit target platform plus platform-neutral chezmoi source selections. The
+CLI converts them to canonical ownership keys and rejects every collision
+before asking a provider to inspect the target.
+
+Provider adapters have two separate interfaces:
+
+- **Observe:** read provider-owned state and return normalized facts. It must
+  not install a provider, update metadata, access a mutation endpoint, or alter
+  files.
+- **Apply:** converge only the plan step passed by the CLI and return a
+  normalized success or failure result. It must not broaden the requested set
+  or perform removal.
+
+The Bash CLI owns validation, ordering, rendering, confirmation, and stopping
+on failure. Adapters own provider-specific observation and mutation. Chezmoi is
+treated as the home-state provider and remains the sole owner of home files;
+catalog paths only select versioned source state consumed by chezmoi.
+
+### Plan model
+
+A change step has these required fields:
+
+| Field | Meaning |
+| --- | --- |
+| ordinal | One-based position in the complete plan |
+| module | Declaring module identifier |
+| provider | `homebrew`, `mise`, or `chezmoi` |
+| resource | Canonical ownership key |
+| action | Provider-normalized additive or convergent action |
+| description | Sanitized human-readable effect |
+| network | Whether the step may access the network |
+| provider installation | Whether the owning provider must first be installed |
+| privilege | `none` or a description of a possible privilege prompt |
+| download | Provider and integrity mechanism, or `none` |
+
+Steps sort by provider order Homebrew, mise, chezmoi; then bytewise canonical
+resource key; then module identifier. Observations are normalized before
+comparison. Identical resolved intent and observations must therefore produce
+identical steps and output. Provider groups with no changes are omitted, while
+a completely empty plan prints `No changes.` and exits successfully.
+
+An invalid catalog, ownership collision, unsupported platform, or failed
+observation emits an actionable error and no plan eligible for apply. Planning
+does not call mutating commands, install missing providers, refresh package
+metadata, or write caches.
+
+Phase 3 does not install providers. A missing provider is reported as a named
+precondition, including that installation would require a separate operation,
+and no actionable plan is produced. Actionable steps still carry the required
+`provider installation` disclosure with the value `no`, preventing a later
+implementation from adding bootstrap effects silently.
+
+### Apply boundary
+
+`apply` recomputes the plan and observations during the same invocation,
+displays all steps and effect disclosures, and then obtains explicit intent.
+Interactive confirmation requires the complete answer `yes`. Any other answer,
+EOF, or interruption cancels before provider mutation. When input is not an
+interactive terminal, apply fails closed unless `--yes` is supplied. The flag
+does not hide the plan or its disclosures.
+
+Execution follows plan order. The first provider failure stops execution. The
+final report classifies every step as completed, failed, or unattempted and
+returns failure. There is no automatic rollback because it could destroy state
+that predates the invocation. A retry recomputes current state, and providers
+must be idempotent so a second successful apply converges to `No changes.`
+
+Phase 3 has no saved plan format, replay, removal, uninstall, prune, or cleanup.
+Plans and reports contain no secrets, usernames, hostnames, private addresses,
+or machine identity. Network use, provider installation, downloads and their
+integrity mechanism, and possible privilege prompts are visible before
+confirmation.
+
 ## Terminal stack
 
 Terminal, multiplexer, shell, and prompt are separate layers.
@@ -160,3 +252,7 @@ planned behavior from released behavior.
 - [ADR 0003: Use TOML for declarative catalogs](adr/0003-use-toml-for-declarative-catalogs.md)
 - [ADR 0004: Enforce single-provider ownership](adr/0004-enforce-single-provider-ownership.md)
 - [ADR 0005: Provide a thin dotfiles CLI](adr/0005-provide-a-thin-dotfiles-cli.md)
+
+## Proposed decisions
+
+- [ADR 0006: Define the Phase 3 execution contract](adr/0006-define-phase-3-execution-contract.md)

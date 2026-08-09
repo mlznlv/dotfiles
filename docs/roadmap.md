@@ -59,19 +59,36 @@ entries.
 
 ## Phase 3: Minimal shell vertical slice
 
-**Status:** Next.
+**Status:** Contract proposed.
 
 **Objective:** prove end-to-end planning and safe application with a small,
 useful composition.
 
-**Deliverables:**
+**Implementation increments:**
 
-- Modules shell.zsh, shell.zsh.autosuggestions, and prompt.starship.
-- Curated profile shell.minimal.
-- Chezmoi source files and provider requests required by those modules.
-- Plan and apply commands with confirmation and non-interactive safeguards.
-- macOS and Debian-family test coverage.
-- Module, profile, and command documentation.
+1. **Execution contract:** accept ADR 0006 and specify schema 2, ownership,
+   provider boundaries, plan ordering, apply safety, paths, and command
+   contracts. Documentation only. Depends on Phase 2.
+2. **Shell catalog composition:** release modules shell.zsh,
+   shell.zsh.autosuggestions, and prompt.starship plus profile shell.minimal
+   under the accepted schema, with validation and resolution fixtures. Depends
+   on the accepted execution contract.
+3. **Provider observation adapters:** add read-only Homebrew, mise, and chezmoi
+   observations and normalized fixture coverage for macOS and Debian. Depends
+   on the shell catalog composition.
+4. **Deterministic planning:** implement `dotfiles plan`, ownership collision
+   checks, stable plan construction, disclosures, no-change behavior, and
+   failure tests. Depends on provider observation adapters.
+5. **Chezmoi shell state:** add the selected Zsh, autosuggestions, and Starship
+   source files and rendering tests without adding apply orchestration. Depends
+   on deterministic planning.
+6. **Safe application:** implement `dotfiles apply`, interactive and
+   non-interactive intent checks, ordered provider execution, stop-on-failure
+   reporting, and idempotency tests. Depends on all earlier Phase 3 increments.
+
+Each increment is one focused pull request and updates its command, module, or
+profile documentation in the same change. Saved plans, rollback, and removal
+remain outside every increment.
 
 **Acceptance criteria:**
 

@@ -20,6 +20,7 @@ supersedes an earlier one instead of rewriting history.
 | [0003](0003-use-toml-for-declarative-catalogs.md) | Accepted | Use TOML for declarative catalogs |
 | [0004](0004-enforce-single-provider-ownership.md) | Accepted | Enforce single-provider ownership |
 | [0005](0005-provide-a-thin-dotfiles-cli.md) | Accepted | Provide a thin dotfiles CLI |
+| [0006](0006-define-phase-3-execution-contract.md) | Proposed | Define the Phase 3 execution contract |
 
 Copy [the template](0000-template.md) when proposing a new decision. Use the next
 four-digit sequence number and a lowercase kebab-case filename.

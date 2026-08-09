@@ -48,8 +48,9 @@ cannot merge into production catalog data. They are not production entries.
 
 ## Planned Phase 3 additions
 
-The next phase adds the first production catalog entries and their chezmoi home
-state.
+Phase 3 is split into focused increments. The following target layout reserves
+clear ownership boundaries; none of these paths exists as released behavior
+until its implementation increment merges.
 
 ~~~text
 .chezmoidata/
@@ -63,10 +64,40 @@ state.
 └── profiles/
     └── shell/
         └── minimal.toml
+home/
+├── dot_config/
+│   ├── starship.toml
+│   └── zsh/
+│       └── autosuggestions.zsh.tmpl
+└── dot_zshrc.tmpl
+lib/
+├── plan.sh
+└── providers/
+    ├── chezmoi.sh
+    ├── homebrew.sh
+    └── mise.sh
+tests/
+└── fixtures/
+    └── phase3/
+        ├── catalog/
+        ├── observations/
+        └── plans/
 ~~~
 
-The home-state layout will be fixed by the Phase 3 pull request and recorded in
-an ADR if it differs from chezmoi conventions.
+`lib/providers/` contains the provider adapter boundary: read-only observation
+and narrowly scoped application. `lib/plan.sh` contains normalized plan
+construction, stable ordering, rendering, and result classification; CLI
+dispatch and confirmation remain in `bin/dotfiles`.
+
+`home/` is the repository's planned chezmoi source root. Schema-2 module data
+selects paths below that root; it does not contain file bodies or executable
+selection logic. Chezmoi remains the sole owner of the rendered home targets.
+
+Phase 3 fixtures remain non-production data. `catalog/` covers schema and
+ownership, `observations/` contains sanitized provider facts, and `plans/`
+contains deterministic expected output for macOS, Debian, no-change,
+cancellation, non-interactive refusal, and partial failure cases. Fixtures must
+not contact providers or use real machine identity.
 
 ## Naming rules
 
