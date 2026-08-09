@@ -59,7 +59,7 @@ entries.
 
 ## Phase 3: Minimal shell vertical slice
 
-**Status:** Contract proposed.
+**Status:** Contract accepted; implementation next.
 
 **Objective:** prove end-to-end planning and safe application with a small,
 useful composition.

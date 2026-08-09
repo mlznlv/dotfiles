@@ -1,6 +1,6 @@
 # ADR 0006: Define the Phase 3 execution contract
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-08-09
 - Supersedes: None
 - Superseded by: None

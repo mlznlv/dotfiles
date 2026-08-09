@@ -255,7 +255,4 @@ planned behavior from released behavior.
 - [ADR 0003: Use TOML for declarative catalogs](adr/0003-use-toml-for-declarative-catalogs.md)
 - [ADR 0004: Enforce single-provider ownership](adr/0004-enforce-single-provider-ownership.md)
 - [ADR 0005: Provide a thin dotfiles CLI](adr/0005-provide-a-thin-dotfiles-cli.md)
-
-## Proposed decisions
-
 - [ADR 0006: Define the Phase 3 execution contract](adr/0006-define-phase-3-execution-contract.md)
