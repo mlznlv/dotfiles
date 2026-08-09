@@ -31,7 +31,7 @@ configuration.
 
 ## Phase 2: Catalog and resolver
 
-**Status:** Complete.
+**Status:** Verified.
 
 **Objective:** implement a read-only core that discovers and resolves catalog
 entries.
