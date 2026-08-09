@@ -6,5 +6,5 @@ summary = "Fixture alternative terminal"
 docs = "docs/modules/terminal/wezterm.md"
 platforms = ["macos"]
 depends = []
-conflicts = []
+conflicts = ["shell.zsh"]
 exclusive_group = "terminal.primary"
