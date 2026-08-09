@@ -65,6 +65,12 @@ The identifier determines the only valid path. For example:
   docs/modules/shell/zsh/autosuggestions.md.
 - shell.minimal maps to .chezmoidata/profiles/shell/minimal.toml.
 
+The `shell.zsh` namespace mapping is intrinsic to schema 3: it applies even
+when no descendant module is present. Schema-1 and schema-2 catalogs retain the
+legacy category-plus-kebab mapping, including `shell/zsh.toml` and
+`shell/zsh-autosuggestions.toml`. Adding or removing another catalog entry
+therefore never changes the valid path of an existing manifest or page.
+
 ## Module schema versions
 
 Schema 1 remains the Phase 2 resolution contract. Schema 2 remains
@@ -197,12 +203,12 @@ Command names must match `^[A-Za-z0-9][A-Za-z0-9._+-]*$`; they contain no path
 separator and are located without running them. Application identifiers must
 match `^[A-Za-z0-9][A-Za-z0-9._-]*$` and are passed only to a generic platform
 presence check. Artifact locators have the form `<root>:<relative-path>`.
-Schema 3 accepts the `share` root, which searches `/opt/homebrew/share` and
-`/usr/local/share` on macOS and `/usr/share` and `/usr/local/share` on Debian.
-The exact path must be a regular file. Symlinks must resolve to a regular file
-below `/opt/homebrew` or `/usr/local` on macOS, or `/usr` or `/usr/local` on
-Debian. Broken or escaping links fail; the checker never opens or executes the
-file.
+Schema 3 accepts the `share` root.
+[ADR 0008](adr/0008-define-portable-share-artifact-discovery.md) proposes its
+deterministic XDG, explicit override, platform compatibility, and Nix search
+order plus strict root-containment and disclosure rules. Presence validation
+is blocked until that provider-neutral contract is accepted; this increment
+only validates the static locator.
 
 All forms reject whitespace, arguments, shell metacharacters, URLs, hooks,
 executable payloads, package-manager instructions, provider data, and

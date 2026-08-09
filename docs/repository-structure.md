@@ -118,11 +118,12 @@ software or use machine identity.
 
 - Module identifiers use dotted category names, such as shell.zsh.
 - The first identifier segment equals the category directory.
-- A module identifier that is also a namespace prefix gets a matching nested
-  directory. Its own manifest repeats the final namespace segment as the
-  filename; descendants use their remaining identifier as the filename.
-- Modules without a module namespace prefix remain directly below their
-  category directory.
+- Schema 3 defines `shell.zsh` as an explicit namespace root. Its own manifest
+  repeats `zsh` as the filename; descendants use their remaining identifier as
+  the filename. This mapping applies independently of which modules exist.
+- Schema-1 and schema-2 modules retain the category-plus-kebab path mapping.
+- New schema-3 namespace roots require an explicit, versioned contract change.
+- Modules outside an explicit namespace remain below their category directory.
 - Profile identifiers follow the same category-first rule.
 - A manifest's identifier must equal its TOML table key.
 - Duplicate flattened compatibility manifests are not allowed.

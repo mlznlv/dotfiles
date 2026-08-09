@@ -104,6 +104,11 @@ paths. This changes no public identifier. A module without a module namespace
 prefix, such as `prompt.starship`, remains directly below its category
 directory.
 
+This namespace is an explicit schema-3 mapping, not an inference from the set
+of modules currently present. Schema-1 and schema-2 catalogs keep their legacy
+category-plus-kebab manifest and documentation paths. Future namespace roots
+require an explicit, versioned contract change before use.
+
 ## Module boundaries
 
 A module represents one user-visible configuration capability, not software

@@ -1,10 +1,13 @@
 [dotfiles.modules."shell.zsh"]
-schema = 1
+schema = 3
 id = "shell.zsh"
 name = "Zsh"
-summary = "Fixture interactive shell"
+summary = "Schema 3 intrinsic namespace fixture"
 docs = "docs/modules/shell/zsh/zsh.md"
 platforms = ["macos", "debian"]
 depends = []
 conflicts = []
 exclusive_group = "shell.primary"
+prerequisites.macos.commands = ["zsh"]
+prerequisites.debian.commands = ["zsh"]
+home.chezmoi.sources = []

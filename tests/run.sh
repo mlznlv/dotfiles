@@ -22,7 +22,7 @@ stage_fixture() {
     cp -R "${fixture_source}/." "${fixture_target}/"
 }
 
-for fixture_name in cycle invalid-identifier invalid-layout missing-dependency unknown-field valid schema2-valid schema2-collision schema2-unsafe schema2-platform schema2-source schema2-unknown-schema schema2-unknown-provider schema3-valid schema3-invalid-identifiers schema3-control schema3-unsupported-platform schema3-unknown-table schema3-unknown-field schema3-provider schema3-collision; do
+for fixture_name in cycle invalid-identifier invalid-layout missing-dependency unknown-field valid schema2-valid schema2-collision schema2-unsafe schema2-platform schema2-source schema2-unknown-schema schema2-unknown-provider schema2-zsh-legacy schema3-valid schema3-invalid-identifiers schema3-control schema3-unsupported-platform schema3-unknown-table schema3-unknown-field schema3-provider schema3-collision schema3-zsh-solo; do
     stage_fixture "${fixture_name}"
 done
 
@@ -203,6 +203,8 @@ expect_contains "rendered target collision is normalized" 3 "duplicate ownership
 expect_contains "mise tool ownership collision fails" 3 "duplicate ownership key mise:tool:shared-tool" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema2-collision" "$CLI" resolve --modules shell.alpha,shell.beta --platform debian
 expect_contains "unknown module schema fails" 3 "unsupported schema 4" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema2-unknown-schema" "$CLI" catalog validate
 expect_contains "unknown schema 2 provider fails" 3 "unsupported field providers.macos.apt.packages" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema2-unknown-provider" "$CLI" catalog validate
+expect_exact "schema 2 keeps the intrinsic legacy Zsh layout" 0 "catalog valid: 1 module, 0 profiles" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema2-zsh-legacy" "$CLI" catalog validate
+expect_exact "schema 3 Zsh layout does not depend on a child module" 0 "catalog valid: 1 module, 0 profiles" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-zsh-solo" "$CLI" catalog validate
 expect_exact "schema 3 validates every prerequisite kind and optional arrays" 0 "catalog valid: 3 modules, 0 profiles" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-valid" "$CLI" catalog validate
 expect_exact "schema 3 resolution remains read-only" 0 "shell.alpha" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-valid" "$CLI" resolve --modules shell.alpha --platform macos
 expect_contains "unsafe command path fails" 3 "unsafe command identifier ./zsh" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate

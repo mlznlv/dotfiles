@@ -193,7 +193,7 @@ function validate_sources(value, label,    values, count, i, previous, parts, pa
     }
 }
 
-function expected_docs(kind, id,    parts, count, i, filename, directory, namespace, candidate, namespace_parts, namespace_count) {
+function expected_docs(kind, id,    parts, count, i, filename, directory) {
     count = split(id, parts, ".")
     directory = parts[1]
     filename = parts[2]
@@ -201,32 +201,10 @@ function expected_docs(kind, id,    parts, count, i, filename, directory, namesp
         filename = filename "-" parts[i]
     }
 
-    if (kind == "modules") {
-        namespace = ""
-        for (candidate in module_exists) {
-            if (candidate == id) {
-                continue
-            }
-            if (index(candidate, id ".") == 1) {
-                namespace = id
-            }
-            if (index(id, candidate ".") == 1 && length(candidate) > length(namespace)) {
-                namespace = candidate
-            }
-        }
-        if (namespace != "") {
-            namespace_count = split(namespace, namespace_parts, ".")
-            directory = namespace_parts[1]
-            for (i = 2; i <= namespace_count; i++) {
-                directory = directory "/" namespace_parts[i]
-            }
-            if (id == namespace) {
-                filename = namespace_parts[namespace_count]
-            } else {
-                filename = substr(id, length(namespace) + 2)
-                gsub(/\./, "-", filename)
-            }
-        }
+    if (kind == "modules" && module_schema[id] == "3" && (id == "shell.zsh" || index(id, "shell.zsh.") == 1)) {
+        directory = "shell/zsh"
+        filename = (id == "shell.zsh" ? "zsh" : substr(id, length("shell.zsh.") + 1))
+        gsub(/\./, "-", filename)
     }
     return "docs/" kind "/" directory "/" filename ".md"
 }

@@ -181,7 +181,6 @@ validate_manifest_layout() {
         return 3
     fi
 
-    catalog_ids=
     while IFS= read -r manifest; do
         [ -n "$manifest" ] || continue
         validate_manifest_shape "$manifest" "$kind" || return $?
@@ -198,8 +197,6 @@ validate_manifest_layout() {
             return 3
         fi
 
-        catalog_ids="${catalog_ids}${table_id}
-"
     done < <(find "$directory" -type f -name '*.toml' -print | LC_ALL=C sort)
 
     while IFS= read -r manifest; do
@@ -207,6 +204,7 @@ validate_manifest_layout() {
 
         if [ "$kind" = "modules" ]; then
             table_id=$(sed -n 's/^\[dotfiles\.modules\."\([^"]*\)"\]$/\1/p' "$manifest")
+            schema=$(sed -n 's/^schema[[:space:]]*=[[:space:]]*\([0-9][0-9]*\)[[:space:]]*$/\1/p' "$manifest")
         else
             table_id=$(sed -n 's/^\[dotfiles\.profiles\."\([^"]*\)"\]$/\1/p' "$manifest")
         fi
@@ -217,39 +215,17 @@ validate_manifest_layout() {
         relative=${manifest#"${SOURCE_DIR}/"}
         expected=".chezmoidata/${kind}/${category}/${filename}.toml"
 
-        if [ "$kind" = "modules" ]; then
-            namespace=
-            while IFS= read -r candidate; do
-                [ -n "$candidate" ] || continue
-                if [ "$candidate" = "$table_id" ]; then
-                    continue
-                fi
-                case "$candidate" in
-                    "${table_id}".*)
-                        namespace=$table_id
-                        ;;
-                esac
-                case "$table_id" in
-                    "${candidate}".*)
-                        if [ "${#candidate}" -gt "${#namespace}" ]; then
-                            namespace=$candidate
-                        fi
-                        ;;
-                esac
-            done <<EOF
-${catalog_ids}
-EOF
-
-            if [ -n "$namespace" ]; then
-                namespace_path=${namespace//./\/}
-                if [ "$table_id" = "$namespace" ]; then
-                    filename=${namespace##*.}
-                else
-                    filename=${table_id#"${namespace}."}
+        if [ "$kind" = "modules" ] && [ "$schema" = "3" ]; then
+            case "$table_id" in
+                shell.zsh)
+                    expected=".chezmoidata/modules/shell/zsh/zsh.toml"
+                    ;;
+                shell.zsh.*)
+                    filename=${table_id#shell.zsh.}
                     filename=${filename//./-}
-                fi
-                expected=".chezmoidata/modules/${namespace_path}/${filename}.toml"
-            fi
+                    expected=".chezmoidata/modules/shell/zsh/${filename}.toml"
+                    ;;
+            esac
         fi
         if [ "$relative" != "$expected" ]; then
             printf 'error: %s must be stored at %s\n' "$table_id" "$expected" >&2
