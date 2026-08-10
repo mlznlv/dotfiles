@@ -7,7 +7,7 @@
 
 ## Context
 
-Schema 3 uses `share:<relative-path>` as provider-neutral evidence that a
+Schema 1 uses `share:<relative-path>` as provider-neutral evidence that a
 selected tool's shared artifact exists. ADR 0007 assigns that root only fixed
 Homebrew, `/usr/local`, and FHS prefixes. That lookup rejects valid user-chosen
 installations from XDG data roots, MacPorts, Nix, plugin managers, and other
@@ -21,7 +21,7 @@ accepted.
 ## Decision
 
 If accepted, this ADR replaces only ADR 0007's fixed `share` search roots and
-symlink boundaries. The schema-3 locator syntax and validation rules remain
+symlink boundaries. The schema-1 locator syntax and validation rules remain
 unchanged.
 
 ### Root sources and order
@@ -52,7 +52,7 @@ Every configured root must be absolute and contain no empty, `.` or `..`
 segment, control character, newline, or carriage return. An invalid explicit
 root fails closed with an actionable error; an invalid ambient XDG entry is
 reported and ignored. Relative catalog paths continue to use the strict
-schema-3 validation rules.
+schema-1 validation rules.
 
 For each root, the checker joins the validated relative path, resolves symlinks,
 and succeeds only when the result is a regular file contained by that root's
@@ -73,7 +73,7 @@ installation action.
 
 ## Consequences
 
-- Schema 3 remains provider- and tool-neutral while supporting user-local,
+- Schema 1 remains provider- and tool-neutral while supporting user-local,
   XDG, MacPorts, Nix, Homebrew, and FHS installations.
 - Users can disclose a safe custom prefix without changing the repository.
 - Lookup order is deterministic and testable without inspecting package tools.

@@ -22,7 +22,7 @@ stage_fixture() {
     cp -R "${fixture_source}/." "${fixture_target}/"
 }
 
-for fixture_name in cycle invalid-identifier invalid-layout missing-dependency unknown-field valid schema2-valid schema2-collision schema2-unsafe schema2-platform schema2-source schema2-unknown-schema schema2-unknown-provider schema2-zsh-legacy schema3-valid schema3-invalid-identifiers schema3-control schema3-unsupported-platform schema3-unknown-table schema3-unknown-field schema3-provider schema3-collision schema3-zsh-solo; do
+for fixture_name in cycle invalid-identifier invalid-layout missing-dependency unknown-field valid prerequisites-valid prerequisite-invalid-identifiers prerequisite-control-character prerequisite-unsupported-platform prerequisite-unknown-table prerequisite-unknown-field provider-field source-collision source-unsafe unsupported-schema; do
     stage_fixture "${fixture_name}"
 done
 
@@ -193,50 +193,39 @@ expect_contains "invalid identifier fails validation" 3 "contains invalid identi
 expect_contains "missing dependency fails validation" 3 "depends on unknown module shell.missing" env DOTFILES_SOURCE_DIR="${FIXTURES}/missing-dependency" "$CLI" catalog validate
 expect_contains "unknown manifest field fails validation" 3 "unsupported field unexpected" env DOTFILES_SOURCE_DIR="${FIXTURES}/unknown-field" "$CLI" catalog validate
 expect_contains "category path mismatch fails validation" 3 "must be stored at .chezmoidata/modules/shell/alpha.toml" env DOTFILES_SOURCE_DIR="${FIXTURES}/invalid-layout" "$CLI" catalog validate
-expect_exact "schema 2 validates provider and nested chezmoi data" 0 "catalog valid: 1 module, 0 profiles" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema2-valid" "$CLI" catalog validate
-expect_contains "unsafe provider identifier fails" 3 "unsafe provider identifier --formula" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema2-unsafe" "$CLI" catalog validate
-expect_contains "Homebrew requires macOS support" 3 "declares Homebrew packages without macos support" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema2-platform" "$CLI" catalog validate
-expect_contains "chezmoi traversal fails" 3 "unsafe chezmoi source home/../dot_zshrc" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema2-source" "$CLI" catalog validate
-expect_contains "Homebrew ownership collision fails on macOS" 3 "duplicate ownership key homebrew:package:shared" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema2-collision" "$CLI" resolve --modules shell.alpha,shell.beta --platform macos
-expect_contains "mise ownership collision fails on Debian" 3 "duplicate ownership key mise:package:shared" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema2-collision" "$CLI" resolve --modules shell.alpha,shell.beta --platform debian
-expect_contains "rendered target collision is normalized" 3 "duplicate ownership key chezmoi:target:.zshrc" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema2-collision" "$CLI" resolve --modules shell.alpha,shell.beta --platform debian
-expect_contains "mise tool ownership collision fails" 3 "duplicate ownership key mise:tool:shared-tool" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema2-collision" "$CLI" resolve --modules shell.alpha,shell.beta --platform debian
-expect_contains "unknown module schema fails" 3 "unsupported schema 4" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema2-unknown-schema" "$CLI" catalog validate
-expect_contains "unknown schema 2 provider fails" 3 "unsupported field providers.macos.apt.packages" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema2-unknown-provider" "$CLI" catalog validate
-expect_exact "schema 2 keeps the intrinsic legacy Zsh layout" 0 "catalog valid: 1 module, 0 profiles" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema2-zsh-legacy" "$CLI" catalog validate
-expect_exact "schema 3 Zsh layout does not depend on a child module" 0 "catalog valid: 1 module, 0 profiles" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-zsh-solo" "$CLI" catalog validate
-expect_exact "schema 3 validates every prerequisite kind and optional arrays" 0 "catalog valid: 3 modules, 0 profiles" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-valid" "$CLI" catalog validate
-expect_exact "schema 3 resolution remains read-only" 0 "shell.alpha" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-valid" "$CLI" resolve --modules shell.alpha --platform macos
-expect_contains "unsafe command path fails" 3 "unsafe command identifier ./zsh" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
-expect_contains "unsafe command arguments fail" 3 "unsafe command identifier zsh --version" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
-expect_contains "unsafe command URL fails" 3 "unsafe command identifier https://example.com/zsh" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
-expect_contains "unsafe command shell syntax fails" 3 "unsafe command identifier zsh;id" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
-expect_contains "duplicate command fails" 3 "macos commands contains duplicate identifier duplicate" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
-expect_contains "unsafe application identifier fails" 3 "unsafe application identifier bad app" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
-expect_contains "unsafe application URL fails" 3 "unsafe application identifier https://example.com/app" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
-expect_contains "unsafe application shell syntax fails" 3 "unsafe application identifier app;id" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
-expect_contains "duplicate application fails" 3 "macos applications contains duplicate identifier duplicate.app" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
-expect_contains "artifact without root fails" 3 "artifact locator without root missing-root" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
-expect_contains "unknown artifact root fails" 3 "unknown artifact root unknown" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
-expect_contains "unsafe artifact locator fails" 3 "unsafe artifact locator share:/absolute" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
-expect_contains "artifact traversal fails" 3 "unsafe artifact locator share:../traversal" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
-expect_contains "artifact empty segment fails" 3 "unsafe artifact locator share:path//empty" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
-expect_contains "artifact dot segment fails" 3 "unsafe artifact locator share:." env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
-expect_contains "artifact dot-dot segment fails" 3 "unsafe artifact locator share:.." env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
-expect_contains "artifact glob fails" 3 "unsafe artifact locator share:path/*" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
-expect_contains "artifact variable fails" 3 'unsafe artifact locator share:$HOME/file' env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
-expect_contains "artifact tilde fails" 3 "unsafe artifact locator share:~/file" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
-expect_contains "artifact URL fails" 3 "unknown artifact root https" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
-expect_contains "artifact whitespace fails" 3 "unsafe artifact locator share:path with-space" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
-expect_contains "artifact shell syntax fails" 3 "unsafe artifact locator share:path;id" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
-expect_contains "duplicate artifact fails" 3 "macos artifacts contains duplicate identifier share:duplicate/file" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-invalid-identifiers" "$CLI" catalog validate
-expect_contains "artifact control character fails" 3 "malformed module record" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-control" "$CLI" catalog validate
-expect_contains "unsupported prerequisite platform fails" 3 "declares macos prerequisites without macos support" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-unsupported-platform" "$CLI" catalog validate
-expect_contains "unknown prerequisite table fails" 3 "unsupported field prerequisites.windows.commands" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-unknown-table" "$CLI" catalog validate
-expect_contains "unknown prerequisite field fails" 3 "unsupported field prerequisites.debian.packages" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-unknown-field" "$CLI" catalog validate
-expect_contains "schema 3 provider fields fail" 3 "cannot declare provider requests" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-provider" "$CLI" catalog validate
-expect_contains "schema 3 rendered target collision is normalized" 3 "duplicate ownership key chezmoi:target:.zshrc" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema3-collision" "$CLI" resolve --modules shell.alpha,shell.beta --platform debian
-expect_exact "schema 2 remains compatible without prerequisite reinterpretation" 0 "shell.alpha" env DOTFILES_SOURCE_DIR="${FIXTURES}/schema2-valid" "$CLI" resolve --modules shell.alpha --platform debian
+expect_contains "chezmoi traversal fails" 3 "unsafe chezmoi source home/../dot_zshrc" env DOTFILES_SOURCE_DIR="${FIXTURES}/source-unsafe" "$CLI" catalog validate
+expect_contains "unknown module schema fails" 3 "schema must be 1" env DOTFILES_SOURCE_DIR="${FIXTURES}/unsupported-schema" "$CLI" catalog validate
+expect_exact "schema 1 validates every prerequisite kind and optional arrays" 0 "catalog valid: 3 modules, 0 profiles" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisites-valid" "$CLI" catalog validate
+expect_exact "schema 1 prerequisite resolution remains read-only" 0 "shell.alpha" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisites-valid" "$CLI" resolve --modules shell.alpha --platform macos
+expect_contains "unsafe command path fails" 3 "unsafe command identifier ./zsh" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "unsafe command arguments fail" 3 "unsafe command identifier zsh --version" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "unsafe command URL fails" 3 "unsafe command identifier https://example.com/zsh" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "unsafe command shell syntax fails" 3 "unsafe command identifier zsh;id" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "duplicate command fails" 3 "macos commands contains duplicate identifier duplicate" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "unsafe application identifier fails" 3 "unsafe application identifier bad app" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "unsafe application URL fails" 3 "unsafe application identifier https://example.com/app" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "unsafe application shell syntax fails" 3 "unsafe application identifier app;id" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "duplicate application fails" 3 "macos applications contains duplicate identifier duplicate.app" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact without root fails" 3 "artifact locator without root missing-root" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "unknown artifact root fails" 3 "unknown artifact root unknown" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "unsafe artifact locator fails" 3 "unsafe artifact locator share:/absolute" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact traversal fails" 3 "unsafe artifact locator share:../traversal" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact empty segment fails" 3 "unsafe artifact locator share:path//empty" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact dot segment fails" 3 "unsafe artifact locator share:." env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact dot-dot segment fails" 3 "unsafe artifact locator share:.." env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact glob fails" 3 "unsafe artifact locator share:path/*" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact variable fails" 3 'unsafe artifact locator share:$HOME/file' env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact tilde fails" 3 "unsafe artifact locator share:~/file" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact URL fails" 3 "unknown artifact root https" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact whitespace fails" 3 "unsafe artifact locator share:path with-space" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact shell syntax fails" 3 "unsafe artifact locator share:path;id" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "duplicate artifact fails" 3 "macos artifacts contains duplicate identifier share:duplicate/file" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact control character fails" 3 "malformed module record" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-control-character" "$CLI" catalog validate
+expect_contains "unsupported prerequisite platform fails" 3 "declares macos prerequisites without macos support" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-unsupported-platform" "$CLI" catalog validate
+expect_contains "unknown prerequisite table fails" 3 "unsupported field prerequisites.windows.commands" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-unknown-table" "$CLI" catalog validate
+expect_contains "unknown prerequisite field fails" 3 "unsupported field prerequisites.debian.packages" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-unknown-field" "$CLI" catalog validate
+expect_contains "provider fields fail" 3 "unsupported field providers.macos.homebrew.packages" env DOTFILES_SOURCE_DIR="${FIXTURES}/provider-field" "$CLI" catalog validate
+expect_contains "rendered target collision is normalized" 3 "duplicate ownership key chezmoi:target:.zshrc" env DOTFILES_SOURCE_DIR="${FIXTURES}/source-collision" "$CLI" resolve --modules shell.alpha,shell.beta --platform debian
 expect_contains "usage errors use status 2" 2 "unknown command unknown" "$CLI" unknown
 expect_contains "missing chezmoi uses status 4" 4 "chezmoi is required" env DOTFILES_CHEZMOI_BIN=does-not-exist "$CLI" catalog validate
 

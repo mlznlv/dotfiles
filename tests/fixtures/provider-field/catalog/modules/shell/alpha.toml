@@ -1,0 +1,12 @@
+[dotfiles.modules."shell.alpha"]
+schema = 1
+id = "shell.alpha"
+name = "Alpha"
+summary = "Forbidden provider field fixture"
+docs = "docs/modules/shell/alpha.md"
+platforms = ["macos"]
+depends = []
+conflicts = []
+exclusive_group = ""
+providers.macos.homebrew.packages = ["alpha"]
+prerequisites.macos.commands = ["alpha"]

@@ -18,7 +18,7 @@ exclusive group.
 
 ## Prerequisites and managed configuration
 
-The released schema-3 manifest declares `zsh` and the artifact locator
+The released schema-1 manifest declares `zsh` and the artifact locator
 `share:zsh-autosuggestions/zsh-autosuggestions.zsh` on macOS and Debian.
 Catalog validation checks only these static identifiers; it never locates or
 reads them, and prerequisite presence checking is not available. No chezmoi

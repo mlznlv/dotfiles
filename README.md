@@ -4,7 +4,7 @@ A modular, reproducible, and security-conscious configuration layer for macOS
 and Debian-family Linux.
 
 > [!IMPORTANT]
-> The read-only schema-3 shell catalog and resolver are available. Managed
+> The read-only schema-1 shell catalog and resolver are available. Managed
 > configuration and apply behavior are not implemented yet.
 
 ## Start here
@@ -73,7 +73,7 @@ apply home state.
 
 ## Project status
 
-The architecture foundation, schema-3 validation, and migrated shell
+The architecture foundation, schema-1 validation, and migrated shell
 composition are established. The solution remains read-only. Generic,
 read-only prerequisite presence validation is the next increment in the
 [roadmap](docs/roadmap.md).

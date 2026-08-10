@@ -19,11 +19,12 @@ $ ./bin/dotfiles catalog validate
 catalog valid: 3 modules, 1 profile
 ~~~
 
-These counts represent the released shell composition.
+These counts represent the current pre-release shell composition.
 
 Validation checks manifest paths, TOML structure, schema fields, identifiers,
 documentation paths, platforms, static prerequisite identifiers, compatibility
-provider fields, chezmoi sources, dependencies, conflicts, ownership, profile
+rules, forbidden provider fields, chezmoi sources, dependencies, conflicts,
+ownership, profile
 references, and dependency cycles. It never locates or invokes a prerequisite,
 applies chezmoi state, or calls a provider.
 

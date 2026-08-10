@@ -7,9 +7,10 @@ discovery commands, and deterministic resolver are released. Configuration
 planning, prerequisite validation, managed home state, and apply are planned.
 
 [ADR 0007](adr/0007-define-configuration-only-modules.md) defines the
-configuration-only direction. Schema 3 and the migrated production catalog are
-released. Schema 2 remains compatibility-only historical input, and no command
-interprets its provider fields as prerequisites.
+configuration-only direction. [ADR 0009](adr/0009-define-pre-release-schema-versioning.md)
+proposes one strict pre-release schema for the root, modules, and profiles.
+Provider requests and unreleased schema compatibility are not part of the
+active contract.
 
 ## Product boundary
 
@@ -97,7 +98,7 @@ presence without opening, reading, sourcing, or executing the file. Values
 cannot contain arguments, unsafe paths, URLs, shell syntax, hooks, executable
 payloads, provider instructions, or credentials.
 
-Schema 3 defines `share:<relative-path>` artifact locators. Relative paths
+Schema 1 defines `share:<relative-path>` artifact locators. Relative paths
 reject empty, `.` and `..` segments, globs, variables, tildes, control
 characters, and shell metacharacters. [ADR 0008](adr/0008-define-portable-share-artifact-discovery.md)
 proposes deterministic XDG, user-override, platform, and Nix search roots with

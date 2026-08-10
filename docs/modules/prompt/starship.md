@@ -19,7 +19,7 @@ shell module.
 
 ## Prerequisites and managed configuration
 
-The released schema-3 manifest declares the static `starship` command
+The released schema-1 manifest declares the static `starship` command
 prerequisite on macOS and Debian. Catalog validation checks only the identifier;
 prerequisite presence checking is not available. No chezmoi source or managed
 file is selected.

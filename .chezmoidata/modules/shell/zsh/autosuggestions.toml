@@ -1,5 +1,5 @@
 [dotfiles.modules."shell.zsh.autosuggestions"]
-schema = 3
+schema = 1
 id = "shell.zsh.autosuggestions"
 name = "Zsh autosuggestions"
 summary = "Interactive command suggestions for Zsh"

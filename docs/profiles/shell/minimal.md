@@ -50,7 +50,7 @@ Prerequisite validation and `dotfiles plan` are unavailable.
 ## Security, privacy, and connectivity
 
 Released commands invoke no providers, prerequisites, network access, privilege
-escalation, home-state writes, secrets, or machine identity. The schema-3
+escalation, home-state writes, secrets, or machine identity. The schema-1
 modules contain static prerequisite identifiers only; planned configuration
 never installs the named tools.
 

@@ -2,7 +2,7 @@
 
 ## Current layout
 
-The repository contains a read-only schema-3 catalog and resolver with three
+The repository contains a read-only schema-1 catalog and resolver with three
 production modules and one profile. It contains no provider adapters, managed
 home files, planning, or apply behavior.
 
@@ -60,10 +60,25 @@ Work branches start from the latest `next` and target `next`. Integrating an
 increment does not promote it to `master`; promotion is a separate release
 pull request and decision.
 
+## GitHub labels
+
+The repository keeps only labels with a demonstrated current consumer:
+
+| Label | Consumer |
+| --- | --- |
+| `dependencies` | Dependabot applies it to dependency update pull requests |
+| `github_actions` | Dependabot applies it to GitHub Actions update pull requests configured by `.github/dependabot.yml` |
+
+Dependabot PRs 9–11 demonstrate both labels in active use. The issue forms do
+not assign labels, no workflow or ownership rule consumes the default issue
+taxonomy, and there are no issues requiring manual triage. Labels must not be
+added or retained without a current form, workflow, automation, ownership,
+release, reporting, or active triage consumer.
+
 ## Phase 3 layout
 
 Phase 3 is split into focused increments. The following target layout reserves
-clear configuration ownership boundaries. Schema 3 catalog paths are released;
+clear configuration ownership boundaries. Schema 1 catalog paths are released;
 prerequisite presence checks, home state, and planning remain later increments.
 
 ~~~text
@@ -103,7 +118,7 @@ constructs stable chezmoi-only configuration plans; CLI dispatch and
 confirmation remain in `bin/dotfiles`. No Homebrew, mise, package-manager, or
 application-provider adapter is planned.
 
-`home/` is the repository's planned chezmoi source root. Schema-3 module data
+`home/` is the repository's planned chezmoi source root. Schema-1 module data
 selects paths below that root; it does not contain file bodies or executable
 selection logic. Chezmoi remains the sole owner of the rendered home targets.
 
@@ -118,11 +133,10 @@ software or use machine identity.
 
 - Module identifiers use dotted category names, such as shell.zsh.
 - The first identifier segment equals the category directory.
-- Schema 3 defines `shell.zsh` as an explicit namespace root. Its own manifest
+- Schema 1 defines `shell.zsh` as an explicit namespace root. Its own manifest
   repeats `zsh` as the filename; descendants use their remaining identifier as
   the filename. This mapping applies independently of which modules exist.
-- Schema-1 and schema-2 modules retain the category-plus-kebab path mapping.
-- New schema-3 namespace roots require an explicit, versioned contract change.
+- New schema-1 namespace roots require an explicit contract change.
 - Modules outside an explicit namespace remain below their category directory.
 - Profile identifiers follow the same category-first rule.
 - A manifest's identifier must equal its TOML table key.

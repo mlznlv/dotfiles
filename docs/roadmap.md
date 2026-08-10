@@ -59,14 +59,16 @@ entries.
 
 ## Phase 3: Minimal shell vertical slice
 
-**Status:** Schema and catalog migration complete; prerequisite validation next.
+**Status:** Pre-release schema simplification awaiting owner approval;
+prerequisite validation next.
 
 **Objective:** prove end-to-end planning and safe application of explicitly
 selected configuration, without installing or converging software.
 
 **Implementation increments:**
 
-1. **Execution contract:** accept ADR 0006 and specify schema 2, ownership,
+1. **Execution contract:** accept ADR 0006 and specify an initial integration
+   schema, ownership,
    provider boundaries, plan ordering, apply safety, paths, and command
    contracts. Historical documentation increment, partially superseded by ADR
    0007. Depends on Phase 2.
@@ -80,9 +82,11 @@ selected configuration, without installing or converging software.
    tool modules, static prerequisites, rendered-target ownership, and the
    explicit migration from provider requests. Documentation only. Blocks every
    later increment.
-4. **Schema and catalog migration (complete):** implemented schema 3, converted
-   the three production modules and fixtures, and preserved schema-2 read-only
-   compatibility without reinterpretation. Depends on ADR 0007.
+4. **Schema and catalog migration (complete):** implemented static
+   prerequisites and converted the three production modules and fixtures.
+   The later pre-release simplification collapses all active manifests to
+   schema 1 and removes compatibility for unreleased iterations. Depends on
+   ADRs 0007 and 0009.
 5. **Prerequisite validation:** implement generic read-only command,
    application, and artifact presence checks with actionable, fail-closed
    errors for macOS and Debian. It never opens or invokes the prerequisite or

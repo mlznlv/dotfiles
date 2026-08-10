@@ -1,5 +1,5 @@
 [dotfiles.modules."prompt.starship"]
-schema = 3
+schema = 1
 id = "prompt.starship"
 name = "Starship"
 summary = "Cross-shell prompt rendering"

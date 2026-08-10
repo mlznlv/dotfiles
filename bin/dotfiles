@@ -144,7 +144,7 @@ validate_manifest_shape() {
             sub(/^[[:space:]]*/, "", line)
             key = line
             sub(/[[:space:]]*=.*$/, "", key)
-            if (kind == "modules" && (key == "providers.macos.homebrew.packages" || key == "providers.debian.mise.packages" || key == "providers.debian.mise.tools" || key == "prerequisites.macos.commands" || key == "prerequisites.macos.applications" || key == "prerequisites.macos.artifacts" || key == "prerequisites.debian.commands" || key == "prerequisites.debian.applications" || key == "prerequisites.debian.artifacts" || key == "home.chezmoi.sources")) {
+            if (kind == "modules" && (key == "prerequisites.macos.commands" || key == "prerequisites.macos.applications" || key == "prerequisites.macos.artifacts" || key == "prerequisites.debian.commands" || key == "prerequisites.debian.applications" || key == "prerequisites.debian.artifacts" || key == "home.chezmoi.sources")) {
                 next
             }
             if (!allowed[key]) {
@@ -204,7 +204,6 @@ validate_manifest_layout() {
 
         if [ "$kind" = "modules" ]; then
             table_id=$(sed -n 's/^\[dotfiles\.modules\."\([^"]*\)"\]$/\1/p' "$manifest")
-            schema=$(sed -n 's/^schema[[:space:]]*=[[:space:]]*\([0-9][0-9]*\)[[:space:]]*$/\1/p' "$manifest")
         else
             table_id=$(sed -n 's/^\[dotfiles\.profiles\."\([^"]*\)"\]$/\1/p' "$manifest")
         fi
@@ -215,7 +214,7 @@ validate_manifest_layout() {
         relative=${manifest#"${SOURCE_DIR}/"}
         expected=".chezmoidata/${kind}/${category}/${filename}.toml"
 
-        if [ "$kind" = "modules" ] && [ "$schema" = "3" ]; then
+        if [ "$kind" = "modules" ]; then
             case "$table_id" in
                 shell.zsh)
                     expected=".chezmoidata/modules/shell/zsh/zsh.toml"

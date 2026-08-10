@@ -7,9 +7,6 @@
 {{- $depends := default "-" (join "," $module.depends) -}}
 {{- $conflicts := default "-" (join "," $module.conflicts) -}}
 {{- $group := default "-" $module.exclusive_group -}}
-{{- $brewPackages := "-" -}}
-{{- $misePackages := "-" -}}
-{{- $miseTools := "-" -}}
 {{- $macosCommands := "-" -}}
 {{- $macosApplications := "-" -}}
 {{- $macosArtifacts := "-" -}}
@@ -17,25 +14,6 @@
 {{- $debianApplications := "-" -}}
 {{- $debianArtifacts := "-" -}}
 {{- $chezmoiSources := "-" -}}
-{{- if hasKey $module "providers" -}}
-{{- if hasKey $module.providers "macos" -}}
-{{- if hasKey $module.providers.macos "homebrew" -}}
-{{- if hasKey $module.providers.macos.homebrew "packages" -}}
-{{- $brewPackages = default "-" (join "," $module.providers.macos.homebrew.packages) -}}
-{{- end -}}
-{{- end -}}
-{{- end -}}
-{{- if hasKey $module.providers "debian" -}}
-{{- if hasKey $module.providers.debian "mise" -}}
-{{- if hasKey $module.providers.debian.mise "packages" -}}
-{{- $misePackages = default "-" (join "," $module.providers.debian.mise.packages) -}}
-{{- end -}}
-{{- if hasKey $module.providers.debian.mise "tools" -}}
-{{- $miseTools = default "-" (join "," $module.providers.debian.mise.tools) -}}
-{{- end -}}
-{{- end -}}
-{{- end -}}
-{{- end -}}
 {{- if hasKey $module "prerequisites" -}}
 {{- if hasKey $module.prerequisites "macos" -}}
 {{- if hasKey $module.prerequisites.macos "commands" -}}
@@ -65,7 +43,7 @@
 {{- $chezmoiSources = default "-" (join "," $module.home.chezmoi.sources) -}}
 {{- end -}}
 {{- end -}}
-{{ printf "M\t%s\t%s\t%s\t%v\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" $key $keys $module.id $module.schema $module.name $module.summary $module.docs $platforms $depends $conflicts $group $brewPackages $misePackages $miseTools $macosCommands $macosApplications $macosArtifacts $debianCommands $debianApplications $debianArtifacts $chezmoiSources -}}
+{{ printf "M\t%s\t%s\t%s\t%v\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" $key $keys $module.id $module.schema $module.name $module.summary $module.docs $platforms $depends $conflicts $group $macosCommands $macosApplications $macosArtifacts $debianCommands $debianApplications $debianArtifacts $chezmoiSources -}}
 {{- end -}}
 {{- range $key := keys .dotfiles.profiles | sortAlpha -}}
 {{- $profile := index $.dotfiles.profiles $key -}}
