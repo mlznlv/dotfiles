@@ -384,7 +384,7 @@ function add_resolved(id,    dependencies, count, i) {
     }
 }
 
-function resolve_modules(    roots, root_count_local, additions, addition_count, i, id, conflicts, conflict_count, conflict_index, group) {
+function resolve_modules(emit_modules,    roots, root_count_local, additions, addition_count, i, id, conflicts, conflict_count, conflict_index, group) {
     if (profile != "") {
         if (!profile_exists[profile]) {
             fail("unknown profile " profile)
@@ -434,10 +434,36 @@ function resolve_modules(    roots, root_count_local, additions, addition_count,
         check_chezmoi_ownership(id, module_sources[id])
     }
 
-    if (!errors) {
+    if (!errors && emit_modules) {
         for (i = 1; i <= resolved_count; i++) {
             print resolved_order[i]
         }
+    }
+}
+
+function print_prerequisites(    i, id, commands, applications, artifacts, values, count, item) {
+    resolve_modules(0)
+    if (errors) return
+    for (i = 1; i <= resolved_count; i++) {
+        id = resolved_order[i]
+        if (platform == "macos") {
+            commands = module_macos_commands[id]
+            applications = module_macos_applications[id]
+            artifacts = module_macos_artifacts[id]
+        } else {
+            commands = module_debian_commands[id]
+            applications = module_debian_applications[id]
+            artifacts = module_debian_artifacts[id]
+        }
+        count = split_list(commands, values)
+        for (item = 1; item <= count; item++) print id, "command", values[item]
+        delete values
+        count = split_list(applications, values)
+        for (item = 1; item <= count; item++) print id, "application", values[item]
+        delete values
+        count = split_list(artifacts, values)
+        for (item = 1; item <= count; item++) print id, "artifact", values[item]
+        delete values
     }
 }
 
@@ -581,7 +607,9 @@ END {
             print "docs: " profile_docs[target_id]
         }
     } else if (action == "resolve") {
-        resolve_modules()
+        resolve_modules(1)
+    } else if (action == "prerequisites") {
+        print_prerequisites()
     } else {
         fail("unknown catalog action " action)
     }

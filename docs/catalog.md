@@ -120,8 +120,8 @@ deterministic lookup order: explicit local roots, valid `XDG_DATA_HOME` or a
 validated `$HOME/.local/share` fallback, valid `XDG_DATA_DIRS`,
 `/usr/local/share`, then `/usr/share`. The contract requires strict root
 validation, resolved-path containment, metadata-only checks, and private
-disclosure without provider inference. Presence validation is not implemented;
-the current command only validates the static locator.
+disclosure without provider inference. `dotfiles prerequisite check` implements
+command and artifact presence checks for a selected resolved composition.
 
 All forms reject whitespace, arguments, shell metacharacters, URLs, hooks,
 executable payloads, package-manager instructions, provider data, and
@@ -152,9 +152,10 @@ home.chezmoi.sources = []
 
 ~~~
 
-These arrays are validated as static data only. Presence checking is the next
-Phase 3 increment and is not available. No prerequisite is an ownership key,
-and no profile may declare prerequisites.
+These arrays remain static catalog data. The prerequisite command observes
+selected command and artifact presence without changing the catalog or machine;
+application checks fail closed. No prerequisite is an ownership key, and no
+profile may declare prerequisites.
 
 ## Ownership validation
 
@@ -234,5 +235,5 @@ with its published checksum verification and runs the suite on macOS and Ubuntu.
 Tests cover schema-1 valid, empty, and omitted prerequisite arrays; unsupported
 schema numbers; unsafe identifiers and artifact locators; forbidden provider
 fields; platform mismatches; recursive discovery; duplicate values; and
-rendered-target collisions. Trap executables verify that validation and
-resolution invoke no provider, installer, command prerequisite, or artifact.
+rendered-target collisions. Isolated roots and PATH entries cover selection,
+ordering, metadata types, containment, privacy, exit codes, and non-invocation.

@@ -8,7 +8,8 @@ Run commands from the repository root with `./bin/dotfiles`.
 
 > [!NOTE]
 > The production catalog contains three shell modules and the `shell.minimal`
-> profile. Prerequisite validation, plan, and apply are not available yet.
+> profile. Command and artifact prerequisite checks are available; application
+> checks, plan, and apply are not.
 
 ## Quick start
 
@@ -35,6 +36,7 @@ not.
 | Discover profiles | `dotfiles profile list` | [profile list](profile/list.md) |
 | Inspect one profile | `dotfiles profile show <profile-id>` | [profile show](profile/show.md) |
 | Preview a composition | `dotfiles resolve ...` | [resolve](resolve.md) |
+| Check selected prerequisites | `dotfiles prerequisite check ...` | [prerequisite check](prerequisite/check.md) |
 
 ## Planned Phase 3 commands
 
@@ -55,11 +57,13 @@ saved plans, replay, automatic rollback, or destructive removal.
 1. List available modules or profiles.
 2. Inspect an identifier with `show`.
 3. Preview the final dependency-expanded composition with `resolve`.
+4. Check its declared command and artifact prerequisites.
 
 ~~~console
 ./bin/dotfiles profile list
 ./bin/dotfiles profile show shell.minimal
 ./bin/dotfiles resolve --profile shell.minimal
+./bin/dotfiles prerequisite check --profile shell.minimal
 ~~~
 
 The example identifier above is released on macOS and Debian-family Linux.
@@ -89,7 +93,8 @@ Use `--all` with a list command to disable platform filtering. Do not combine
 | `0` | Success, including an empty list |
 | `2` | Invalid command syntax |
 | `3` | Unsupported platform, invalid catalog, or failed resolution |
-| `4` | Chezmoi or an internal CLI file is unavailable |
+| `4` | Chezmoi/checker dependency is unavailable, or application checking is required |
+| `5` | One or more selected command or artifact prerequisites are missing |
 
 Errors are written to standard error. Invalid syntax also suggests
 `dotfiles help`.
@@ -113,9 +118,10 @@ The shell identifiers documented in this guide are released.
 
 ## Safety
 
-The current CLI reads versioned catalog data and basic operating-system facts.
-It does not use the network, request elevated privileges, call providers, read
-secrets, or change the machine.
+The current CLI reads catalog data, basic operating-system facts, PATH file
+metadata, and artifact metadata. It does not open or invoke prerequisites, use
+the network, request elevated privileges, call providers, read secrets, or
+change the machine.
 
 For an end-to-end introduction, read the [user guide](../user-guide/README.md).
 Future commands are tracked in the [roadmap](../roadmap.md). Contributors adding

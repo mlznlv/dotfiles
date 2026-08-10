@@ -59,8 +59,8 @@ entries.
 
 ## Phase 3: Minimal shell vertical slice
 
-**Status:** Pre-release schema simplification complete; prerequisite validation
-next.
+**Status:** Command and artifact prerequisite slice complete; managed shell
+configuration next.
 
 **Objective:** prove end-to-end planning and safe application of explicitly
 selected configuration, without installing or converging software.
@@ -91,10 +91,11 @@ selected configuration, without installing or converging software.
    with explicit, XDG, validated HOME-derived, and generic system data roots
    plus deterministic safety, containment, disclosure, and non-invocation test
    requirements. Documentation only.
-6. **Prerequisite validation:** implement generic read-only command,
-   application, and artifact presence checks with actionable, fail-closed
-   errors for macOS and Debian. It never opens or invokes the prerequisite or
-   an installer. Depends on the schema migration and accepted ADR 0008.
+6. **Prerequisite validation (partially complete):** implemented generic,
+   read-only command and artifact checks for selected shell compositions with
+   actionable errors, deterministic ADR 0008 discovery, and no invocation.
+   Application checks remain fail-closed and deferred. Depends on the schema
+   migration and accepted ADR 0008.
 7. **Chezmoi shell configuration:** add selected Zsh, autosuggestions, and
    Starship source files plus rendering and target-ownership tests. Depends on
    the schema migration.

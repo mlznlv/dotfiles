@@ -9,6 +9,7 @@ SOURCE_DIR=${DOTFILES_SOURCE_DIR:-"${PROJECT_ROOT}"}
 CHEZMOI_BIN=${DOTFILES_CHEZMOI_BIN:-chezmoi}
 CATALOG_TEMPLATE="${PROJECT_ROOT}/lib/catalog-records.tmpl"
 CATALOG_PROGRAM="${PROJECT_ROOT}/lib/catalog.awk"
+PREREQUISITE_PROGRAM="${PROJECT_ROOT}/lib/prerequisite-check.sh"
 
 usage() {
     cat <<'EOF'
@@ -21,6 +22,7 @@ Usage:
   dotfiles profile list [--platform macos|debian | --all]
   dotfiles profile show <profile-id>
   dotfiles resolve (--profile <profile-id> | --modules <id,id>) [--add <id,id>] [--platform macos|debian]
+  dotfiles prerequisite check (--profile <profile-id> | --modules <id,id>) [--add <id,id>] [--platform macos|debian]
 
 All commands in this release are read-only.
 EOF
@@ -384,6 +386,64 @@ resolve_command() {
     run_catalog resolve "$platform" 0 "" "$profile" "$modules" "$additional"
 }
 
+prerequisite_check_command() {
+    profile=
+    modules=
+    additional=
+    platform=
+
+    while [ "$#" -gt 0 ]; do
+        case "$1" in
+            --profile)
+                shift
+                [ "$#" -gt 0 ] || usage_error "--profile requires a value"
+                profile=$1
+                ;;
+            --modules)
+                shift
+                [ "$#" -gt 0 ] || usage_error "--modules requires a value"
+                modules=$1
+                ;;
+            --add)
+                shift
+                [ "$#" -gt 0 ] || usage_error "--add requires a value"
+                additional=$1
+                ;;
+            --platform)
+                shift
+                [ "$#" -gt 0 ] || usage_error "--platform requires a value"
+                platform=$1
+                ;;
+            -h|--help)
+                usage
+                return 0
+                ;;
+            *) usage_error "unknown option $1" ;;
+        esac
+        shift
+    done
+
+    if [ -n "$profile" ] && [ -n "$modules" ]; then
+        usage_error "--profile and --modules are mutually exclusive"
+    fi
+    if [ -z "$profile" ] && [ -z "$modules" ]; then
+        usage_error "prerequisite check requires --profile or --modules"
+    fi
+    if [ -z "$platform" ]; then
+        platform=$(detect_platform) || exit $?
+    fi
+    validate_platform "$platform" || exit $?
+    if [ ! -f "$PREREQUISITE_PROGRAM" ]; then
+        printf 'error: prerequisite checker implementation is missing\n' >&2
+        return 4
+    fi
+
+    prerequisite_records=$(run_catalog prerequisites "$platform" 0 "" "$profile" "$modules" "$additional") || return $?
+    # shellcheck source=../lib/prerequisite-check.sh
+    source "$PREREQUISITE_PROGRAM"
+    prerequisite_check_records "$prerequisite_records"
+}
+
 main() {
     [ "$#" -gt 0 ] || {
         usage
@@ -434,6 +494,15 @@ main() {
             ;;
         resolve)
             resolve_command "$@"
+            ;;
+        prerequisite)
+            [ "$#" -gt 0 ] || usage_error "prerequisite requires a subcommand"
+            subcommand=$1
+            shift
+            case "$subcommand" in
+                check) prerequisite_check_command "$@" ;;
+                *) usage_error "unknown prerequisite subcommand $subcommand" ;;
+            esac
             ;;
         *)
             usage_error "unknown command $command_name"

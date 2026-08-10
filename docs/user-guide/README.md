@@ -5,11 +5,12 @@ dotfiles composition. For exact syntax, use the [command guide](../cli/README.md
 
 > [!IMPORTANT]
 > The current release is read-only. It can inspect, validate, and resolve catalog
-> data, but it cannot install packages, save a profile, or apply configuration.
+> data and check selected command/artifact prerequisites, but it cannot install
+> packages, save a profile, or apply configuration.
 >
 > The production catalog exposes the minimal shell composition. Prerequisite
-> identifiers use schema 1 and are validated as static data. Prerequisite
-> presence checks, managed home state, plan, and apply remain unavailable.
+> identifiers use schema 1. Command and artifact presence checks are available;
+> application checks, managed home state, plan, and apply remain unavailable.
 > Future apply manages configuration only and never installs software.
 
 ## Before you start
@@ -131,6 +132,18 @@ when checking compatibility for another machine:
 Accepted values are `macos` and `debian`. The `debian` value covers Debian,
 Ubuntu, Kali, and other supported Debian-family distributions.
 
+## Check prerequisites
+
+Check the resolved profile without installing or configuring anything:
+
+~~~console
+./bin/dotfiles prerequisite check --profile shell.minimal --platform debian
+~~~
+
+The command reports every declared command and artifact as `present` or
+`missing`. Missing items must be provided outside this project. Artifact root
+paths below HOME are abbreviated as `$HOME`; no provider is inferred.
+
 ## Understand failures
 
 The CLI stops without partial output when a composition is invalid. Common
@@ -157,7 +170,8 @@ Exit codes are stable:
 | `0` | Success, including an empty list |
 | `2` | Invalid command syntax |
 | `3` | Unsupported platform, invalid catalog, or failed resolution |
-| `4` | Chezmoi or an internal CLI file is unavailable |
+| `4` | Chezmoi/checker dependency is unavailable, or application checking is required |
+| `5` | One or more selected prerequisites are missing |
 
 ## Safety and current boundaries
 
@@ -166,7 +180,7 @@ Available commands do not:
 - Install, remove, or upgrade packages.
 - Write home configuration or save a composition.
 - Invoke Homebrew, mise, or another provider.
-- Locate, read, or invoke declared prerequisites.
+- Open or invoke declared prerequisites.
 - Apply chezmoi state.
 - Read secrets or machine identity.
 - Request elevated privileges.
@@ -186,3 +200,4 @@ boundary. Follow delivery in the [roadmap](../roadmap.md).
 - [List profiles](../cli/profile/list.md)
 - [Inspect a profile](../cli/profile/show.md)
 - [Resolve a composition](../cli/resolve.md)
+- [Check prerequisites](../cli/prerequisite/check.md)

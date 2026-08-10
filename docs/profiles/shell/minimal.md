@@ -1,6 +1,6 @@
 # Minimal shell
 
-- Status: Available for discovery and resolution
+- Status: Available for discovery, resolution, and prerequisite checking
 - Intended targets: minimal interactive shell environments
 - Supported platforms: macOS and Debian-family Linux
 - Documentation owner: repository maintainer
@@ -43,16 +43,17 @@ Discovery and resolution are available:
 ~~~console
 ./bin/dotfiles profile show shell.minimal
 ./bin/dotfiles resolve --profile shell.minimal --platform debian
+./bin/dotfiles prerequisite check --profile shell.minimal --platform debian
 ~~~
 
-Prerequisite validation and `dotfiles plan` are unavailable.
+Command and artifact prerequisite checks are available. Application checks and
+`dotfiles plan` are unavailable.
 
 ## Security, privacy, and connectivity
 
 Released commands invoke no providers, prerequisites, network access, privilege
-escalation, home-state writes, secrets, or machine identity. The schema-1
-modules contain static prerequisite identifiers only; planned configuration
-never installs the named tools.
+escalation, or home-state writes. Presence checks inspect executable and
+artifact metadata only and never install the named tools.
 
 ## Verification and recovery
 
@@ -63,6 +64,6 @@ invalid catalog or selection input and retrying. No rollback or removal exists.
 ## Tests and known limitations
 
 Production discovery, show, macOS and Debian resolution, dependency ordering,
-provider and prerequisite non-invocation, and macOS/Ubuntu CI cover the profile.
-Prerequisite presence checks, managed home state, configuration plan, apply,
-saving, and recovery are deferred.
+provider/prerequisite non-invocation, isolated presence fixtures, and
+macOS/Ubuntu CI cover the profile. Application checks, managed home state,
+configuration plan, apply, saving, and recovery are deferred.

@@ -1,6 +1,6 @@
 # Zsh
 
-- Status: Available for discovery and resolution
+- Status: Available for discovery, resolution, and prerequisite checking
 - Category: shell
 - Supported platforms: macOS and Debian-family Linux
 - Documentation owner: repository maintainer
@@ -17,10 +17,9 @@ The module has no dependencies or declared conflicts and belongs to the
 
 ## Prerequisites and managed configuration
 
-The released schema-1 manifest declares the static `zsh` command prerequisite
-on macOS and Debian. Catalog validation checks only the identifier; prerequisite
-presence checking is not available. No chezmoi source or startup file is
-selected yet.
+The schema-1 manifest declares `zsh` on macOS and Debian. `prerequisite check`
+locates an external executable file through absolute PATH entries without
+invoking it. No chezmoi source or startup file is selected yet.
 
 ## Options
 
@@ -33,6 +32,7 @@ Plan and apply are unavailable. Verify the released metadata with:
 ~~~console
 ./bin/dotfiles module show shell.zsh
 ./bin/dotfiles resolve --modules shell.zsh --platform debian
+./bin/dotfiles prerequisite check --modules shell.zsh --platform debian
 ~~~
 
 These read-only commands need no recovery. Planned apply will manage only
@@ -47,5 +47,5 @@ and login-shell changes are outside the product boundary.
 ## Tests and known limitations
 
 Schema, ownership, exclusive-group, discovery, dependency resolution, profile
-resolution, and macOS/Ubuntu CI cover this module. Prerequisite presence checks,
-`.zshrc`, configuration plan, and apply are deferred.
+resolution, isolated command-presence tests, and macOS/Ubuntu CI cover this
+module. `.zshrc`, configuration plan, and apply are deferred.

@@ -2,9 +2,9 @@
 
 ## Current layout
 
-The repository contains a read-only schema-1 catalog and resolver with three
-production modules and one profile. It contains no provider adapters, managed
-home files, planning, or apply behavior.
+The repository contains a read-only schema-1 catalog, resolver, and shell
+prerequisite checker with three production modules and one profile. It contains
+no provider adapters, managed home files, planning, or apply behavior.
 
 ~~~text
 .
@@ -34,7 +34,8 @@ home files, planning, or apply behavior.
 │   └── roadmap.md
 ├── lib/
 │   ├── catalog-records.tmpl
-│   └── catalog.awk
+│   ├── catalog.awk
+│   └── prerequisite-check.sh
 ├── scripts/
 │   └── check.sh
 ├── tests/
@@ -78,8 +79,9 @@ release, reporting, or active triage consumer.
 ## Phase 3 layout
 
 Phase 3 is split into focused increments. The following target layout reserves
-clear configuration ownership boundaries. Schema 1 catalog paths are released;
-prerequisite presence checks, home state, and planning remain later increments.
+clear configuration ownership boundaries. Schema 1 catalog paths and read-only
+command/artifact presence checks are released; application checks, home state,
+and planning remain later increments.
 
 ~~~text
 .chezmoidata/
@@ -101,7 +103,7 @@ home/
 │       └── autosuggestions.zsh.tmpl
 └── dot_zshrc.tmpl
 lib/
-├── prerequisites.sh
+├── prerequisite-check.sh
 └── plan.sh
 tests/
 └── fixtures/
@@ -112,11 +114,11 @@ tests/
         └── plans/
 ~~~
 
-`lib/prerequisites.sh` contains generic, read-only command, application, and artifact
-presence checks. It never runs a prerequisite or installer. `lib/plan.sh`
-constructs stable chezmoi-only configuration plans; CLI dispatch and
-confirmation remain in `bin/dotfiles`. No Homebrew, mise, package-manager, or
-application-provider adapter is planned.
+`lib/prerequisite-check.sh` contains released, read-only command and artifact
+presence checks. Applications currently fail closed. It never runs a
+prerequisite or installer. Planned `lib/plan.sh` will construct stable
+chezmoi-only configuration plans; CLI dispatch remains in `bin/dotfiles`. No
+Homebrew, mise, package-manager, or application-provider adapter is planned.
 
 `home/` is the repository's planned chezmoi source root. Schema-1 module data
 selects paths below that root; it does not contain file bodies or executable
