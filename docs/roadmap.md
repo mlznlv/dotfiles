@@ -87,10 +87,10 @@ selected configuration, without installing or converging software.
    The later pre-release simplification collapses all active manifests to
    schema 1 and removes compatibility for unreleased iterations. Depends on
    ADRs 0007 and 0009.
-5. **Provider-neutral artifact discovery gate:** accept ADR 0008 with explicit,
-   XDG, validated HOME-derived, and generic system data roots plus deterministic
-   safety, containment, disclosure, and non-invocation tests. Documentation
-   only. Blocks prerequisite validation.
+5. **Provider-neutral artifact discovery gate (complete):** accepted ADR 0008
+   with explicit, XDG, validated HOME-derived, and generic system data roots
+   plus deterministic safety, containment, disclosure, and non-invocation test
+   requirements. Documentation only.
 6. **Prerequisite validation:** implement generic read-only command,
    application, and artifact presence checks with actionable, fail-closed
    errors for macOS and Debian. It never opens or invokes the prerequisite or

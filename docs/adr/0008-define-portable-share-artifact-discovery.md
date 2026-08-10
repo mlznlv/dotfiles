@@ -1,8 +1,8 @@
 # ADR 0008: Define portable share artifact discovery
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-08-09
-- Supersedes: ADR 0007 (fixed artifact roots and symlink boundaries only, if accepted)
+- Supersedes: ADR 0007 (fixed artifact roots and symlink boundaries only)
 - Superseded by: None
 
 ## Context
@@ -16,12 +16,12 @@ product boundary.
 Users may install software anywhere and expose an additional share root
 explicitly. The repository needs only a deterministic, generic, read-only
 presence check. Catalog validation currently treats artifact locators as inert
-strings; presence checking is not implemented and remains blocked until this
-decision is accepted.
+strings; presence checking is not implemented and belongs to the next
+increment.
 
 ## Decision
 
-If accepted, this ADR replaces only ADR 0007's fixed artifact-root list and the
+This ADR replaces only ADR 0007's fixed artifact-root list and the
 associated fixed-prefix symlink boundary. It does not change the
 `share:<relative-path>` syntax, schema-1 static-data validation, missing-
 prerequisite behavior, configuration-only boundary, or prohibition on opening,
@@ -139,8 +139,8 @@ The prerequisite-validation increment must prove:
   uses one explicit local override mechanism.
 - Invalid explicit input fails closed, while invalid ambient input is visible
   and safely ignored.
-- Presence validation remains blocked until this proposal is owner-reviewed,
-  accepted, and implemented with the complete test contract above.
+- Presence validation remains unimplemented and must satisfy the complete test
+  contract above in the next increment.
 
 ## Alternatives considered
 

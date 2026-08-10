@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-08-09
 - Supersedes: ADR 0004 (part), ADR 0006 (part)
-- Superseded by: ADR 0009 (schema numbering and compatibility only)
+- Superseded by: ADR 0008 (artifact roots and symlink boundaries only); ADR 0009 (schema numbering and compatibility only)
 
 ## Context
 

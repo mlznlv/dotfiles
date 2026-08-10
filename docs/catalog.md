@@ -115,14 +115,13 @@ separator and are located without running them. Application identifiers must
 match `^[A-Za-z0-9][A-Za-z0-9._-]*$` and are passed only to a generic platform
 presence check. Artifact locators have the form `<root>:<relative-path>`.
 Schema 1 accepts the `share` root.
-[ADR 0008](adr/0008-define-portable-share-artifact-discovery.md) proposes its
+[ADR 0008](adr/0008-define-portable-share-artifact-discovery.md) defines its
 deterministic lookup order: explicit local roots, valid `XDG_DATA_HOME` or a
 validated `$HOME/.local/share` fallback, valid `XDG_DATA_DIRS`,
-`/usr/local/share`, then `/usr/share`. The proposal requires strict root
+`/usr/local/share`, then `/usr/share`. The contract requires strict root
 validation, resolved-path containment, metadata-only checks, and private
-disclosure without provider inference. Presence validation is not implemented
-and remains blocked until that contract is accepted; the current command only
-validates the static locator.
+disclosure without provider inference. Presence validation is not implemented;
+the current command only validates the static locator.
 
 All forms reject whitespace, arguments, shell metacharacters, URLs, hooks,
 executable payloads, package-manager instructions, provider data, and

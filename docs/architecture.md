@@ -101,11 +101,10 @@ payloads, provider instructions, or credentials.
 Schema 1 defines `share:<relative-path>` artifact locators. Relative paths
 reject empty, `.` and `..` segments, globs, variables, tildes, control
 characters, and shell metacharacters. [ADR 0008](adr/0008-define-portable-share-artifact-discovery.md)
-proposes deterministic explicit, XDG, validated HOME-derived, and generic
+defines deterministic explicit, XDG, validated HOME-derived, and generic
 system data roots with strict containment and disclosure rules. It performs no
 provider, registry, executable, shell-profile, or network discovery. Presence
-validation is not implemented and remains blocked until that contract is
-accepted.
+validation is not implemented.
 
 Prerequisite validation is part of both plan and apply preconditions. A missing
 tool produces an error naming the module, platform, prerequisite kind, and
