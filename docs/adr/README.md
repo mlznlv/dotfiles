@@ -28,8 +28,9 @@ supersedes an earlier one instead of rewriting history.
 ADR 0007 partially supersedes ADRs 0004 and 0006. Their unaffected safety
 decisions and immutable historical text remain accepted.
 
-ADR 0008 proposes superseding ADR 0007's fixed artifact-search prefixes. No
-presence checker may implement either lookup while that decision is pending.
+ADR 0008 proposes replacing ADR 0007's fixed artifact roots with explicit,
+XDG, HOME-derived, and generic system data roots. Artifact presence checking
+remains blocked while that decision is pending.
 
 ADR 0009 supersedes only ADR 0007's schema-numbering and compatibility clauses.
 Its substantive configuration-only decisions remain accepted.

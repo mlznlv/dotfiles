@@ -87,18 +87,22 @@ selected configuration, without installing or converging software.
    The later pre-release simplification collapses all active manifests to
    schema 1 and removes compatibility for unreleased iterations. Depends on
    ADRs 0007 and 0009.
-5. **Prerequisite validation:** implement generic read-only command,
+5. **Provider-neutral artifact discovery gate:** accept ADR 0008 with explicit,
+   XDG, validated HOME-derived, and generic system data roots plus deterministic
+   safety, containment, disclosure, and non-invocation tests. Documentation
+   only. Blocks prerequisite validation.
+6. **Prerequisite validation:** implement generic read-only command,
    application, and artifact presence checks with actionable, fail-closed
    errors for macOS and Debian. It never opens or invokes the prerequisite or
-   an installer. Depends on the schema migration.
-6. **Chezmoi shell configuration:** add selected Zsh, autosuggestions, and
+   an installer. Depends on the schema migration and accepted ADR 0008.
+7. **Chezmoi shell configuration:** add selected Zsh, autosuggestions, and
    Starship source files plus rendering and target-ownership tests. Depends on
    the schema migration.
-7. **Deterministic configuration planning:** implement `dotfiles plan`, enforce
+8. **Deterministic configuration planning:** implement `dotfiles plan`, enforce
    prerequisite and rendered-target preconditions, and show stable chezmoi-only
    diffs and no-change behavior. Depends on prerequisite validation and shell
    configuration.
-8. **Safe configuration apply:** implement `dotfiles apply`, interactive and
+9. **Safe configuration apply:** implement `dotfiles apply`, interactive and
    non-interactive intent checks, selected-source chezmoi application,
    stop-on-failure reporting, and idempotency tests. Depends on all earlier
    Phase 3 increments.
