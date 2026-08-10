@@ -58,7 +58,7 @@ docs/modules/
     └── starship.md
 ~~~
 
-The released initial modules are:
+The available pre-release modules are:
 
 - shell.zsh
 - shell.zsh.autosuggestions, depending on shell.zsh
@@ -88,10 +88,10 @@ conflicts = []
 exclusive_group = "shell.primary"
 ~~~
 
-Schema 3 is the released production contract. It adds static platform command,
-application, or artifact prerequisite identifiers and chezmoi source
-selections. All three production modules use schema 3 with empty managed-source
-arrays. Schema 1 and schema 2 remain read-only compatibility contracts. See the
+Schema 1 is the pre-release production contract. It includes static platform
+command, application, or artifact prerequisite identifiers and chezmoi source
+selections. All three production modules use schema 1 with empty managed-source
+arrays. No earlier integration iteration is a compatibility contract. See the
 [catalog contract](../catalog.md).
 
 When one module identifier is the namespace prefix of another, manifests use a
@@ -104,10 +104,9 @@ paths. This changes no public identifier. A module without a module namespace
 prefix, such as `prompt.starship`, remains directly below its category
 directory.
 
-This namespace is an explicit schema-3 mapping, not an inference from the set
-of modules currently present. Schema-1 and schema-2 catalogs keep their legacy
-category-plus-kebab manifest and documentation paths. Future namespace roots
-require an explicit, versioned contract change before use.
+This namespace is an explicit schema-1 mapping, not an inference from the set
+of modules currently present. Future namespace roots require an explicit
+contract change before use.
 
 ## Module boundaries
 

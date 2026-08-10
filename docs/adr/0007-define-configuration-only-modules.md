@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-08-09
 - Supersedes: ADR 0004 (part), ADR 0006 (part)
-- Superseded by: None
+- Superseded by: ADR 0009 (schema numbering and compatibility only)
 
 ## Context
 

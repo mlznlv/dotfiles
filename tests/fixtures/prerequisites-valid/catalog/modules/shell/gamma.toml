@@ -1,0 +1,10 @@
+[dotfiles.modules."shell.gamma"]
+schema = 1
+id = "shell.gamma"
+name = "Gamma"
+summary = "Schema 1 fixture with omitted optional arrays"
+docs = "docs/modules/shell/gamma.md"
+platforms = ["debian"]
+depends = []
+conflicts = []
+exclusive_group = ""

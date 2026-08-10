@@ -4,10 +4,8 @@ BEGIN {
     expected_root_keys = "modules,profiles,schema"
     expected_module_keys = "conflicts,depends,docs,exclusive_group,id,name,platforms,schema,summary"
     expected_module_keys_home = "conflicts,depends,docs,exclusive_group,home,id,name,platforms,schema,summary"
-    expected_module_keys_providers = "conflicts,depends,docs,exclusive_group,id,name,platforms,providers,schema,summary"
-    expected_module_keys_schema2 = "conflicts,depends,docs,exclusive_group,home,id,name,platforms,providers,schema,summary"
     expected_module_keys_prerequisites = "conflicts,depends,docs,exclusive_group,id,name,platforms,prerequisites,schema,summary"
-    expected_module_keys_schema3 = "conflicts,depends,docs,exclusive_group,home,id,name,platforms,prerequisites,schema,summary"
+    expected_module_keys_full = "conflicts,depends,docs,exclusive_group,home,id,name,platforms,prerequisites,schema,summary"
     expected_profile_keys = "docs,id,modules,name,platforms,schema,summary"
 }
 
@@ -137,20 +135,6 @@ function validate_platforms(value, label,    values, count, i, previous) {
     }
 }
 
-function validate_resource_list(value, label,    values, count, i, previous) {
-    count = split_list(value, values)
-    for (i = 1; i <= count; i++) {
-        if (values[i] !~ /^[a-z0-9][a-z0-9@+._-]*$/) {
-            fail(label " contains unsafe provider identifier " values[i])
-        }
-        for (previous = 1; previous < i; previous++) {
-            if (values[previous] == values[i]) {
-                fail(label " contains duplicate provider identifier " values[i])
-            }
-        }
-    }
-}
-
 function normalize_source(source,    segments, count, i, segment, target) {
     sub(/^home\//, "", source)
     sub(/\.tmpl$/, "", source)
@@ -201,7 +185,7 @@ function expected_docs(kind, id,    parts, count, i, filename, directory) {
         filename = filename "-" parts[i]
     }
 
-    if (kind == "modules" && module_schema[id] == "3" && (id == "shell.zsh" || index(id, "shell.zsh.") == 1)) {
+    if (kind == "modules" && (id == "shell.zsh" || index(id, "shell.zsh.") == 1)) {
         directory = "shell/zsh"
         filename = (id == "shell.zsh" ? "zsh" : substr(id, length("shell.zsh.") + 1))
         gsub(/\./, "-", filename)
@@ -259,29 +243,11 @@ function validate_catalog(    i, id, values, count, item, platform_values, platf
         if (module_declared_id[id] != id) {
             fail("module key and id differ for " id)
         }
-        if (module_schema[id] == "1") {
-            if (module_keys[id] != expected_module_keys) {
-                fail("schema-1 module " id " fields must be " expected_module_keys)
-            }
-            if (module_brew[id] != "-" || module_mise_packages[id] != "-" || module_mise_tools[id] != "-" || module_macos_commands[id] != "-" || module_macos_applications[id] != "-" || module_macos_artifacts[id] != "-" || module_debian_commands[id] != "-" || module_debian_applications[id] != "-" || module_debian_artifacts[id] != "-" || module_sources[id] != "-") {
-                fail("schema-1 module " id " cannot declare provider, prerequisite, or home requests")
-            }
-        } else if (module_schema[id] == "2") {
-            if (module_keys[id] != expected_module_keys && module_keys[id] != expected_module_keys_home && module_keys[id] != expected_module_keys_providers && module_keys[id] != expected_module_keys_schema2) {
-                fail("schema-2 module " id " contains unsupported fields or tables")
-            }
-            if (module_macos_commands[id] != "-" || module_macos_applications[id] != "-" || module_macos_artifacts[id] != "-" || module_debian_commands[id] != "-" || module_debian_applications[id] != "-" || module_debian_artifacts[id] != "-") {
-                fail("schema-2 module " id " cannot declare prerequisites")
-            }
-        } else if (module_schema[id] == "3") {
-            if (module_keys[id] != expected_module_keys && module_keys[id] != expected_module_keys_home && module_keys[id] != expected_module_keys_prerequisites && module_keys[id] != expected_module_keys_schema3) {
-                fail("schema-3 module " id " contains unsupported fields or tables")
-            }
-            if (module_brew[id] != "-" || module_mise_packages[id] != "-" || module_mise_tools[id] != "-") {
-                fail("schema-3 module " id " cannot declare provider requests")
-            }
-        } else {
-            fail("module " id " has unsupported schema " module_schema[id])
+        if (module_schema[id] != "1") {
+            fail("module " id " schema must be 1")
+        }
+        if (module_keys[id] != expected_module_keys && module_keys[id] != expected_module_keys_home && module_keys[id] != expected_module_keys_prerequisites && module_keys[id] != expected_module_keys_full) {
+            fail("module " id " contains unsupported fields or tables")
         }
         if (module_name[id] == "" || module_summary[id] == "") {
             fail("module " id " requires name and summary")
@@ -292,9 +258,6 @@ function validate_catalog(    i, id, values, count, item, platform_values, platf
         validate_platforms(module_platforms[id], "module " id " platforms")
         validate_list(module_depends[id], "module " id " dependencies", 0)
         validate_list(module_conflicts[id], "module " id " conflicts", 0)
-        validate_resource_list(module_brew[id], "module " id " Homebrew packages")
-        validate_resource_list(module_mise_packages[id], "module " id " mise packages")
-        validate_resource_list(module_mise_tools[id], "module " id " mise tools")
         validate_commands(module_macos_commands[id], "module " id " macos commands")
         validate_applications(module_macos_applications[id], "module " id " macos applications")
         validate_artifacts(module_macos_artifacts[id], "module " id " macos artifacts")
@@ -302,12 +265,6 @@ function validate_catalog(    i, id, values, count, item, platform_values, platf
         validate_applications(module_debian_applications[id], "module " id " debian applications")
         validate_artifacts(module_debian_artifacts[id], "module " id " debian artifacts")
         validate_sources(module_sources[id], "module " id " chezmoi sources")
-        if (module_brew[id] != "-" && !list_contains(module_platforms[id], "macos")) {
-            fail("module " id " declares Homebrew packages without macos support")
-        }
-        if ((module_mise_packages[id] != "-" || module_mise_tools[id] != "-") && !list_contains(module_platforms[id], "debian")) {
-            fail("module " id " declares mise requests without debian support")
-        }
         if ((module_macos_commands[id] != "-" || module_macos_applications[id] != "-" || module_macos_artifacts[id] != "-") && !list_contains(module_platforms[id], "macos")) {
             fail("module " id " declares macos prerequisites without macos support")
         }
@@ -474,12 +431,6 @@ function resolve_modules(    roots, root_count_local, additions, addition_count,
                 group_owner[group] = id
             }
         }
-        if (platform == "macos") {
-            check_ownership_list(id, module_brew[id], "homebrew:package:")
-        } else if (platform == "debian") {
-            check_ownership_list(id, module_mise_packages[id], "mise:package:")
-            check_ownership_list(id, module_mise_tools[id], "mise:tool:")
-        }
         check_chezmoi_ownership(id, module_sources[id])
     }
 
@@ -500,13 +451,6 @@ function claim_ownership(module, key, source) {
     } else {
         ownership_module[key] = module
         ownership_source[key] = source
-    }
-}
-
-function check_ownership_list(module, value, prefix,    values, count, i) {
-    count = split_list(value, values)
-    for (i = 1; i <= count; i++) {
-        claim_ownership(module, prefix values[i], "")
     }
 }
 
@@ -534,7 +478,7 @@ $1 == "C" {
 }
 
 $1 == "M" {
-    if (NF != 22) {
+    if (NF != 19) {
         fail("malformed module record")
         next
     }
@@ -554,16 +498,13 @@ $1 == "M" {
     module_depends[$2] = $10
     module_conflicts[$2] = $11
     module_group[$2] = $12
-    module_brew[$2] = $13
-    module_mise_packages[$2] = $14
-    module_mise_tools[$2] = $15
-    module_macos_commands[$2] = $16
-    module_macos_applications[$2] = $17
-    module_macos_artifacts[$2] = $18
-    module_debian_commands[$2] = $19
-    module_debian_applications[$2] = $20
-    module_debian_artifacts[$2] = $21
-    module_sources[$2] = $22
+    module_macos_commands[$2] = $13
+    module_macos_applications[$2] = $14
+    module_macos_artifacts[$2] = $15
+    module_debian_commands[$2] = $16
+    module_debian_applications[$2] = $17
+    module_debian_artifacts[$2] = $18
+    module_sources[$2] = $19
     next
 }
 

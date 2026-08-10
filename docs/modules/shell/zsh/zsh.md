@@ -17,7 +17,7 @@ The module has no dependencies or declared conflicts and belongs to the
 
 ## Prerequisites and managed configuration
 
-The released schema-3 manifest declares the static `zsh` command prerequisite
+The released schema-1 manifest declares the static `zsh` command prerequisite
 on macOS and Debian. Catalog validation checks only the identifier; prerequisite
 presence checking is not available. No chezmoi source or startup file is
 selected yet.
