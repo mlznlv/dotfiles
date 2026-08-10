@@ -59,8 +59,8 @@ entries.
 
 ## Phase 3: Minimal shell vertical slice
 
-**Status:** Pre-release schema simplification awaiting owner approval;
-prerequisite validation next.
+**Status:** Pre-release schema simplification complete; prerequisite validation
+next.
 
 **Objective:** prove end-to-end planning and safe application of explicitly
 selected configuration, without installing or converging software.

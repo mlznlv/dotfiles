@@ -73,9 +73,8 @@ entry never changes the valid path of an existing manifest or page.
 Schema 1 is the only pre-release contract for the catalog, modules, and
 profiles. The unreleased schema-2 and schema-3 integration iterations are not
 compatibility contracts. [ADR 0009](adr/0009-define-pre-release-schema-versioning.md)
-proposes this versioning rule; it must be accepted before this correction
-merges. Schema 2 may be introduced only after a stable schema-1 release and an
-accepted incompatible-change and migration decision.
+defines this versioning rule. Schema 2 may be introduced only after a stable
+schema-1 release and an accepted incompatible-change and migration decision.
 
 ### Schema 1 module fields
 

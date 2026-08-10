@@ -1,8 +1,8 @@
 # ADR 0009: Define pre-release schema versioning
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-08-10
-- Supersedes: ADR 0007 (schema numbering and compatibility only, if accepted)
+- Supersedes: ADR 0007 (schema numbering and compatibility only)
 - Superseded by: None
 
 ## Context
@@ -53,8 +53,7 @@ from schema 3 to schema 1 by this change, but is not accepted automatically.
   schema-1 path contract.
 - The next Phase 3 increment remains read-only prerequisite presence
   validation; this decision adds no presence behavior.
-- Accepting this ADR before merge is required because it changes an accepted
-  clause of ADR 0007.
+- Owner approval accepted this decision before the implementation merge.
 
 ## Alternatives considered
 
