@@ -3,9 +3,9 @@
 ## Purpose and status
 
 This document defines the target architecture. The read-only catalog,
-discovery commands, resolver, and command/artifact prerequisite checks are
-released. Application checks, planning, managed home state, and apply are
-planned.
+discovery commands, resolver, command/artifact prerequisite checks, and
+isolated selected-source renderer are released. Application checks, planning,
+managed home state, and apply are planned.
 
 [ADR 0007](adr/0007-define-configuration-only-modules.md) defines the
 configuration-only direction. [ADR 0009](adr/0009-define-pre-release-schema-versioning.md)
@@ -41,7 +41,8 @@ flowchart LR
     C["Module and profile catalogs"] --> D
     D --> E["Rendered-target ownership validation"]
     E --> F["Read-only prerequisite validation"]
-    F --> G["Chezmoi configuration diff"]
+    F --> R["Ephemeral selected-source rendering"]
+    R --> G["Chezmoi configuration diff"]
     G --> H["User review and explicit intent"]
     H --> I["Chezmoi apply for selected sources"]
     F -->|"missing"| J["Actionable error; no mutation"]
@@ -59,6 +60,8 @@ The core knows these generic concepts:
   checked without execution.
 - **Rendered target:** a home-relative file path produced by a selected chezmoi
   source.
+- **Render context:** closed, invocation-local selection facts passed to
+  chezmoi and removed before return.
 - **Plan:** an ordered, read-only description of configuration diffs.
 
 The core has no mandatory shell, prompt, terminal, editor, multiplexer,
@@ -85,7 +88,6 @@ configuration coupling, never a convenient software bundle.
 | `editor.vscode` (future) | Manage selected VS Code configuration after verifying VS Code | A terminal, shell, prompt, or extensions not explicitly modeled |
 | `multiplexer.tmux` (future) | Manage selected tmux configuration after verifying tmux | A terminal, shell, or remote-access client |
 
-Selecting no modules produces no tool prerequisites and no managed targets.
 Profiles contain only visible module identifiers; resolver output shows every
 explicit dependency before planning.
 
@@ -107,9 +109,9 @@ system data roots with strict containment and disclosure rules. It performs no
 provider, registry, executable, shell-profile, or network discovery. The
 released checker implements this contract for selected artifact prerequisites.
 
-The released command checks only resolved selected modules for the target
-platform. External commands are located through absolute PATH entries;
-applications fail closed until their platform semantics are accepted.
+The released command and internal renderer check only resolved selected modules
+for the target platform. External commands are located through absolute PATH
+entries; applications fail closed until their platform semantics are accepted.
 Prerequisite validation is also a future plan and apply precondition. A missing
 tool produces an error naming the module, prerequisite kind, and identifier,
 with guidance to provide it outside this project. No chezmoi diff
@@ -135,37 +137,43 @@ supported chezmoi attributes. The ownership record also names the declaring
 module. Repeated keys fail deterministically before prerequisite validation,
 planning, or apply, even when their source paths or intended content differ.
 
-## Planned shell rendering boundary
+## Read-only shell rendering boundary
 
 [ADR 0010](adr/0010-define-selection-aware-shell-rendering.md) defines the
-accepted rendering contract for later managed shell sources. It is planned,
-not released behavior.
+accepted rendering contract. The repository implements it as an internal,
+read-only adapter; there is no public render command and no home mutation.
 
-A future plan/apply invocation will translate its explicit composition into a
+A render invocation translates its explicit composition into a
 closed, temporary chezmoi override-data file containing only the platform,
 ordered resolved module identifiers, selected source identifiers, and the
-validated autosuggestions artifact path required by the Zsh template. The file
-will be mode `0600`, removed on every exit path, and never saved as profile,
+validated canonical autosuggestions artifact path required by the Zsh template.
+The file is mode `0600`, removed on every exit path, and never saved as profile,
 catalog, plan, or authorization state.
 
 The accepted ownership boundary is exact:
 
-| Module | Planned target | Activation responsibility |
+| Module | Rendered target | Activation responsibility |
 | --- | --- | --- |
 | `shell.zsh` | `.zshrc` | All Zsh startup and optional integration activation |
 | `shell.zsh.autosuggestions` | `.config/zsh/autosuggestions.zsh` | Autosuggestions tool configuration only |
 | `prompt.starship` | `.config/starship.toml` | Shell-independent Starship configuration only |
 
-The Zsh-owned template will compare only known validated module identifiers.
-It will not glob integration files. Autosuggestions will use only the current,
-fully resolved ADR 0008-contained artifact. Starship Zsh activation will appear
-only when both Zsh and Starship are in the resolved explicit composition.
-Omitting Zsh will not rewrite `.zshrc` or clean up its prior state.
+The Zsh-owned template compares only known validated module identifiers and
+never globs integration files. Autosuggestions uses only the current, fully
+resolved ADR 0008-contained artifact. Starship Zsh activation appears only when
+both Zsh and Starship are in the resolved explicit composition. Omitting Zsh
+renders no `.zshrc`; a narrower Zsh render contains no stale optional
+activation and deletes no other output.
+
+The adapter stages only selected targets in an isolated caller-owned temporary
+directory by asking chezmoi to render each validated source mapping. Static
+files remain byte-identical. The result is test and future-planning input, not
+reusable authority, and is never applied to a home directory.
 
 ## Planned configuration flow
 
-The flow below depends on accepted ADR 0010 and later managed-source and
-planning increments. It is not available in the current CLI.
+Steps 1–5 below are implemented by the internal renderer. Steps 6–8 remain
+future plan/apply work and are not available in the current CLI.
 
 1. Resolve the explicit composition for the detected or requested platform.
 2. Validate static catalog data, platform compatibility, and dependencies.
@@ -197,7 +205,7 @@ diffs. It has no custom state database. Disposable generated caches must not
 become authority.
 
 - Catalog and imported profile data are static and never evaluated as code.
-- Planned render data is closed, ephemeral, sanitized, and never authority.
+- Render data is closed, ephemeral, sanitized, and never authority.
 - Plans and logs exclude secrets, usernames, hostnames, private addresses, and
   machine identity.
 - Unsupported module/platform combinations fail before configuration changes.

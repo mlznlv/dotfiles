@@ -10,4 +10,4 @@ conflicts = []
 exclusive_group = "shell.primary"
 prerequisites.macos.commands = ["zsh"]
 prerequisites.debian.commands = ["zsh"]
-home.chezmoi.sources = []
+home.chezmoi.sources = ["home/dot_zshrc.tmpl"]

@@ -4,9 +4,10 @@ A modular, reproducible, and security-conscious configuration layer for macOS
 and Debian-family Linux.
 
 > [!IMPORTANT]
-> The read-only schema-1 shell catalog, resolver, and command/artifact
-> prerequisite checks are available. Managed configuration, plan, and apply
-> are not implemented yet.
+> The read-only schema-1 shell catalog, resolver, command/artifact prerequisite
+> checks, and isolated selected-source renderer are available. No public render
+> command exists; managed home configuration, plan, and apply are not
+> implemented yet.
 
 ## Start here
 
@@ -75,10 +76,10 @@ apply home state.
 
 ## Project status
 
-The architecture foundation, schema-1 shell composition, and read-only command
-and artifact prerequisite checks are established. Application checks, managed
-configuration, plan, and apply remain later [roadmap](docs/roadmap.md)
-increments.
+The architecture foundation, schema-1 shell composition, prerequisite checks,
+and selection-aware read-only shell rendering are established. Application
+checks, managed home configuration, plan, and apply remain later
+[roadmap](docs/roadmap.md) increments.
 
 Development integrates through `next`; `master` remains the stable branch until
 an explicitly reviewed promotion. See [Contributing](CONTRIBUTING.md) for the

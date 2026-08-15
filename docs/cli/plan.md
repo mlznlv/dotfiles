@@ -2,9 +2,9 @@
 
 ## Status
 
-This command is not available in the current CLI. Its configuration-only
-contract depends on accepted ADR 0010 and the later read-only shell-rendering
-implementation.
+This command is not available in the current CLI. Accepted ADR 0010 and the
+internal read-only shell renderer provide its rendering foundation; stable diff
+translation and plan presentation remain unimplemented.
 
 ## Synopsis
 
@@ -22,12 +22,12 @@ missing prerequisite names the module and identifier, tells the user to provide
 the tool outside this project, and fails before creating a plan eligible for
 apply.
 
-After preconditions pass, the command will build a mode-`0600` temporary
-override-data file from the platform, ordered resolved module IDs, selected
-source IDs, and the currently validated autosuggestions artifact path when
-required. It will pass that closed context to chezmoi, request diffs limited to
-selected sources, remove the context before return, and print one deterministic
-configuration plan.
+After preconditions pass, the command will call the internal renderer to rebuild
+a mode-`0600` temporary override-data file from the platform, ordered resolved
+module IDs, selected source IDs, and the currently validated autosuggestions
+artifact path when required. It will request diffs limited to selected sources,
+remove temporary state before return, and print one deterministic configuration
+plan.
 
 Every step contains an ordinal, module, normalized `chezmoi:target` key,
 action, and sanitized description. HOME paths use `$HOME`; other non-generic

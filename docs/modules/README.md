@@ -65,6 +65,8 @@ The available pre-release modules are:
 - prompt.starship
 
 Their metadata and dependencies are available for discovery and resolution.
+Their selected sources are available to the internal isolated renderer; no
+public render, plan, or apply command exists.
 
 ## Manifest contract
 
@@ -90,9 +92,9 @@ exclusive_group = "shell.primary"
 
 Schema 1 is the pre-release production contract. It includes static platform
 command, application, or artifact prerequisite identifiers and chezmoi source
-selections. All three production modules use schema 1 with empty managed-source
-arrays. No earlier integration iteration is a compatibility contract. See the
-[catalog contract](../catalog.md).
+selections. Each production module declares its one ADR-0010-owned source. No
+earlier integration iteration is a compatibility contract. See the [catalog
+contract](../catalog.md).
 
 When one module identifier is the namespace prefix of another, manifests use a
 matching directory hierarchy. `shell.zsh` is stored at

@@ -15,6 +15,9 @@ bash -n "${PROJECT_ROOT}/bin/dotfiles"
 bash -n "${PROJECT_ROOT}/scripts/check.sh"
 bash -n "${PROJECT_ROOT}/scripts/check-branch-policy.sh"
 bash -n "${PROJECT_ROOT}/tests/run.sh"
+bash -n "${PROJECT_ROOT}/lib/render.sh"
+bash -n "${PROJECT_ROOT}/tests/render.sh"
+bash -n "${PROJECT_ROOT}/tests/helpers/chezmoi-render-probe.sh"
 
 bash "${PROJECT_ROOT}/scripts/check-branch-policy.sh"
 
@@ -23,3 +26,4 @@ bash "${PROJECT_ROOT}/scripts/check-branch-policy.sh"
 "${PROJECT_ROOT}/bin/dotfiles" catalog validate >/dev/null
 
 bash "${PROJECT_ROOT}/tests/run.sh"
+bash "${PROJECT_ROOT}/tests/render.sh"

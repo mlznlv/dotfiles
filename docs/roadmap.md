@@ -100,10 +100,10 @@ selected configuration, without installing or converging software.
    with ephemeral render data, exact shell-target ownership, deterministic
    optional activation, artifact-path privacy, and non-destructive deselection
    semantics. Documentation only; blocks managed shell sources.
-8. **Read-only shell rendering:** implement the ephemeral context adapter; add
-   selected Zsh, autosuggestions, and Starship sources; update manifest source
-   declarations; and prove byte-stable rendering, ownership, containment,
-   privacy and stale-state behavior without home mutation.
+8. **Read-only shell rendering (complete):** implemented the ephemeral context
+   adapter, selected Zsh, autosuggestions, and Starship sources, manifest source
+   ownership, and macOS/Debian coverage for byte-stable rendering, containment,
+   canonical quoting, privacy, cleanup, and stale state without home mutation.
    Depends on accepted ADR 0010 and prerequisite validation.
 9. **Deterministic configuration planning:** implement `dotfiles plan`, enforce
    prerequisite and rendered-target preconditions, and show stable chezmoi-only

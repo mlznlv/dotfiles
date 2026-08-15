@@ -1,6 +1,7 @@
 # Minimal shell
 
-- Status: Available for discovery, resolution, and prerequisite checking
+- Status: Available for discovery, resolution, prerequisite checking, and
+  internal read-only rendering
 - Intended targets: minimal interactive shell environments
 - Supported platforms: macOS and Debian-family Linux
 - Documentation owner: repository maintainer
@@ -49,13 +50,13 @@ Discovery and resolution are available:
 Command and artifact prerequisite checks are available. Application checks and
 `dotfiles plan` are unavailable.
 
-Under accepted ADR 0010, a future render of this profile will select exactly
+The internal ADR-0010 renderer selects exactly
 `.zshrc`, `.config/zsh/autosuggestions.zsh`, and `.config/starship.toml`.
-The Zsh-owned startup target will activate autosuggestions from its validated
+The Zsh-owned startup target activates autosuggestions from its validated
 canonical artifact path and then Starship, without scanning stale fragments.
-Reapplying a smaller Zsh composition will remove omitted activation lines from
-`.zshrc` while leaving omitted modules' existing files untouched. This behavior
-remains planned pending implementation.
+Rendering a smaller Zsh composition omits optional activation lines while
+leaving old optional files untouched in isolated output. No public render
+command, plan, apply, or home mutation is available.
 
 ## Security, privacy, and connectivity
 
@@ -73,5 +74,6 @@ invalid catalog or selection input and retrying. No rollback or removal exists.
 
 Production discovery, show, macOS and Debian resolution, dependency ordering,
 provider/prerequisite non-invocation, isolated presence fixtures, and
-macOS/Ubuntu CI cover the profile. Application checks, managed home state,
-configuration plan, apply, saving, and recovery are deferred.
+macOS/Ubuntu CI cover the profile. The complete read-only target and activation
+matrix is also tested on both platform inputs. Application checks, managed home
+state, configuration plan, apply, saving, and recovery are deferred.
