@@ -36,14 +36,15 @@ prerequisite_valid_root() {
     case "/${local_root#/}/" in *'/./'*|*'/../'*) return 1 ;; esac
 }
 
-prerequisite_valid_path_entry() {
+prerequisite_normalize_path_entry() {
     local_entry=$1
     case "$local_entry" in /*) ;; *) return 1 ;; esac
     if printf '%s' "$local_entry" | LC_ALL=C grep '[[:cntrl:]]' >/dev/null 2>&1; then
         return 1
     fi
-    [ "$local_entry" = / ] && return 0
-    case "/${local_entry#/}/" in *'//'*|*'/./'*|*'/../'*) return 1 ;; esac
+    local_entry=$(prerequisite_normalize_root "$local_entry")
+    case "/${local_entry#/}/" in *'/./'*|*'/../'*) return 1 ;; esac
+    printf '%s\n' "$local_entry"
 }
 
 prerequisite_normalize_root() {
@@ -144,7 +145,7 @@ prerequisite_command_present() {
             *:*) local_directory=${local_path_list%%:*}; local_path_list=${local_path_list#*:}; local_more=1 ;;
             *) local_directory=$local_path_list; local_more=0 ;;
         esac
-        if prerequisite_valid_path_entry "$local_directory" &&
+        if local_directory=$(prerequisite_normalize_path_entry "$local_directory") &&
            [ -f "${local_directory}/${local_name}" ] &&
            [ -x "${local_directory}/${local_name}" ]; then
             return 0
