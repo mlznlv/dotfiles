@@ -1,7 +1,7 @@
 # Zsh
 
-- Status: Available for discovery, resolution, prerequisite checking, and
-  internal read-only rendering
+- Status: Available for discovery, resolution, prerequisite checking,
+  internal read-only rendering, and configuration planning
 - Category: shell
 - Supported platforms: macOS and Debian-family Linux
 - Documentation owner: repository maintainer
@@ -36,17 +36,22 @@ There are no module options or local defaults.
 
 ## Plan, apply, verification, and recovery
 
-Plan and apply are unavailable. The internal renderer exercises the source in
-isolated test output only. Verify the released metadata with:
+Read-only planning is available; apply remains unavailable. The internal
+renderer exercises the source in isolated temporary output. Verify metadata
+and preview the selected `.zshrc` target with:
 
 ~~~console
 ./bin/dotfiles module show shell.zsh
 ./bin/dotfiles resolve --modules shell.zsh --platform debian
 ./bin/dotfiles prerequisite check --modules shell.zsh --platform debian
+./bin/dotfiles plan --modules shell.zsh --platform debian
 ~~~
 
-These read-only commands need no recovery. Planned apply will manage only
-explicitly selected configuration and will not change the login shell.
+The plan reports create or update for `.zshrc`, or `No changes.` A narrower Zsh
+selection may update `.zshrc` to omit unselected integrations but never reports
+or removes their separately owned files. These read-only commands need no
+recovery. Planned apply will manage only explicitly selected configuration and
+will not change the login shell.
 
 ## Platform, security, and privacy notes
 
@@ -58,5 +63,6 @@ and login-shell changes are outside the product boundary.
 
 Schema, ownership, exclusive-group, discovery, dependency resolution, profile
 resolution, isolated command-presence tests, and macOS/Ubuntu CI cover this
-module. Read-only `.zshrc` rendering is covered; home convergence,
-configuration plan, and apply are deferred.
+module. Read-only `.zshrc` rendering and planning cover create, update,
+no-change, stale optional state, privacy, and zero HOME mutation. Home
+convergence and apply are deferred.

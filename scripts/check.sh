@@ -16,8 +16,11 @@ bash -n "${PROJECT_ROOT}/scripts/check.sh"
 bash -n "${PROJECT_ROOT}/scripts/check-branch-policy.sh"
 bash -n "${PROJECT_ROOT}/tests/run.sh"
 bash -n "${PROJECT_ROOT}/lib/render.sh"
+bash -n "${PROJECT_ROOT}/lib/plan.sh"
 bash -n "${PROJECT_ROOT}/tests/render.sh"
 bash -n "${PROJECT_ROOT}/tests/helpers/chezmoi-render-probe.sh"
+bash -n "${PROJECT_ROOT}/tests/plan.sh"
+bash -n "${PROJECT_ROOT}/tests/helpers/chezmoi-plan-probe.sh"
 
 bash "${PROJECT_ROOT}/scripts/check-branch-policy.sh"
 
@@ -27,3 +30,4 @@ bash "${PROJECT_ROOT}/scripts/check-branch-policy.sh"
 
 bash "${PROJECT_ROOT}/tests/run.sh"
 bash "${PROJECT_ROOT}/tests/render.sh"
+bash "${PROJECT_ROOT}/tests/plan.sh"

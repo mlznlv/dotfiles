@@ -59,8 +59,8 @@ entries.
 
 ## Phase 3: Minimal shell vertical slice
 
-**Status:** Command and artifact prerequisite slice complete; managed shell
-configuration next.
+**Status:** Deterministic configuration planning complete; safe shell apply
+next.
 
 **Objective:** prove end-to-end planning and safe application of explicitly
 selected configuration, without installing or converging software.
@@ -105,10 +105,11 @@ selected configuration, without installing or converging software.
    ownership, and macOS/Debian coverage for byte-stable rendering, containment,
    canonical quoting, privacy, cleanup, and stale state without home mutation.
    Depends on accepted ADR 0010 and prerequisite validation.
-9. **Deterministic configuration planning:** implement `dotfiles plan`, enforce
-   prerequisite and rendered-target preconditions, and show stable chezmoi-only
-   diffs and no-change behavior. Depends on prerequisite validation and shell
-   configuration.
+9. **Deterministic configuration planning (complete):** implemented
+   `dotfiles plan` with fresh prerequisite and artifact validation, exact
+   selected-target Chezmoi comparison, stable privacy-safe create/update
+   effects, no-change behavior, and macOS/Debian safety and non-mutation
+   coverage. Depends on prerequisite validation and shell configuration.
 10. **Safe configuration apply:** implement `dotfiles apply`, interactive and
    non-interactive intent checks, selected-source chezmoi application,
    stop-on-failure reporting, and idempotency tests. Depends on all earlier

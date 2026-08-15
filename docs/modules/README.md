@@ -65,8 +65,8 @@ The available pre-release modules are:
 - prompt.starship
 
 Their metadata and dependencies are available for discovery and resolution.
-Their selected sources are available to the internal isolated renderer; no
-public render, plan, or apply command exists.
+Their selected sources are available to the internal isolated renderer and the
+public read-only planner; no public render or apply command exists.
 
 ## Manifest contract
 

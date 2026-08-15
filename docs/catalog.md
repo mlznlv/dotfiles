@@ -186,8 +186,8 @@ The internal renderer derives source identifiers from the resolved set in
 normalized-target order and passes a closed ephemeral context to chezmoi. That
 context is not a catalog field, saved profile, or compatibility contract. The
 Zsh template compares only known validated module identifiers to render
-optional activation. Rendering is isolated and read-only; plan, apply, and home
-convergence remain unavailable.
+optional activation. Rendering and selected-target planning are isolated and
+read-only; apply and home convergence remain unavailable.
 
 ## Schema 1 profile fields
 
@@ -253,4 +253,7 @@ rendered-target collisions. Isolated roots and PATH entries cover selection,
 ordering, metadata types, containment, privacy, exit codes, and non-invocation.
 The read-only render matrix additionally covers every production selection on
 macOS and Debian, deterministic source order, canonical quoting, stale output,
-and temporary-context cleanup.
+and temporary-context cleanup. The plan matrix covers create, update,
+no-change, selected-path scope, immediate artifact revalidation, unsafe target
+types, malformed comparison output, privacy, cleanup, and zero HOME mutation
+for both platform inputs.

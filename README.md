@@ -5,9 +5,9 @@ and Debian-family Linux.
 
 > [!IMPORTANT]
 > The read-only schema-1 shell catalog, resolver, command/artifact prerequisite
-> checks, and isolated selected-source renderer are available. No public render
-> command exists; managed home configuration, plan, and apply are not
-> implemented yet.
+> checks, isolated selected-source renderer, and configuration plan are
+> available. No public render command exists; managed home configuration and
+> apply are not implemented yet.
 
 ## Start here
 
@@ -56,10 +56,12 @@ With chezmoi available, users and contributors can inspect and resolve the shell
 ./bin/dotfiles profile list --all
 ./bin/dotfiles resolve --profile shell.minimal --platform debian
 ./bin/dotfiles prerequisite check --profile shell.minimal --platform debian
+./bin/dotfiles plan --profile shell.minimal --platform debian
 ~~~
 
 These commands do not install packages, change configuration, call providers, or
-apply home state.
+apply home state. Planning compares only selected targets and does not print
+their contents.
 
 ## Documentation
 
@@ -77,9 +79,9 @@ apply home state.
 ## Project status
 
 The architecture foundation, schema-1 shell composition, prerequisite checks,
-and selection-aware read-only shell rendering are established. Application
-checks, managed home configuration, plan, and apply remain later
-[roadmap](docs/roadmap.md) increments.
+selection-aware read-only shell rendering, and deterministic configuration
+planning are established. Application checks, managed home configuration, and
+apply remain later [roadmap](docs/roadmap.md) increments.
 
 Development integrates through `next`; `master` remains the stable branch until
 an explicitly reviewed promotion. See [Contributing](CONTRIBUTING.md) for the

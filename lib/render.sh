@@ -63,23 +63,45 @@ dotfiles_render_prepare_target() {
     [ ! -e "$local_current" ] || [ -f "$local_current" ] || return 1
 }
 
-dotfiles_render_selection() (
+dotfiles_render_selection() {
     if [ "$#" -ne 5 ]; then
         printf 'error: internal renderer requires output, profile, modules, additions, and platform\n' >&2
         return 2
     fi
+    dotfiles_render_selection_internal "" "$@"
+}
 
-    local local_output=$1
-    local local_profile=$2
-    local local_modules_input=$3
-    local local_additional=$4
-    local local_platform=$5
+dotfiles_render_selection_then() {
+    if [ "$#" -ne 6 ]; then
+        printf 'error: internal renderer callback requires a function and render arguments\n' >&2
+        return 2
+    fi
+    if ! declare -F "$1" >/dev/null 2>&1; then
+        printf 'error: internal renderer callback is unavailable\n' >&2
+        return 4
+    fi
+    dotfiles_render_selection_internal "$@"
+}
+
+dotfiles_render_selection_internal() (
+    if [ "$#" -ne 6 ]; then
+        printf 'error: invalid internal renderer invocation\n' >&2
+        return 2
+    fi
+
+    local local_callback=$1
+    local local_output=$2
+    local local_profile=$3
+    local local_modules_input=$4
+    local local_additional=$5
+    local local_platform=$6
     local local_output_resolved
     local local_home_resolved=
     local local_source_resolved
     local local_temp_parent=${TMPDIR:-/tmp}
     local local_private=
     local local_context
+    local local_selection_file
     local local_staging
     local local_backup
     local local_render_records
@@ -103,6 +125,7 @@ dotfiles_render_selection() (
     local local_duplicate
     local LC_ALL=C
     local -a local_resolved_modules=()
+    local -a local_source_modules=()
     local -a local_sources=()
     local -a local_targets=()
     local -a local_target_existed=()
@@ -162,6 +185,7 @@ dotfiles_render_selection() (
     : > "$DOTFILES_RENDER_OUTPUT_TEMP_LIST" || return 4
 
     local_context="${local_private}/context.toml"
+    local_selection_file="${local_private}/selection.tsv"
     local_staging="${local_private}/rendered"
     local_backup="${local_private}/previous"
     local_error_file="${local_private}/error.log"
@@ -210,6 +234,7 @@ dotfiles_render_selection() (
                     printf 'error: a selected chezmoi source is unavailable\n' >&2
                     return 3
                 fi
+                local_source_modules[${#local_source_modules[@]}]=$local_a
                 local_sources[${#local_sources[@]}]=$local_b
                 local_targets[${#local_targets[@]}]=$local_c
                 local_previous_target=$local_c
@@ -220,6 +245,14 @@ dotfiles_render_selection() (
                 ;;
         esac
     done <<< "$local_render_records"
+
+    {
+        for local_index in "${!local_sources[@]}"; do
+            printf '%s\t%s\t%s\n' "${local_source_modules[$local_index]}" \
+                "${local_sources[$local_index]}" "${local_targets[$local_index]}"
+        done
+    } > "$local_selection_file"
+    chmod 600 "$local_selection_file" || return 4
 
     if [ ! -f "$PREREQUISITE_PROGRAM" ]; then
         printf 'error: prerequisite checker implementation is missing\n' >&2
@@ -389,4 +422,9 @@ dotfiles_render_selection() (
         fi
         return 4
     done
+
+    if [ -n "$local_callback" ]; then
+        "$local_callback" "$local_context" "$local_selection_file" "$local_artifact" "$local_output_resolved" \
+            "$local_profile" "$local_modules_input" "$local_additional" "$local_platform"
+    fi
 )
