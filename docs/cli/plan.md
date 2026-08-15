@@ -3,8 +3,8 @@
 ## Status
 
 This command is not available in the current CLI. Its configuration-only
-contract also depends on acceptance of proposed ADR 0010 and the later
-read-only shell-rendering implementation.
+contract depends on accepted ADR 0010 and the later read-only shell-rendering
+implementation.
 
 ## Synopsis
 
@@ -34,11 +34,10 @@ action, and sanitized description. HOME paths use `$HOME`; other non-generic
 local roots use origin tokens rather than raw private prefixes. Steps sort by
 target and then module. `No changes.` is a successful plan.
 
-The proposed shell contract makes target omission explicit. A smaller
+The accepted shell contract makes target omission explicit. A smaller
 composition that still selects `shell.zsh` may show `.zshrc` converging without
 previous optional activation lines. An omitted owner produces no target step:
-the plan does not claim removal or deactivation of its existing file. Selecting
-no modules produces no targets and `No changes.`
+the plan does not claim removal or deactivation of its existing file.
 
 Planning never installs or updates software, invokes Homebrew or mise, calls an
 operating-system package manager, executes a prerequisite, writes home state,

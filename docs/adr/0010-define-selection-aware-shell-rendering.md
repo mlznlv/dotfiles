@@ -1,6 +1,6 @@
 # ADR 0010: Define selection-aware shell rendering
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-08-15
 - Supersedes: None
 - Superseded by: None
@@ -40,8 +40,9 @@ The closed context contains only:
 - the target platform, exactly `macos` or `debian`;
 - resolved module identifiers in resolver order;
 - selected chezmoi source identifiers in deterministic target order; and
-- for `shell.zsh.autosuggestions` only, the absolute artifact path returned by
-  the successful ADR 0008 check for its declared `share:` locator.
+- for `shell.zsh.autosuggestions` only, the fully resolved absolute artifact
+  path returned by the successful ADR 0008 check for its declared `share:`
+  locator.
 
 Command/application names, commands, hooks, executable template data, secrets,
 usernames, hostnames, private infrastructure, arbitrary catalog strings, and
@@ -91,18 +92,21 @@ selects Zsh and never creates or mutates `.zshrc`.
 
 Autosuggestions keeps its explicit dependency on `shell.zsh`. Before rendering,
 the checker must resolve the declared locator through ADR 0008, prove that it is
-a regular file contained by its resolved root, and return that exact path as an
+a regular file contained by its resolved root, and return the fully resolved
+candidate path—not the lexical locator or an unresolved symlink path—as an
 ephemeral fact. Rendering has no fallback search and never asks a provider,
 registry, package manager, network service, or shell startup file for another
 path.
 
-The Zsh template can use only that validated path. It emits a static `source --`
-line using a repository-owned quoting helper, never string concatenation from
-catalog text. A path equal to or below HOME is rendered as a double-quoted
-`$HOME` prefix plus a single-quoted, validated relative suffix. Other paths are
-single-quoted with every literal single quote encoded by the standard shell
-`'\''` sequence. Newline, carriage return, NUL, and control characters are
-rejected before the context is built.
+The Zsh template can use only that fully resolved, contained path. It emits a
+static `source --` line that names the canonical candidate, using a
+repository-owned quoting helper and never string concatenation from catalog
+text. The fully resolved absolute path is single-quoted directly; it is not
+reconstructed from `$HOME`, an artifact root, or the original locator. Every
+literal single quote is encoded by the standard shell `'\''` sequence.
+Newline, carriage return, NUL, and control characters are rejected before the
+context is built. Retargeting a lexical symlink after rendering therefore
+cannot redirect the startup source outside the root.
 
 The raw path is local to the temporary context and the local rendered `.zshrc`.
 It is not committed, exported, cached, or retained as plan authority. Plan and
@@ -128,8 +132,7 @@ remain inactive from this `.zshrc` because it does not glob or source them.
 Omitting `shell.zsh` selects no owner for `.zshrc`; plan and apply must not
 rewrite, remove, or claim to deactivate an existing file. Similarly, omitting
 Starship does not remove `.config/starship.toml`, and its possible use by an
-unmanaged shell is outside this composition. Selecting no modules produces no
-source targets, no mutation, and no cleanup. Removal, pruning, and broad
+unmanaged shell is outside this composition. Removal, pruning, and broad
 deactivation remain explicit non-goals.
 
 ### Rendering, plan, and apply separation
@@ -158,7 +161,6 @@ prerequisite arrays differ.
 | `shell.zsh.autosuggestions` | `.zshrc`, `.config/zsh/autosuggestions.zsh` | Core Zsh, fixed autosuggestions config, then validated artifact | Zsh command declarations for dependency and module; module artifact | Starship config is not referenced | May converge both selected targets |
 | `shell.minimal` | All three targets | Core Zsh, autosuggestions config and artifact, then one Starship activation | All selected module command/artifact declarations | Unknown fragments are never scanned | May converge all three targets |
 | `shell.zsh` after `shell.minimal` | `.zshrc` | Re-rendered as core Zsh only | `shell.zsh`: `zsh` command | Old autosuggestions/Starship files remain, but this `.zshrc` activates neither | May converge `.zshrc`; no deletion |
-| No modules | None | Not selected; untouched | None | Every existing file remains outside the invocation | No mutation or cleanup |
 
 Profile selection, direct modules, and `--add` all use the same resolved-set
 rules. The table introduces no implicit module: only the declared
@@ -175,12 +177,14 @@ fixtures rather than real host identity or tools, that:
 - Starship-only selection neither creates nor mutates `.zshrc`;
 - Zsh plus Starship renders exactly one Zsh-owned Starship activation;
 - autosuggestions renders one fixed configuration reference and one safely
-  quoted source of the currently validated contained artifact, with no fallback;
+  quoted source of the fully resolved, currently validated contained artifact,
+  with no fallback;
+- retargeting the original in-root symlink after rendering cannot change the
+  canonical artifact path sourced by `.zshrc`;
 - `shell.minimal` renders exactly the three mapped targets in the documented
   activation order;
 - re-rendering Zsh with a smaller composition omits deselected integrations
   even when their old configuration files remain;
-- no selection produces no managed targets;
 - every target maps to one owner and duplicate canonical keys fail;
 - malicious identifiers, paths, context fields, prerequisite output, quotes,
   or control characters cannot inject template or shell syntax;

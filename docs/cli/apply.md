@@ -3,8 +3,7 @@
 ## Status
 
 This command is not available in the current CLI. Its configuration-only
-contract also depends on acceptance of proposed ADR 0010, read-only shell
-rendering, and planning.
+contract depends on accepted ADR 0010, read-only shell rendering, and planning.
 
 ## Synopsis
 
@@ -33,13 +32,12 @@ uninstall, removal, prune, broad cleanup, or automatic rollback. A failure
 reports completed, failed, and unattempted configuration targets. Retrying
 recomputes state, and a second successful apply converges to `No changes.`
 
-For the proposed shell contract, selecting `shell.zsh` permits convergence of
+For the accepted shell contract, selecting `shell.zsh` permits convergence of
 its owned `.zshrc`, including omission of integrations not in the current
 resolved set. Files owned by omitted modules are not selected for apply and are
-not removed. Omitting Zsh does not rewrite `.zshrc`; selecting no modules
-performs no mutation or cleanup. The temporary context is removed on success,
-failure, cancellation, or interruption, and its raw artifact path is never
-saved in a reusable plan or repository log.
+not removed. Omitting Zsh does not rewrite `.zshrc`. The temporary context is
+removed on success, failure, cancellation, or interruption, and its raw
+artifact path is never saved in a reusable plan or repository log.
 
 ## Examples
 

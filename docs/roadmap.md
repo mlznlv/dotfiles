@@ -96,14 +96,14 @@ selected configuration, without installing or converging software.
    actionable errors, deterministic ADR 0008 discovery, and no invocation.
    Application checks remain fail-closed and deferred. Depends on the schema
    migration and accepted ADR 0008.
-7. **Selection-aware shell rendering gate (under review):** accept ADR 0010
+7. **Selection-aware shell rendering gate (complete):** accepted ADR 0010
    with ephemeral render data, exact shell-target ownership, deterministic
    optional activation, artifact-path privacy, and non-destructive deselection
    semantics. Documentation only; blocks managed shell sources.
 8. **Read-only shell rendering:** implement the ephemeral context adapter; add
    selected Zsh, autosuggestions, and Starship sources; update manifest source
    declarations; and prove byte-stable rendering, ownership, containment,
-   privacy, stale-state, and no-selection behavior without home mutation.
+   privacy and stale-state behavior without home mutation.
    Depends on accepted ADR 0010 and prerequisite validation.
 9. **Deterministic configuration planning:** implement `dotfiles plan`, enforce
    prerequisite and rendered-target preconditions, and show stable chezmoi-only

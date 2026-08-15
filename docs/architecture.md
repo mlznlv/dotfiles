@@ -135,11 +135,11 @@ supported chezmoi attributes. The ownership record also names the declaring
 module. Repeated keys fail deterministically before prerequisite validation,
 planning, or apply, even when their source paths or intended content differ.
 
-## Proposed shell rendering boundary
+## Planned shell rendering boundary
 
-[ADR 0010](adr/0010-define-selection-aware-shell-rendering.md) proposes the
-rendering contract that must be accepted before managed shell sources are
-added. It is planned, not released behavior.
+[ADR 0010](adr/0010-define-selection-aware-shell-rendering.md) defines the
+accepted rendering contract for later managed shell sources. It is planned,
+not released behavior.
 
 A future plan/apply invocation will translate its explicit composition into a
 closed, temporary chezmoi override-data file containing only the platform,
@@ -148,7 +148,7 @@ validated autosuggestions artifact path required by the Zsh template. The file
 will be mode `0600`, removed on every exit path, and never saved as profile,
 catalog, plan, or authorization state.
 
-The proposed ownership boundary is exact:
+The accepted ownership boundary is exact:
 
 | Module | Planned target | Activation responsibility |
 | --- | --- | --- |
@@ -157,15 +157,14 @@ The proposed ownership boundary is exact:
 | `prompt.starship` | `.config/starship.toml` | Shell-independent Starship configuration only |
 
 The Zsh-owned template will compare only known validated module identifiers.
-It will not glob integration files. Autosuggestions will use only the current
-ADR 0008-contained artifact, and Starship Zsh activation will appear only when
-both Zsh and Starship are in the resolved explicit composition. Omitting Zsh
-will not rewrite `.zshrc`; selecting no modules will produce no targets or
-cleanup.
+It will not glob integration files. Autosuggestions will use only the current,
+fully resolved ADR 0008-contained artifact. Starship Zsh activation will appear
+only when both Zsh and Starship are in the resolved explicit composition.
+Omitting Zsh will not rewrite `.zshrc` or clean up its prior state.
 
 ## Planned configuration flow
 
-The flow below depends on acceptance of ADR 0010 and later managed-source and
+The flow below depends on accepted ADR 0010 and later managed-source and
 planning increments. It is not available in the current CLI.
 
 1. Resolve the explicit composition for the detected or requested platform.
@@ -198,7 +197,7 @@ diffs. It has no custom state database. Disposable generated caches must not
 become authority.
 
 - Catalog and imported profile data are static and never evaluated as code.
-- Proposed render data is closed, ephemeral, sanitized, and never authority.
+- Planned render data is closed, ephemeral, sanitized, and never authority.
 - Plans and logs exclude secrets, usernames, hostnames, private addresses, and
   machine identity.
 - Unsupported module/platform combinations fail before configuration changes.

@@ -23,10 +23,10 @@ The schema-1 manifest declares `starship` on macOS and Debian.
 `prerequisite check` locates an external executable file through absolute PATH
 entries without invoking it. No chezmoi source or managed file is selected.
 
-Proposed ADR 0010 would assign this module only `.config/starship.toml`.
-Starship would remain selectable without Zsh and would never own `.zshrc`.
+Accepted ADR 0010 assigns this module only the planned `.config/starship.toml`.
+Starship remains selectable without Zsh and never owns `.zshrc`.
 When both modules are in one resolved explicit composition, the Zsh-owned
-template would emit exactly one static `starship init zsh` activation. This
+template will emit exactly one static `starship init zsh` activation. This
 configuration and activation are not implemented.
 
 ## Options
@@ -57,4 +57,3 @@ is outside the product boundary.
 Schema, current ownership, discovery, explicit resolution, profile resolution,
 isolated command-presence tests, and macOS/Ubuntu CI cover this module. Shell
 initialization, managed configuration, plan, and apply are deferred.
-ADR 0010 owner acceptance is required before Starship source implementation.
