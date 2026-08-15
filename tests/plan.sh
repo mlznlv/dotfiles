@@ -37,7 +37,7 @@ ARTIFACT_TARGET="${ARTIFACT_DIRECTORY}/canonical-plugin.zsh"
 ARTIFACT_ALTERNATE="${ARTIFACT_DIRECTORY}/alternate-plugin.zsh"
 
 mkdir -p "$PROBE_BIN" "${TEST_ROOT}/homes" "${TEST_ROOT}/desired" "${TEST_ROOT}/tmp"
-for probe in brew mise apt apt-get dnf yum pacman apk installer zsh starship less more bat delta diff code vim vi nano open xdg-open; do
+for probe in brew mise apt apt-get dnf yum pacman apk installer zsh starship less more bat delta diff code vim vi nano open xdg-open op bw pass gopass keepassxc-cli vault; do
     printf '%s\n' \
         '#!/bin/sh' \
         'printf "%s\n" "$0 $*" >> "$DOTFILES_PROBE_LOG"' \

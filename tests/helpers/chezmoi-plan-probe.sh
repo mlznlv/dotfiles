@@ -29,7 +29,6 @@ color=0
 progress=0
 builtin_diff=0
 refresh=0
-skip_secrets=0
 recursive=0
 
 for argument in "$@"; do
@@ -58,7 +57,6 @@ for argument in "$@"; do
             --progress=false) [ "$progress" -eq 0 ] || fail_probe 82; progress=1 ;;
             --use-builtin-diff) [ "$builtin_diff" -eq 0 ] || fail_probe 82; builtin_diff=1 ;;
             --refresh-externals=never) [ "$refresh" -eq 0 ] || fail_probe 82; refresh=1 ;;
-            --skip-secrets) [ "$skip_secrets" -eq 0 ] || fail_probe 82; skip_secrets=1 ;;
             --config) expect=config ;;
             --config-format) expect=config-format ;;
             --source) expect=source ;;
@@ -90,7 +88,7 @@ done
 [ "$phase" = status ] || fail_probe 85
 [ "$no_pager" -eq 1 ] && [ "$no_tty" -eq 1 ] && [ "$dry_run" -eq 1 ] || fail_probe 86
 [ "$color" -eq 1 ] && [ "$progress" -eq 1 ] && [ "$builtin_diff" -eq 1 ] || fail_probe 86
-[ "$refresh" -eq 1 ] && [ "$skip_secrets" -eq 1 ] || fail_probe 86
+[ "$refresh" -eq 1 ] || fail_probe 86
 [ "$config" = /dev/null ] && [ "$config_format" = toml ] || fail_probe 87
 [ "$source_directory" = "$DOTFILES_EXPECTED_SOURCE_HOME" ] || fail_probe 87
 [ "$destination" = "$HOME" ] || fail_probe 87

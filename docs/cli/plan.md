@@ -33,8 +33,9 @@ retained.
 
 Chezmoi compares only exact targets owned by the resolved modules. User
 configuration, pagers, color, custom diffs, external refresh, interactivity,
-TTY behavior, and secret commands are disabled. The public result contains no
-raw diff, destination content, HOME path, artifact root, or temporary path.
+and TTY behavior are disabled. Selected sources use no secret command
+integration. The public result contains no raw diff, destination content, HOME
+path, artifact root, or temporary path.
 
 Changed steps sort by normalized target and module. An absent target is
 `create`; a differing regular file is `update`; an unchanged target is omitted.

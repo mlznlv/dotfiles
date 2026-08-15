@@ -150,7 +150,7 @@ dotfiles_plan_compare_selection() {
     done
 
     if "$local_plan_chezmoi" --no-pager --no-tty --dry-run --config /dev/null --config-format toml \
-        --color=false --progress=false --use-builtin-diff --refresh-externals=never --skip-secrets \
+        --color=false --progress=false --use-builtin-diff --refresh-externals=never \
         --source "${SOURCE_DIR}/home" --destination "$DOTFILES_PLAN_HOME" \
         --cache "$DOTFILES_PLAN_CACHE" --persistent-state "$DOTFILES_PLAN_STATE" \
         --override-data-file "$local_context" status --path-style relative --recursive=false \
