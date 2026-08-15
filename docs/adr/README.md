@@ -24,16 +24,20 @@ supersedes an earlier one instead of rewriting history.
 | [0007](0007-define-configuration-only-modules.md) | Accepted | Define configuration-only modules |
 | [0008](0008-define-portable-share-artifact-discovery.md) | Accepted | Define portable share artifact discovery |
 | [0009](0009-define-pre-release-schema-versioning.md) | Accepted | Define pre-release schema versioning |
+| [0010](0010-define-selection-aware-shell-rendering.md) | Accepted | Define selection-aware shell rendering |
 
 ADR 0007 partially supersedes ADRs 0004 and 0006. Their unaffected safety
 decisions and immutable historical text remain accepted.
 
 ADR 0008 replaces ADR 0007's fixed artifact roots with explicit, XDG,
-HOME-derived, and generic system data roots. Artifact presence checking remains
-unimplemented.
+HOME-derived, and generic system data roots. Command and artifact presence
+checking is implemented.
 
 ADR 0009 supersedes only ADR 0007's schema-numbering and compatibility clauses.
 Its substantive configuration-only decisions remain accepted.
+
+ADR 0010 defines an ephemeral render context, exact shell-target ownership,
+and selection-aware activation for the later managed-shell implementation.
 
 Copy [the template](0000-template.md) when proposing a new decision. Use the next
 four-digit sequence number and a lowercase kebab-case filename.

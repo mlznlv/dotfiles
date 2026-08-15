@@ -25,6 +25,13 @@ accepted provider-neutral share roots for a contained regular file using
 metadata only. It never opens the artifact. No chezmoi source or shell
 initialization file is selected yet.
 
+Accepted ADR 0010 assigns this module only the planned
+`.config/zsh/autosuggestions.zsh`; the Zsh module continues to own `.zshrc`.
+When both dependency and module are resolved, the Zsh-owned template will
+reference the fixed configuration target and safely source only the fully
+resolved ADR 0008-validated artifact path. No fallback search, provider lookup,
+or fragment glob is planned. This behavior is not implemented.
+
 ## Options
 
 There are no module options or local defaults.

@@ -2,8 +2,8 @@
 
 ## Status
 
-This command is not available in the current CLI. Its accepted
-configuration-only contract depends on the schema migration.
+This command is not available in the current CLI. Its configuration-only
+contract depends on accepted ADR 0010, read-only shell rendering, and planning.
 
 ## Synopsis
 
@@ -14,10 +14,11 @@ dotfiles apply (--profile <profile-id> | --modules <id,id>)
 
 ## Behavior
 
-Apply recomputes resolution, rendered-target ownership, static prerequisite
-checks, and the selected-source chezmoi diff during one invocation. It cannot
-load or replay a saved plan. A missing prerequisite or invalid platform fails
-before mutation and tells the user to provide the tool outside this project.
+Apply recomputes resolution, rendered-target ownership, prerequisite checks,
+the closed ephemeral render context, and the selected-source chezmoi diff
+during one invocation. It cannot load or replay a saved plan or render result.
+A missing prerequisite or invalid platform fails before mutation and tells the
+user to provide the tool outside this project.
 
 The complete configuration plan is printed before any change. With an
 interactive terminal, the exact answer `yes` confirms. Any other answer, EOF,
@@ -30,6 +31,13 @@ prerequisite executable. It performs no software installation, upgrade,
 uninstall, removal, prune, broad cleanup, or automatic rollback. A failure
 reports completed, failed, and unattempted configuration targets. Retrying
 recomputes state, and a second successful apply converges to `No changes.`
+
+For the accepted shell contract, selecting `shell.zsh` permits convergence of
+its owned `.zshrc`, including omission of integrations not in the current
+resolved set. Files owned by omitted modules are not selected for apply and are
+not removed. Omitting Zsh does not rewrite `.zshrc`. The temporary context is
+removed on success, failure, cancellation, or interruption, and its raw
+artifact path is never saved in a reusable plan or repository log.
 
 ## Examples
 

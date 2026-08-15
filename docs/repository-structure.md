@@ -78,10 +78,10 @@ release, reporting, or active triage consumer.
 
 ## Phase 3 layout
 
-Phase 3 is split into focused increments. The following target layout reserves
-clear configuration ownership boundaries. Schema 1 catalog paths and read-only
-command/artifact presence checks are released; application checks, home state,
-and planning remain later increments.
+Phase 3 is split into focused increments. The following target layout is
+defined by accepted ADR 0010 and remains unimplemented.
+Schema 1 catalog paths and read-only command/artifact presence checks are
+released; application checks, home state, and planning remain later increments.
 
 ~~~text
 .chezmoidata/
@@ -100,7 +100,7 @@ home/
 ├── dot_config/
 │   ├── starship.toml
 │   └── zsh/
-│       └── autosuggestions.zsh.tmpl
+│       └── autosuggestions.zsh
 └── dot_zshrc.tmpl
 lib/
 ├── prerequisite-check.sh
@@ -120,9 +120,15 @@ prerequisite or installer. Planned `lib/plan.sh` will construct stable
 chezmoi-only configuration plans; CLI dispatch remains in `bin/dotfiles`. No
 Homebrew, mise, package-manager, or application-provider adapter is planned.
 
-`home/` is the repository's planned chezmoi source root. Schema-1 module data
-selects paths below that root; it does not contain file bodies or executable
-selection logic. Chezmoi remains the sole owner of the rendered home targets.
+`home/` is the planned chezmoi source root. `shell.zsh` alone owns
+`home/dot_zshrc.tmpl`; autosuggestions and Starship own their distinct tool
+configuration sources. Schema-1 module data will select paths below `home/`,
+but will contain no file bodies or executable selection logic. Chezmoi remains
+the sole engine for rendered home targets.
+
+No composition file is planned. Future plan/apply invocations will pass a
+mode-`0600` temporary override-data file to chezmoi and remove it before return;
+that local ephemeral file is not part of repository layout or saved state.
 
 Phase 3 fixtures remain non-production data. `catalog/` covers schema and
 rendered-target ownership, `prerequisites/` contains sanitized presence facts,

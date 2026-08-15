@@ -2,8 +2,9 @@
 
 ## Status
 
-This command is not available in the current CLI. Its accepted
-configuration-only contract depends on the schema migration.
+This command is not available in the current CLI. Its configuration-only
+contract depends on accepted ADR 0010 and the later read-only shell-rendering
+implementation.
 
 ## Synopsis
 
@@ -21,15 +22,27 @@ missing prerequisite names the module and identifier, tells the user to provide
 the tool outside this project, and fails before creating a plan eligible for
 apply.
 
-After preconditions pass, the command asks chezmoi for diffs limited to the
-selected module sources and prints one deterministic configuration plan. Every
-step contains an ordinal, module, normalized `chezmoi:target` key, action, and
-sanitized description. Steps sort by target and then module. `No changes.` is a
-successful plan.
+After preconditions pass, the command will build a mode-`0600` temporary
+override-data file from the platform, ordered resolved module IDs, selected
+source IDs, and the currently validated autosuggestions artifact path when
+required. It will pass that closed context to chezmoi, request diffs limited to
+selected sources, remove the context before return, and print one deterministic
+configuration plan.
+
+Every step contains an ordinal, module, normalized `chezmoi:target` key,
+action, and sanitized description. HOME paths use `$HOME`; other non-generic
+local roots use origin tokens rather than raw private prefixes. Steps sort by
+target and then module. `No changes.` is a successful plan.
+
+The accepted shell contract makes target omission explicit. A smaller
+composition that still selects `shell.zsh` may show `.zshrc` converging without
+previous optional activation lines. An omitted owner produces no target step:
+the plan does not claim removal or deactivation of its existing file.
 
 Planning never installs or updates software, invokes Homebrew or mise, calls an
 operating-system package manager, executes a prerequisite, writes home state,
-or saves a plan. Plans contain no secrets or machine identity.
+or saves a plan or render context. Plans contain no secrets, raw private roots,
+or machine identity and cannot be replayed by apply.
 
 ## Examples
 

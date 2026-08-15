@@ -21,6 +21,13 @@ The schema-1 manifest declares `zsh` on macOS and Debian. `prerequisite check`
 locates an external executable file through absolute PATH entries without
 invoking it. No chezmoi source or startup file is selected yet.
 
+Accepted ADR 0010 makes this module the sole planned owner of `.zshrc` and all
+Zsh startup activation syntax. Its template will enumerate only integrations in
+the resolved explicit composition—never glob a fragment directory. Starship
+activation will require both selected modules; autosuggestions activation will
+require its selected module and currently validated artifact. These
+sources and behaviors are not implemented.
+
 ## Options
 
 There are no module options or local defaults.
