@@ -1,0 +1,10 @@
+[dotfiles.modules."shell.empty"]
+schema = 1
+id = "shell.empty"
+name = "Empty"
+summary = "No-prerequisite fixture"
+docs = "docs/modules/shell/empty.md"
+platforms = ["macos", "debian"]
+depends = []
+conflicts = []
+exclusive_group = ""

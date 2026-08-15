@@ -1,0 +1,12 @@
+[dotfiles.modules."shell.beta"]
+schema = 1
+id = "shell.beta"
+name = "Beta"
+summary = "Dependency ordering fixture"
+docs = "docs/modules/shell/beta.md"
+platforms = ["macos", "debian"]
+depends = ["shell.alpha"]
+conflicts = []
+exclusive_group = ""
+prerequisites.macos.commands = ["beta-tool"]
+prerequisites.debian.commands = ["beta-tool"]

@@ -1,6 +1,6 @@
 # Zsh autosuggestions
 
-- Status: Available for discovery and resolution
+- Status: Available for discovery, resolution, and prerequisite checking
 - Category: shell
 - Supported platforms: macOS and Debian-family Linux
 - Documentation owner: repository maintainer
@@ -20,9 +20,10 @@ exclusive group.
 
 The released schema-1 manifest declares `zsh` and the artifact locator
 `share:zsh-autosuggestions/zsh-autosuggestions.zsh` on macOS and Debian.
-Catalog validation checks only these static identifiers; it never locates or
-reads them, and prerequisite presence checking is not available. No chezmoi
-source or shell initialization file is selected yet.
+`prerequisite check` locates the command without invocation and searches the
+accepted provider-neutral share roots for a contained regular file using
+metadata only. It never opens the artifact. No chezmoi source or shell
+initialization file is selected yet.
 
 ## Options
 
@@ -38,6 +39,12 @@ shell.zsh
 shell.zsh.autosuggestions
 ~~~
 
+Check both prerequisites with:
+
+~~~console
+./bin/dotfiles prerequisite check --modules shell.zsh.autosuggestions --platform macos
+~~~
+
 The command is read-only and needs no recovery. Planned startup-file recovery
 will cover configuration only.
 
@@ -49,5 +56,5 @@ privilege, provider process, secret, command history, or machine identity.
 ## Tests and known limitations
 
 Schema, dependency, ownership, discovery, profile resolution, and macOS/Ubuntu
-CI cover this module. Prerequisite presence checks, initialization,
-configuration plan, and apply are deferred.
+CI plus isolated command, artifact, and containment tests cover this module.
+Initialization, configuration plan, and apply are deferred.

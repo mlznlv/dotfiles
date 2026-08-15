@@ -1,6 +1,6 @@
 # Starship
 
-- Status: Available for discovery and resolution
+- Status: Available for discovery, resolution, and prerequisite checking
 - Category: prompt
 - Supported platforms: macOS and Debian-family Linux
 - Documentation owner: repository maintainer
@@ -19,10 +19,9 @@ shell module.
 
 ## Prerequisites and managed configuration
 
-The released schema-1 manifest declares the static `starship` command
-prerequisite on macOS and Debian. Catalog validation checks only the identifier;
-prerequisite presence checking is not available. No chezmoi source or managed
-file is selected.
+The schema-1 manifest declares `starship` on macOS and Debian.
+`prerequisite check` locates an external executable file through absolute PATH
+entries without invoking it. No chezmoi source or managed file is selected.
 
 ## Options
 
@@ -35,6 +34,7 @@ Plan and apply are unavailable. Verify metadata with:
 ~~~console
 ./bin/dotfiles module show prompt.starship
 ./bin/dotfiles resolve --modules prompt.starship --platform debian
+./bin/dotfiles prerequisite check --modules prompt.starship --platform debian
 ~~~
 
 These commands are read-only. They require no recovery; correct invalid catalog
@@ -49,5 +49,5 @@ is outside the product boundary.
 ## Tests and known limitations
 
 Schema, current ownership, discovery, explicit resolution, profile resolution,
-and macOS/Ubuntu CI cover this module. Prerequisite presence checks, shell
+isolated command-presence tests, and macOS/Ubuntu CI cover this module. Shell
 initialization, managed configuration, plan, and apply are deferred.

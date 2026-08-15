@@ -4,8 +4,9 @@ A modular, reproducible, and security-conscious configuration layer for macOS
 and Debian-family Linux.
 
 > [!IMPORTANT]
-> The read-only schema-1 shell catalog and resolver are available. Managed
-> configuration and apply behavior are not implemented yet.
+> The read-only schema-1 shell catalog, resolver, and command/artifact
+> prerequisite checks are available. Managed configuration, plan, and apply
+> are not implemented yet.
 
 ## Start here
 
@@ -53,6 +54,7 @@ With chezmoi available, users and contributors can inspect and resolve the shell
 ./bin/dotfiles module list --all
 ./bin/dotfiles profile list --all
 ./bin/dotfiles resolve --profile shell.minimal --platform debian
+./bin/dotfiles prerequisite check --profile shell.minimal --platform debian
 ~~~
 
 These commands do not install packages, change configuration, call providers, or
@@ -73,10 +75,10 @@ apply home state.
 
 ## Project status
 
-The architecture foundation, schema-1 validation, and migrated shell
-composition are established. The solution remains read-only. Generic,
-read-only prerequisite presence validation is the next increment in the
-[roadmap](docs/roadmap.md).
+The architecture foundation, schema-1 shell composition, and read-only command
+and artifact prerequisite checks are established. Application checks, managed
+configuration, plan, and apply remain later [roadmap](docs/roadmap.md)
+increments.
 
 Development integrates through `next`; `master` remains the stable branch until
 an explicitly reviewed promotion. See [Contributing](CONTRIBUTING.md) for the

@@ -1,0 +1,14 @@
+[dotfiles.modules."shell.alpha"]
+schema = 1
+id = "shell.alpha"
+name = "Alpha"
+summary = "Command and artifact prerequisite fixture"
+docs = "docs/modules/shell/alpha.md"
+platforms = ["macos", "debian"]
+depends = []
+conflicts = []
+exclusive_group = ""
+prerequisites.macos.commands = ["alpha-tool", "missing-tool"]
+prerequisites.macos.artifacts = ["share:fixture/item"]
+prerequisites.debian.commands = ["alpha-tool", "missing-tool"]
+prerequisites.debian.artifacts = ["share:fixture/item"]

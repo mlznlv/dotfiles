@@ -3,8 +3,9 @@
 ## Purpose and status
 
 This document defines the target architecture. The read-only catalog,
-discovery commands, and deterministic resolver are released. Configuration
-planning, prerequisite validation, managed home state, and apply are planned.
+discovery commands, resolver, and command/artifact prerequisite checks are
+released. Application checks, planning, managed home state, and apply are
+planned.
 
 [ADR 0007](adr/0007-define-configuration-only-modules.md) defines the
 configuration-only direction. [ADR 0009](adr/0009-define-pre-release-schema-versioning.md)
@@ -103,12 +104,15 @@ reject empty, `.` and `..` segments, globs, variables, tildes, control
 characters, and shell metacharacters. [ADR 0008](adr/0008-define-portable-share-artifact-discovery.md)
 defines deterministic explicit, XDG, validated HOME-derived, and generic
 system data roots with strict containment and disclosure rules. It performs no
-provider, registry, executable, shell-profile, or network discovery. Presence
-validation is not implemented.
+provider, registry, executable, shell-profile, or network discovery. The
+released checker implements this contract for selected artifact prerequisites.
 
-Prerequisite validation is part of both plan and apply preconditions. A missing
-tool produces an error naming the module, platform, prerequisite kind, and
-identifier, with guidance to provide it outside this project. No chezmoi diff
+The released command checks only resolved selected modules for the target
+platform. External commands are located through absolute PATH entries;
+applications fail closed until their platform semantics are accepted.
+Prerequisite validation is also a future plan and apply precondition. A missing
+tool produces an error naming the module, prerequisite kind, and identifier,
+with guidance to provide it outside this project. No chezmoi diff
 eligible for apply is produced, and no configuration changes occur.
 
 The initial platform identifiers remain `macos` and `debian`. Modules declare
