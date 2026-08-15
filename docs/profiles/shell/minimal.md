@@ -49,6 +49,14 @@ Discovery and resolution are available:
 Command and artifact prerequisite checks are available. Application checks and
 `dotfiles plan` are unavailable.
 
+Under proposed ADR 0010, a future render of this profile would select exactly
+`.zshrc`, `.config/zsh/autosuggestions.zsh`, and `.config/starship.toml`.
+The Zsh-owned startup target would activate autosuggestions from its validated
+artifact and then Starship, without scanning stale fragments. Reapplying a
+smaller Zsh composition would remove omitted activation lines from `.zshrc`
+while leaving omitted modules' existing files untouched. This behavior remains
+planned pending owner acceptance and implementation.
+
 ## Security, privacy, and connectivity
 
 Released commands invoke no providers, prerequisites, network access, privilege

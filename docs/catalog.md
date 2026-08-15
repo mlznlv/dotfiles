@@ -175,6 +175,21 @@ duplicate ownership error, even when the declarations are identical. The error
 names the key, source path, and every declaring module. This check completes
 before prerequisite checks, planning, or mutation.
 
+### Proposed source-selection semantics
+
+[ADR 0010](adr/0010-define-selection-aware-shell-rendering.md) proposes that a
+module declare only sources for targets it owns. The Zsh module would declare
+`.zshrc`; autosuggestions and Starship would declare only their separate tool
+configuration targets. Optional modules would not declare or compete for the
+Zsh-owned source.
+
+A future plan/apply invocation would derive selected source identifiers from
+the resolved set and pass a closed ephemeral context to chezmoi. That context
+would not be a catalog field, saved profile, or compatibility contract. The
+Zsh template could compare only known validated module identifiers to render
+optional activation. Production source arrays remain empty until the proposed
+ADR is accepted and a separate implementation changes manifests and sources.
+
 ## Schema 1 profile fields
 
 | Field | Type | Rule |
