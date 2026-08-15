@@ -288,6 +288,50 @@ printf 'unmanaged sentinel\n' > "$starship_existing/.zshrc"
 expect_render_status "Starship render with existing .zshrc succeeds" 0 "$starship_existing" "" prompt.starship "" debian
 check_equal "Starship render leaves existing .zshrc byte-stable" "$(sed -n '1p' "$starship_existing/.zshrc")" 'unmanaged sentinel'
 
+copy_failure_output="${TEST_ROOT}/copy-failure-output"
+copy_count_file="${TEST_ROOT}/copy-count"
+mkdir "$copy_failure_output"
+printf '%s\n' \
+    '#!/bin/sh' \
+    'count=0' \
+    '[ ! -f "$DOTFILES_COPY_COUNT_FILE" ] || IFS= read -r count < "$DOTFILES_COPY_COUNT_FILE"' \
+    'count=$((count + 1))' \
+    'printf "%s\n" "$count" > "$DOTFILES_COPY_COUNT_FILE"' \
+    '[ "$count" -ne "$DOTFILES_COPY_FAIL_AT" ] || exit 98' \
+    'exec /bin/cp "$@"' > "${PROBE_BIN}/cp"
+chmod +x "${PROBE_BIN}/cp"
+export DOTFILES_COPY_COUNT_FILE=$copy_count_file
+export DOTFILES_COPY_FAIL_AT=3
+expect_render_status "late selected-target copy failure is reported" 4 "$copy_failure_output" shell.minimal "" "" debian
+check_equal "late selected-target copy failure publishes no target" "$(rendered_files "$copy_failure_output")" ""
+rm -f -- "${PROBE_BIN}/cp"
+unset DOTFILES_COPY_COUNT_FILE DOTFILES_COPY_FAIL_AT
+
+publish_failure_output="${TEST_ROOT}/publish-failure-output"
+publish_count_file="${TEST_ROOT}/publish-count"
+mkdir -p "$publish_failure_output/.config/zsh"
+printf 'old starship\n' > "$publish_failure_output/.config/starship.toml"
+printf 'old autosuggestions\n' > "$publish_failure_output/.config/zsh/autosuggestions.zsh"
+printf 'old zsh\n' > "$publish_failure_output/.zshrc"
+publish_snapshot_before=$(find "$publish_failure_output" -type f -exec cksum {} \; | LC_ALL=C sort)
+printf '%s\n' \
+    '#!/bin/sh' \
+    'count=0' \
+    '[ ! -f "$DOTFILES_PUBLISH_COUNT_FILE" ] || IFS= read -r count < "$DOTFILES_PUBLISH_COUNT_FILE"' \
+    'count=$((count + 1))' \
+    'printf "%s\n" "$count" > "$DOTFILES_PUBLISH_COUNT_FILE"' \
+    '[ "$count" -ne "$DOTFILES_PUBLISH_FAIL_AT" ] || exit 98' \
+    'exec /bin/mv "$@"' > "${PROBE_BIN}/mv"
+chmod +x "${PROBE_BIN}/mv"
+export DOTFILES_PUBLISH_COUNT_FILE=$publish_count_file
+export DOTFILES_PUBLISH_FAIL_AT=3
+expect_render_status "late selected-target publication failure is reported" 4 "$publish_failure_output" shell.minimal "" "" macos
+rm -f -- "${PROBE_BIN}/mv"
+unset DOTFILES_PUBLISH_COUNT_FILE DOTFILES_PUBLISH_FAIL_AT
+publish_snapshot_after=$(find "$publish_failure_output" -type f -exec cksum {} \; | LC_ALL=C sort)
+check_equal "late publication failure restores every prior target" "$publish_snapshot_after" "$publish_snapshot_before"
+check_equal "late publication failure leaves no temporary target" "$(find "$publish_failure_output" -type f -name '.dotfiles-render.*' -print)" ""
+
 : > "$CONTEXT_SUMMARY_LOG"
 context_output="${TEST_ROOT}/context-output"
 mkdir "$context_output"
