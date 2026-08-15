@@ -1,6 +1,7 @@
 # Starship
 
-- Status: Available for discovery, resolution, and prerequisite checking
+- Status: Available for discovery, resolution, prerequisite checking, and
+  internal read-only rendering
 - Category: prompt
 - Supported platforms: macOS and Debian-family Linux
 - Documentation owner: repository maintainer
@@ -21,13 +22,16 @@ shell module.
 
 The schema-1 manifest declares `starship` on macOS and Debian.
 `prerequisite check` locates an external executable file through absolute PATH
-entries without invoking it. No chezmoi source or managed file is selected.
+entries without invoking it. No managed file is applied to the user's home.
 
-Accepted ADR 0010 assigns this module only the planned `.config/starship.toml`.
-Starship remains selectable without Zsh and never owns `.zshrc`.
+Accepted ADR 0010 assigns this module only
+`home/dot_config/starship.toml`, rendered as `.config/starship.toml`. The
+initial configuration disables the extra blank prompt line and otherwise uses
+portable built-in modules. Starship remains selectable without Zsh and never
+owns `.zshrc`.
 When both modules are in one resolved explicit composition, the Zsh-owned
-template will emit exactly one static `starship init zsh` activation. This
-configuration and activation are not implemented.
+template emits exactly one static `starship init zsh` activation. The internal
+renderer produces these targets only in isolated output.
 
 ## Options
 
@@ -43,8 +47,9 @@ Plan and apply are unavailable. Verify metadata with:
 ./bin/dotfiles prerequisite check --modules prompt.starship --platform debian
 ~~~
 
-These commands are read-only. They require no recovery; correct invalid catalog
-data and rerun them. Configuration recovery is deferred with apply.
+These commands and internal rendering are read-only. They require no recovery;
+correct invalid catalog data and rerun them. Configuration recovery is deferred
+with apply.
 
 ## Platform, security, and privacy notes
 
@@ -55,5 +60,6 @@ is outside the product boundary.
 ## Tests and known limitations
 
 Schema, current ownership, discovery, explicit resolution, profile resolution,
-isolated command-presence tests, and macOS/Ubuntu CI cover this module. Shell
-initialization, managed configuration, plan, and apply are deferred.
+isolated command-presence tests, and macOS/Ubuntu CI cover this module. Isolated
+Starship-only and Zsh-composed rendering are covered; managed home
+configuration, plan, and apply are deferred.

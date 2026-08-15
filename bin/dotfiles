@@ -3,7 +3,7 @@
 set -u
 
 DOTFILES_VERSION="0.1.0-dev"
-SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 PROJECT_ROOT=$(CDPATH= cd -- "${SCRIPT_DIR}/.." && pwd)
 SOURCE_DIR=${DOTFILES_SOURCE_DIR:-"${PROJECT_ROOT}"}
 CHEZMOI_BIN=${DOTFILES_CHEZMOI_BIN:-chezmoi}
@@ -251,7 +251,9 @@ catalog_records() {
         return 4
     fi
 
-    "$CHEZMOI_BIN" --no-pager --no-tty --source "$SOURCE_DIR" execute-template < "$CATALOG_TEMPLATE"
+    "$CHEZMOI_BIN" --no-pager --no-tty --config /dev/null --config-format toml \
+        --refresh-externals=never --source "$SOURCE_DIR" \
+        execute-template < "$CATALOG_TEMPLATE"
 }
 
 run_catalog() {
@@ -510,4 +512,6 @@ main() {
     esac
 }
 
-main "$@"
+if [ "${BASH_SOURCE[0]}" = "$0" ]; then
+    main "$@"
+fi

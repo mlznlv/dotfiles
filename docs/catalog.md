@@ -136,19 +136,19 @@ The production declarations are:
 # Zsh configuration
 prerequisites.macos.commands = ["zsh"]
 prerequisites.debian.commands = ["zsh"]
-home.chezmoi.sources = []
+home.chezmoi.sources = ["home/dot_zshrc.tmpl"]
 
 # Zsh autosuggestions configuration; the module also depends on shell.zsh
 prerequisites.macos.commands = ["zsh"]
 prerequisites.macos.artifacts = ["share:zsh-autosuggestions/zsh-autosuggestions.zsh"]
 prerequisites.debian.commands = ["zsh"]
 prerequisites.debian.artifacts = ["share:zsh-autosuggestions/zsh-autosuggestions.zsh"]
-home.chezmoi.sources = []
+home.chezmoi.sources = ["home/dot_config/zsh/autosuggestions.zsh"]
 
 # Starship remains independent from every shell
 prerequisites.macos.commands = ["starship"]
 prerequisites.debian.commands = ["starship"]
-home.chezmoi.sources = []
+home.chezmoi.sources = ["home/dot_config/starship.toml"]
 
 ~~~
 
@@ -175,20 +175,19 @@ duplicate ownership error, even when the declarations are identical. The error
 names the key, source path, and every declaring module. This check completes
 before prerequisite checks, planning, or mutation.
 
-### Planned source-selection semantics
+### Read-only source selection
 
 [ADR 0010](adr/0010-define-selection-aware-shell-rendering.md) defines that a
-module declares only sources for targets it owns. The Zsh module will declare
-`.zshrc`; autosuggestions and Starship will declare only their separate tool
-configuration targets. Optional modules will not declare or compete for the
-Zsh-owned source.
+module declares only sources for targets it owns. Zsh declares `.zshrc`;
+autosuggestions and Starship declare only their separate tool configuration
+targets. Optional modules do not declare or compete for the Zsh-owned source.
 
-A future plan/apply invocation will derive selected source identifiers from
-the resolved set and pass a closed ephemeral context to chezmoi. That context
-will not be a catalog field, saved profile, or compatibility contract. The
-Zsh template will compare only known validated module identifiers to render
-optional activation. Production source arrays remain empty until the accepted
-contract is implemented in a separate change to manifests and sources.
+The internal renderer derives source identifiers from the resolved set in
+normalized-target order and passes a closed ephemeral context to chezmoi. That
+context is not a catalog field, saved profile, or compatibility contract. The
+Zsh template compares only known validated module identifiers to render
+optional activation. Rendering is isolated and read-only; plan, apply, and home
+convergence remain unavailable.
 
 ## Schema 1 profile fields
 
@@ -252,3 +251,6 @@ schema numbers; unsafe identifiers and artifact locators; forbidden provider
 fields; platform mismatches; recursive discovery; duplicate values; and
 rendered-target collisions. Isolated roots and PATH entries cover selection,
 ordering, metadata types, containment, privacy, exit codes, and non-invocation.
+The read-only render matrix additionally covers every production selection on
+macOS and Debian, deterministic source order, canonical quoting, stale output,
+and temporary-context cleanup.

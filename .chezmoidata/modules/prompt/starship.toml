@@ -10,4 +10,4 @@ conflicts = []
 exclusive_group = "prompt.primary"
 prerequisites.macos.commands = ["starship"]
 prerequisites.debian.commands = ["starship"]
-home.chezmoi.sources = []
+home.chezmoi.sources = ["home/dot_config/starship.toml"]

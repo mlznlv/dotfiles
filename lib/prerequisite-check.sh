@@ -29,6 +29,7 @@ prerequisite_sanitize_path() {
 prerequisite_valid_root() {
     local_root=$1
     case "$local_root" in /*) ;; *) return 1 ;; esac
+    case "$local_root" in *$'\n'*|*$'\r'*) return 1 ;; esac
     case "$local_root" in *':'*|*'~'*|*'$'*|*'*'*|*'?'*|*'['*|*']'*|*'`'*|*'\'*) return 1 ;; esac
     if printf '%s' "$local_root" | LC_ALL=C grep '[[:cntrl:]]' >/dev/null 2>&1; then
         return 1
@@ -155,7 +156,7 @@ prerequisite_command_present() {
     return 1
 }
 
-prerequisite_artifact_present() {
+prerequisite_artifact_resolve() {
     local_relative=${1#share:}
     local_paths=$PREREQUISITE_ROOT_PATHS
     local_resolved_roots=$PREREQUISITE_ROOT_RESOLVED
@@ -167,16 +168,28 @@ prerequisite_artifact_present() {
         local_candidate="${local_root}/${local_relative}"
         if local_resolved_candidate=$(realpath "$local_candidate" 2>/dev/null) && [ -f "$local_resolved_candidate" ]; then
             case "$local_resolved_root" in
-                /) return 0 ;;
-                *) case "$local_resolved_candidate" in "$local_resolved_root"/*) return 0 ;; esac ;;
+                /) printf '%s\n' "$local_resolved_candidate"; return 0 ;;
+                *) case "$local_resolved_candidate" in "$local_resolved_root"/*) printf '%s\n' "$local_resolved_candidate"; return 0 ;; esac ;;
             esac
         fi
     done
     return 1
 }
 
+prerequisite_artifact_present() {
+    prerequisite_artifact_resolve "$1" >/dev/null
+}
+
+prerequisite_render_path_safe() {
+    local_path=$1
+    case "$local_path" in *$'\n'*|*$'\r'*) return 1 ;; esac
+    ! printf '%s' "$local_path" | LC_ALL=C grep '[[:cntrl:]]' >/dev/null 2>&1
+}
+
 prerequisite_check_records() {
     local_records=$1
+    PREREQUISITE_ARTIFACT_FACTS=
+    PREREQUISITE_ARTIFACT_FACTS_INVALID=0
     while IFS=$'\t' read -r local_module local_kind local_identifier; do
         [ -n "$local_module" ] || continue
         if [ "$local_kind" = application ]; then
@@ -196,7 +209,17 @@ prerequisite_check_records() {
             command) prerequisite_command_present "$local_identifier" && local_present=1 || local_present=0 ;;
             artifact)
                 printf 'roots: %s artifact %s — %s\n' "$local_module" "$local_identifier" "$(printf '%s' "$PREREQUISITE_ROOT_LABELS" | tr '\n' ';')"
-                prerequisite_artifact_present "$local_identifier" && local_present=1 || local_present=0
+                if local_resolved_artifact=$(prerequisite_artifact_resolve "$local_identifier"); then
+                    local_present=1
+                    if prerequisite_render_path_safe "$local_resolved_artifact"; then
+                        PREREQUISITE_ARTIFACT_FACTS="${PREREQUISITE_ARTIFACT_FACTS}${PREREQUISITE_ARTIFACT_FACTS:+
+}${local_module}"$'\t'"${local_identifier}"$'\t'"${local_resolved_artifact}"
+                    else
+                        PREREQUISITE_ARTIFACT_FACTS_INVALID=1
+                    fi
+                else
+                    local_present=0
+                fi
                 ;;
             *) printf 'error: unsupported prerequisite kind %s for module %s\n' "$local_kind" "$local_module" >&2; return 4 ;;
         esac

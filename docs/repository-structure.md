@@ -2,9 +2,10 @@
 
 ## Current layout
 
-The repository contains a read-only schema-1 catalog, resolver, and shell
-prerequisite checker with three production modules and one profile. It contains
-no provider adapters, managed home files, planning, or apply behavior.
+The repository contains a read-only schema-1 catalog, resolver, shell
+prerequisite checker, and isolated selected-source renderer with three
+production modules and one profile. It contains no provider adapters, planning,
+apply behavior, or managed-home mutation.
 
 ~~~text
 .
@@ -32,15 +33,23 @@ no provider adapters, managed home files, planning, or apply behavior.
 │   ├── catalog.md
 │   ├── repository-structure.md
 │   └── roadmap.md
+├── home/
+│   ├── .chezmoitemplates/
+│   │   └── zsh-quote-literal
+│   ├── dot_config/{starship.toml,zsh/autosuggestions.zsh}
+│   └── dot_zshrc.tmpl
 ├── lib/
 │   ├── catalog-records.tmpl
 │   ├── catalog.awk
-│   └── prerequisite-check.sh
+│   ├── prerequisite-check.sh
+│   └── render.sh
 ├── scripts/
 │   └── check.sh
 ├── tests/
 │   ├── fixtures/
 │   │   └── <case>/catalog/
+│   ├── helpers/chezmoi-render-probe.sh
+│   ├── render.sh
 │   └── run.sh
 └── public repository files
 ~~~
@@ -79,9 +88,9 @@ release, reporting, or active triage consumer.
 ## Phase 3 layout
 
 Phase 3 is split into focused increments. The following target layout is
-defined by accepted ADR 0010 and remains unimplemented.
-Schema 1 catalog paths and read-only command/artifact presence checks are
-released; application checks, home state, and planning remain later increments.
+defined by accepted ADR 0010 and is implemented for isolated read-only shell
+rendering. Application checks, managed home state, planning, and apply remain
+later increments.
 
 ~~~text
 .chezmoidata/
@@ -97,6 +106,8 @@ released; application checks, home state, and planning remain later increments.
     └── shell/
         └── minimal.toml
 home/
+├── .chezmoitemplates/
+│   └── zsh-quote-literal
 ├── dot_config/
 │   ├── starship.toml
 │   └── zsh/
@@ -104,38 +115,38 @@ home/
 └── dot_zshrc.tmpl
 lib/
 ├── prerequisite-check.sh
-└── plan.sh
+└── render.sh
 tests/
-└── fixtures/
-    └── phase3/
-        ├── catalog/
-        ├── prerequisites/
-        ├── rendered/
-        └── plans/
+├── helpers/
+│   └── chezmoi-render-probe.sh
+└── render.sh
 ~~~
 
 `lib/prerequisite-check.sh` contains released, read-only command and artifact
 presence checks. Applications currently fail closed. It never runs a
-prerequisite or installer. Planned `lib/plan.sh` will construct stable
-chezmoi-only configuration plans; CLI dispatch remains in `bin/dotfiles`. No
-Homebrew, mise, package-manager, or application-provider adapter is planned.
+prerequisite or installer. `lib/render.sh` builds the closed temporary context
+and asks chezmoi to render only selected targets into an isolated non-home
+directory. A later `lib/plan.sh` will construct stable chezmoi-only
+configuration plans; CLI dispatch remains in `bin/dotfiles`. No Homebrew, mise,
+package-manager, or application-provider adapter is planned.
 
-`home/` is the planned chezmoi source root. `shell.zsh` alone owns
+`home/` is the chezmoi source root. `shell.zsh` alone owns
 `home/dot_zshrc.tmpl`; autosuggestions and Starship own their distinct tool
-configuration sources. Schema-1 module data will select paths below `home/`,
-but will contain no file bodies or executable selection logic. Chezmoi remains
+configuration sources. Schema-1 module data selects paths below `home/`, but
+contains no file bodies or executable selection logic. Chezmoi remains
 the sole engine for rendered home targets.
 
-No composition file is planned. Future plan/apply invocations will pass a
-mode-`0600` temporary override-data file to chezmoi and remove it before return;
-that local ephemeral file is not part of repository layout or saved state.
+No composition file exists. The internal renderer passes a mode-`0600`
+temporary override-data file to chezmoi and removes its private directory on
+every exit path; that local ephemeral file is not part of repository layout or
+saved state. Future plan/apply invocations will rebuild it rather than reuse a
+render result.
 
-Phase 3 fixtures remain non-production data. `catalog/` covers schema and
-rendered-target ownership, `prerequisites/` contains sanitized presence facts,
-`rendered/` contains expected chezmoi output, and `plans/` contains deterministic
-configuration-only output for macOS, Debian, no-change, cancellation,
-non-interactive refusal, and failure cases. Fixtures must not inspect real
-software or use machine identity.
+Phase 3 fixtures remain non-production data. The render suite creates isolated
+catalog facts, prerequisite roots, output trees, and probe commands at runtime;
+none are saved as machine state or committed with local paths. Later plan
+fixtures will cover deterministic configuration-only output, no-change,
+cancellation, non-interactive refusal, and failure cases.
 
 ## Naming rules
 

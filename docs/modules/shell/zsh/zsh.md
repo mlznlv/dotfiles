@@ -1,6 +1,7 @@
 # Zsh
 
-- Status: Available for discovery, resolution, and prerequisite checking
+- Status: Available for discovery, resolution, prerequisite checking, and
+  internal read-only rendering
 - Category: shell
 - Supported platforms: macOS and Debian-family Linux
 - Documentation owner: repository maintainer
@@ -19,14 +20,15 @@ The module has no dependencies or declared conflicts and belongs to the
 
 The schema-1 manifest declares `zsh` on macOS and Debian. `prerequisite check`
 locates an external executable file through absolute PATH entries without
-invoking it. No chezmoi source or startup file is selected yet.
+invoking it. This module alone declares `home/dot_zshrc.tmpl`, which normalizes
+to `.zshrc`.
 
-Accepted ADR 0010 makes this module the sole planned owner of `.zshrc` and all
-Zsh startup activation syntax. Its template will enumerate only integrations in
+Accepted ADR 0010 makes this module the sole owner of `.zshrc` and all Zsh
+startup activation syntax. Its template enumerates only integrations in
 the resolved explicit composition—never glob a fragment directory. Starship
-activation will require both selected modules; autosuggestions activation will
-require its selected module and currently validated artifact. These
-sources and behaviors are not implemented.
+activation requires both selected modules; autosuggestions activation requires
+its selected module and currently validated canonical artifact. Core output is
+deliberately minimal and changes no login shell.
 
 ## Options
 
@@ -34,7 +36,8 @@ There are no module options or local defaults.
 
 ## Plan, apply, verification, and recovery
 
-Plan and apply are unavailable. Verify the released metadata with:
+Plan and apply are unavailable. The internal renderer exercises the source in
+isolated test output only. Verify the released metadata with:
 
 ~~~console
 ./bin/dotfiles module show shell.zsh
@@ -55,4 +58,5 @@ and login-shell changes are outside the product boundary.
 
 Schema, ownership, exclusive-group, discovery, dependency resolution, profile
 resolution, isolated command-presence tests, and macOS/Ubuntu CI cover this
-module. `.zshrc`, configuration plan, and apply are deferred.
+module. Read-only `.zshrc` rendering is covered; home convergence,
+configuration plan, and apply are deferred.

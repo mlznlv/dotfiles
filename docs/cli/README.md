@@ -48,9 +48,10 @@ available in the current CLI:
 | Build a read-only configuration plan | `dotfiles plan ...` | [plan](plan.md) |
 | Recompute, confirm, and apply selected configuration | `dotfiles apply ...` | [apply](apply.md) |
 
-Neither command may be presented as released until ADR 0007 is accepted and its
-implementation and tests merge. Phase 3 will not install software or support
-saved plans, replay, automatic rollback, or destructive removal.
+Neither command is released. They follow the tested internal rendering
+foundation and require their own implementation and tests. Phase 3 will not
+install software or support saved plans, replay, automatic rollback, or
+destructive removal.
 
 ## Typical workflow
 
