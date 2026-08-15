@@ -14,8 +14,8 @@ done
 
 [ -n "$context" ] && [ -f "$context" ] || exit 91
 
-context_mode=$(stat -f '%Lp' "$context" 2>/dev/null || stat -c '%a' "$context" 2>/dev/null) || exit 92
-directory_mode=$(stat -f '%Lp' "$(dirname -- "$context")" 2>/dev/null || stat -c '%a' "$(dirname -- "$context")" 2>/dev/null) || exit 92
+context_mode=$(stat -c '%a' "$context" 2>/dev/null || stat -f '%Lp' "$context" 2>/dev/null) || exit 92
+directory_mode=$(stat -c '%a' "$(dirname -- "$context")" 2>/dev/null || stat -f '%Lp' "$(dirname -- "$context")" 2>/dev/null) || exit 92
 [ "$context_mode" = 600 ] && [ "$directory_mode" = 700 ] || exit 93
 
 awk '
