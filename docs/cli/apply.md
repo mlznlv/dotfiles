@@ -16,8 +16,10 @@ dotfiles apply (--profile <profile-id> | --modules <id,id>)
 Selection and platform rules are identical to [`dotfiles plan`](plan.md).
 `--yes` is an apply-only acknowledgement for the plan printed by the current
 invocation. It does not suppress validation, recomputation, output, or failure
-reporting. There is no `-y`, saved plan, saved selection, default profile, or
-environment-based approval.
+reporting. There is no `-y`, saved plan, default profile, or environment-based
+approval.
+The current command does not load the local selection saved by `config set`;
+an explicit base remains required.
 
 ## Confirmation flow
 

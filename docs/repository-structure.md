@@ -5,7 +5,9 @@
 The repository contains a schema-1 catalog, resolver, shell prerequisite
 checker, isolated selected-source renderer, deterministic configuration
 planner, and safe selected-target apply path with three production modules and
-one profile. It contains no software-provider adapters or saved local state.
+one profile. It also contains the flag-based local-selection state library and
+tests. It contains no software-provider adapters; the saved state itself lives
+outside the repository and managed home sources.
 
 ~~~text
 .
@@ -26,6 +28,7 @@ one profile. It contains no software-provider adapters or saved local state.
 ├── docs/
 │   ├── adr/
 │   ├── cli/
+│   │   └── config/set.md
 │   ├── modules/{shell/zsh,prompt}/
 │   ├── profiles/
 │   ├── user-guide/
@@ -42,6 +45,7 @@ one profile. It contains no software-provider adapters or saved local state.
 │   ├── catalog-records.tmpl
 │   ├── catalog.awk
 │   ├── apply.sh
+│   ├── config-state.sh
 │   ├── plan.sh
 │   ├── prerequisite-check.sh
 │   └── render.sh
@@ -55,6 +59,7 @@ one profile. It contains no software-provider adapters or saved local state.
 │   │   ├── apply-confirmation-hook.sh
 │   │   └── pty-confirm.py
 │   ├── apply.sh
+│   ├── config-state.sh
 │   ├── plan.sh
 │   ├── render.sh
 │   └── run.sh
@@ -96,8 +101,8 @@ release, reporting, or active triage consumer.
 
 Phase 3 is split into focused increments. The following layout implements the
 accepted ADR-0010 shell sources, read-only rendering, selected-target planning,
-and safe apply. Application checks and saved local selection remain later
-increments.
+and safe apply. Application checks remain a later increment; flag-based local
+selection is implemented in Phase 4.
 
 ~~~text
 .chezmoidata/
@@ -153,11 +158,12 @@ configuration sources. Schema-1 module data selects paths below `home/`, but
 contains no file bodies or executable selection logic. Chezmoi remains
 the sole engine for rendered home targets.
 
-No composition file exists. The internal renderer passes a mode-`0600`
-temporary override-data file to chezmoi and removes its private directory on
-every exit path; that local ephemeral file is not part of repository layout or
-saved state. Every plan and apply pass rebuilds it; apply compares two
-invocation-local passes and never reuses a render result or saved plan.
+No composition file exists inside the repository or managed home sources. The
+internal renderer passes a mode-`0600` temporary override-data file to chezmoi
+and removes its private directory on every exit path; that local ephemeral file
+is distinct from saved selection. Every plan and apply pass rebuilds it; apply
+compares two invocation-local passes and never reuses a render result or saved
+plan.
 
 Phase 3 fixtures remain non-production data. The render, plan, and apply suites
 create isolated catalog facts, prerequisite roots, HOME and output trees, and
@@ -166,11 +172,11 @@ local paths. Apply fixtures cover PTY confirmation, fresh-plan drift, exact
 target mutation, verification, idempotency, partial failure, signals, privacy,
 and cleanup on macOS and Debian inputs.
 
-## Planned Phase 4 local state
+## Implemented Phase 4 local state
 
-[ADR 0011](adr/0011-define-local-configuration-workflow.md) is Accepted but
-does not change the current repository layout or released CLI. When
-implemented, one CLI-owned active-selection file will live outside both the
+[ADR 0011](adr/0011-define-local-configuration-workflow.md) is Accepted, and
+`lib/config-state.sh` plus `dotfiles config set` implement its first state
+increment. One CLI-owned active-selection file lives outside both the
 repository and managed HOME sources:
 
 ~~~text
@@ -184,16 +190,27 @@ $HOME/.config/
 ~~~
 
 The HOME form is a fallback only when `XDG_CONFIG_HOME` is unset or empty. The
-dedicated directory and file are planned with modes `0700` and `0600`, strict
-ownership and no-symlink validation, an adjacent writer lock, and atomic
+dedicated directory and file use modes `0700` and `0600`, strict ownership and
+no-symlink validation, an adjacent transient writer lock, and atomic
 same-directory replacement. The file contains canonical schema-1 selection
 intent only. It is not repository data, `.chezmoidata`, a file below `home/`,
 a Chezmoi general configuration file, or a managed home target.
 
+`tests/config-state.sh` uses only the library's private root parameter and
+isolated temporary trees for lifecycle tests. It covers canonical output,
+strict current-state rejection, macOS and Debian resolution, modes, path and
+link safety, lock contention, drift, injected durability failures, signals,
+privacy, non-invocation, and zero managed-home mutation. The private seam is
+not a CLI flag or environment-selected production destination.
+
+Existing `resolve`, `prerequisite check`, `plan`, and `apply` commands do not
+read this file and continue to require an explicit base. Interactive selection,
+saved-state consumption, inspect, and doctor remain later Phase 4 increments.
+
 The accepted decision reserves `$XDG_CACHE_HOME/dotfiles/generated/`, with a
 validated `$HOME/.cache/dotfiles/generated/` fallback, only if a future
 implementation proves a persistent generated-cache need. No cache directory or
-reset command is part of the current or first planned implementation increment.
+reset command is part of the current implementation.
 
 ## Naming rules
 

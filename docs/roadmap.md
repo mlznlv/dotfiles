@@ -140,7 +140,8 @@ applications, remote access, or broad configuration sets.
 
 ## Phase 4: Configuration workflow
 
-**Status:** Architecture accepted; implementation planned.
+**Status:** In progress; architecture and flag-based local selection complete,
+interactive local selection next.
 
 **Objective:** make normal setup possible without editing TOML.
 
@@ -159,10 +160,11 @@ applications, remote access, or broad configuration sets.
    [ADR 0011](adr/0011-define-local-configuration-workflow.md), which defines
    local-selection purpose, storage, schema, precedence, command effects,
    filesystem safety, diagnostics, and cache boundaries. Documentation only.
-2. **Flag-based local selection:** implement the private configuration-state
-   library and `config set` with isolated macOS and Debian coverage. Depends on
-   accepted ADR 0011 and is the first implementation increment it unlocks.
-3. **Interactive local selection:** implement exact, terminal-only selection
+2. **Flag-based local selection (complete):** implemented the private
+   configuration-state library and `config set` with isolated macOS and Debian
+   coverage. Depends on accepted ADR 0011 and is the first implementation
+   increment it unlocks.
+3. **Interactive local selection (next):** implement exact, terminal-only selection
    and confirmation on the same state library. Depends on increment 2.
 4. **Saved-selection consumption:** let `resolve`, `prerequisite check`, `plan`,
    and `apply` load local intent only when an invocation omits an explicit

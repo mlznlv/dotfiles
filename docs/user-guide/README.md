@@ -7,8 +7,9 @@ and applying an explicit dotfiles composition. For exact syntax, use the
 > [!IMPORTANT]
 > The current release can inspect, validate, and resolve catalog data, check
 > selected command/artifact prerequisites, plan selected target changes, and
-> explicitly apply those selected home files through Chezmoi. It cannot install
-> packages or save a profile.
+> explicitly apply those selected home files through Chezmoi. It can also save
+> local profile or module intent without applying it. It cannot install
+> packages.
 >
 > The production catalog exposes the minimal shell composition. Prerequisite
 > identifiers use schema 1. Command and artifact presence checks are available;
@@ -194,20 +195,35 @@ written bytes, and stops at the first failure. A second identical apply prints
 exactly `No changes.` without prompting. Omitted module files are not inspected,
 reported, removed, or cleaned.
 
-## Planned local selection
+## Save local selection
 
-The current CLI does not save a composition; continue passing `--profile` or
-`--modules` to selection-consuming commands. Accepted
-[ADR 0011](../adr/0011-define-local-configuration-workflow.md) defines a later
-local active-selection workflow, but its `config` commands are not available
-until their focused implementation increments ship.
+Save the exact profile or ordered module intent without changing managed home
+configuration:
 
-The planned workflow saves only the profile or module choice. Saving never
-plans, applies, installs, repairs, or changes managed home configuration.
-Explicit selectors continue to override saved state without reading or
-combining with it, and `plan` and `apply` retain fresh validation and explicit
-apply intent. Follow the staged work in the
-[Phase 4 roadmap](../roadmap.md#phase-4-configuration-workflow).
+~~~console
+$ ./bin/dotfiles config set --profile shell.minimal --platform debian
+Proposed local selection:
+Base: profile shell.minimal
+Additional modules: none
+Resolved modules for debian:
+  shell.zsh
+  shell.zsh.autosuggestions
+  prompt.starship
+Local selection saved.
+Managed home configuration: unchanged.
+~~~
+
+The command saves only the profile or module choice and optional additions in
+canonical schema-1 TOML. Saving never checks prerequisites, plans, applies,
+installs, repairs, or changes managed home configuration. See
+[config set](../cli/config/set.md) for explicit module syntax, local path rules,
+recovery, and concurrency limits.
+
+> [!WARNING]
+> `resolve`, `prerequisite check`, `plan`, and `apply` do not consume saved
+> selection yet. Continue passing `--profile` or `--modules` to those commands.
+> Interactive selection, saved-state consumption, inspect, and doctor remain
+> later [Phase 4](../roadmap.md#phase-4-configuration-workflow) increments.
 
 ## Understand failures
 
@@ -239,7 +255,7 @@ Exit codes are stable:
 | `0` | Success, including an empty list |
 | `2` | Invalid command syntax |
 | `3` | Invalid catalog, composition, platform, destination, prerequisite data, ownership, or comparison result |
-| `4` | Chezmoi/checker dependency is unavailable, or application checking is required |
+| `4` | A required component or safe local-state update is unavailable, a post-rename result is uncertain, or application checking is required |
 | `5` | A selected prerequisite is missing or a Chezmoi comparison failed |
 | `6` | Chezmoi apply or post-target verification failed after mutation began |
 | `129`, `130`, `143` | Handled HUP, INT, or TERM interruption |
@@ -254,7 +270,7 @@ roll back or replay the earlier plan.
 Available commands do not:
 
 - Install, remove, or upgrade packages.
-- Save a composition or reusable plan.
+- Save a reusable plan or apply a saved selection implicitly.
 - Invoke Homebrew, mise, or another provider.
 - Open or invoke declared prerequisites.
 - Display destination contents or machine identity, or inspect unselected home
@@ -263,9 +279,11 @@ Available commands do not:
 - Remove, prune, clean, or roll back configuration.
 
 Only `apply` writes managed home configuration, and only after printing and
-recomputing the selected plan with exact intent. Saved profiles, generalized
-recovery, sharing, and repair commands remain planned. Software installation is
-outside the product boundary. Follow delivery in the [roadmap](../roadmap.md).
+recomputing the selected plan with exact intent. `config set` writes only the
+CLI-owned active-selection file and necessary owned configuration directories.
+Interactive selection, generalized recovery, sharing, and repair commands
+remain planned. Software installation is outside the product boundary. Follow
+delivery in the [roadmap](../roadmap.md).
 
 ## Command reference
 
@@ -278,6 +296,7 @@ outside the product boundary. Follow delivery in the [roadmap](../roadmap.md).
 - [List profiles](../cli/profile/list.md)
 - [Inspect a profile](../cli/profile/show.md)
 - [Resolve a composition](../cli/resolve.md)
+- [Save local selection](../cli/config/set.md)
 - [Check prerequisites](../cli/prerequisite/check.md)
 - [Build a configuration plan](../cli/plan.md)
 - [Apply selected configuration](../cli/apply.md)
