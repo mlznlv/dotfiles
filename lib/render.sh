@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Internal, read-only selected-source renderer for future plan and apply paths.
+# Internal, read-only selected-source renderer for plan and apply paths.
 # Arguments: output directory, profile ID, module IDs, added module IDs, platform.
 
 dotfiles_render_cleanup() {
@@ -11,6 +11,15 @@ dotfiles_render_cleanup() {
         done < "$DOTFILES_RENDER_OUTPUT_TEMP_LIST"
     fi
     [ -z "${DOTFILES_RENDER_PRIVATE:-}" ] || rm -rf -- "$DOTFILES_RENDER_PRIVATE"
+}
+
+dotfiles_render_signal() {
+    local local_status=$1
+    if [ -n "${DOTFILES_RENDER_SIGNAL_HANDLER:-}" ] &&
+       declare -F "$DOTFILES_RENDER_SIGNAL_HANDLER" >/dev/null 2>&1; then
+        "$DOTFILES_RENDER_SIGNAL_HANDLER" "$local_status"
+    fi
+    exit "$local_status"
 }
 
 dotfiles_render_scalar_safe() {
@@ -178,9 +187,9 @@ dotfiles_render_selection_internal() (
     DOTFILES_RENDER_PRIVATE=$local_private
     DOTFILES_RENDER_OUTPUT_TEMP_LIST="${local_private}/output-temps"
     trap dotfiles_render_cleanup EXIT
-    trap 'exit 129' HUP
-    trap 'exit 130' INT
-    trap 'exit 143' TERM
+    trap 'dotfiles_render_signal 129' HUP
+    trap 'dotfiles_render_signal 130' INT
+    trap 'dotfiles_render_signal 143' TERM
     chmod 700 "$local_private" || return 4
     : > "$DOTFILES_RENDER_OUTPUT_TEMP_LIST" || return 4
 

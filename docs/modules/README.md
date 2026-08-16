@@ -66,7 +66,8 @@ The available pre-release modules are:
 
 Their metadata and dependencies are available for discovery and resolution.
 Their selected sources are available to the internal isolated renderer and the
-public read-only planner; no public render or apply command exists.
+public read-only planner. Public apply can converge only freshly recomputed,
+confirmed selected targets; no public render command exists.
 
 ## Manifest contract
 

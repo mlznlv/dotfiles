@@ -1,7 +1,7 @@
 # Starship
 
 - Status: Available for discovery, resolution, prerequisite checking,
-  internal read-only rendering, and configuration planning
+  internal read-only rendering, configuration planning, and selected apply
 - Category: prompt
 - Supported platforms: macOS and Debian-family Linux
 - Documentation owner: repository maintainer
@@ -9,8 +9,8 @@
 ## Purpose and result
 
 `prompt.starship` declares the cross-shell Starship prompt as an independent
-prompt layer. Current commands expose its catalog intent but do not install or
-configure Starship.
+prompt layer. Apply can converge its selected configuration, but no command
+installs Starship.
 
 ## Dependencies and conflicts
 
@@ -22,7 +22,7 @@ shell module.
 
 The schema-1 manifest declares `starship` on macOS and Debian.
 `prerequisite check` locates an external executable file through absolute PATH
-entries without invoking it. No managed file is applied to the user's home.
+entries without invoking it.
 
 Accepted ADR 0010 assigns this module only
 `home/dot_config/starship.toml`, rendered as `.config/starship.toml`. The
@@ -39,20 +39,21 @@ There are no module options or local defaults.
 
 ## Plan, apply, verification, and recovery
 
-Read-only planning is available; apply remains unavailable. Inspect metadata
-and preview only the Starship-owned target with:
+Inspect metadata, preview only the Starship-owned target, then explicitly apply
+the same selection with:
 
 ~~~console
 ./bin/dotfiles module show prompt.starship
 ./bin/dotfiles resolve --modules prompt.starship --platform debian
 ./bin/dotfiles prerequisite check --modules prompt.starship --platform debian
 ./bin/dotfiles plan --modules prompt.starship --platform debian
+./bin/dotfiles apply --modules prompt.starship --platform debian
 ~~~
 
 The plan can report create or update for `.config/starship.toml`, or
-`No changes.` It never selects or inspects `.zshrc`. These commands and internal
-rendering are read-only. Correct invalid input or prerequisites and rerun them;
-configuration recovery is deferred with apply.
+`No changes.` Apply never selects or inspects `.zshrc`; it confirms and verifies
+only `.config/starship.toml`. Correct invalid input or a reported failure and
+rerun the command. Completed targets are not rolled back.
 
 ## Platform, security, and privacy notes
 
@@ -64,6 +65,6 @@ is outside the product boundary.
 
 Schema, current ownership, discovery, explicit resolution, profile resolution,
 isolated command-presence tests, and macOS/Ubuntu CI cover this module. Isolated
-Starship-only and Zsh-composed rendering and planning are covered, including
-selected-path scope and zero HOME mutation. Managed home configuration and
-apply are deferred.
+Starship-only and Zsh-composed rendering, planning, and apply are covered,
+including selected-path scope, confirmation, byte verification, idempotency,
+and zero unrelated HOME mutation.

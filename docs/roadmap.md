@@ -59,8 +59,7 @@ entries.
 
 ## Phase 3: Minimal shell vertical slice
 
-**Status:** Deterministic configuration planning complete; safe shell apply
-next.
+**Status:** Complete.
 
 **Objective:** prove end-to-end planning and safe application of explicitly
 selected configuration, without installing or converging software.
@@ -110,10 +109,11 @@ selected configuration, without installing or converging software.
    selected-target Chezmoi comparison, stable privacy-safe create/update
    effects, no-change behavior, and macOS/Debian safety and non-mutation
    coverage. Depends on prerequisite validation and shell configuration.
-10. **Safe configuration apply:** implement `dotfiles apply`, interactive and
-   non-interactive intent checks, selected-source chezmoi application,
-   stop-on-failure reporting, and idempotency tests. Depends on all earlier
-   Phase 3 increments.
+10. **Safe configuration apply (complete):** implemented `dotfiles apply` with
+   exact interactive and non-interactive intent, post-confirmation fresh-plan
+   verification, one-target-at-a-time Chezmoi application, byte verification,
+   stop-on-failure reporting, signal cleanup, and macOS/Debian idempotency
+   coverage. Depends on all earlier Phase 3 increments.
 
 Each increment is one focused pull request and updates its command, module, or
 profile documentation in the same change. Implementation increments branch from

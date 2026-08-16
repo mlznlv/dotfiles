@@ -132,7 +132,7 @@ expected_with_terminal=$(printf '%s\n' \
     terminal.ghostty)
 
 expect_exact "version is stable" 0 "dotfiles 0.1.0-dev" "$CLI" version
-expect_contains "help is available" 0 "All commands in this release are read-only." "$CLI" help
+expect_contains "help is available" 0 "All commands except apply are read-only." "$CLI" help
 expect_exact "production catalog validates" 0 "catalog valid: 3 modules, 1 profile" "$CLI" catalog validate
 expect_contains "production module list exposes Zsh" 0 "shell.zsh" "$CLI" module list --platform macos
 expect_contains "production module list exposes Starship" 0 "prompt.starship" "$CLI" module list --platform debian

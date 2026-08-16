@@ -187,7 +187,8 @@ normalized-target order and passes a closed ephemeral context to chezmoi. That
 context is not a catalog field, saved profile, or compatibility contract. The
 Zsh template compares only known validated module identifiers to render
 optional activation. Rendering and selected-target planning are isolated and
-read-only; apply and home convergence remain unavailable.
+read-only. Apply rebuilds those facts after confirmation and may converge only
+changed targets owned by the resolved selected modules.
 
 ## Schema 1 profile fields
 
@@ -256,4 +257,6 @@ macOS and Debian, deterministic source order, canonical quoting, stale output,
 and temporary-context cleanup. The plan matrix covers create, update,
 no-change, selected-path scope, immediate artifact revalidation, unsafe target
 types, malformed comparison output, privacy, cleanup, and zero HOME mutation
-for both platform inputs.
+for both platform inputs. The apply matrix covers exact and rejected
+confirmation, post-confirmation drift, selected-target mutation and byte
+verification, first-failure reports, signals, idempotency, privacy, and cleanup.

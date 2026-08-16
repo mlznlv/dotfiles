@@ -1,15 +1,16 @@
 # Command guide
 
-Use the CLI to inspect and validate the catalog or preview a module composition.
-Every command available today is read-only: nothing is installed, saved, or
-applied.
+Use the CLI to inspect and validate the catalog, preview a module composition,
+or explicitly apply selected home configuration. Only `apply` mutates managed
+home targets; no command installs software or saves a selection.
 
 Run commands from the repository root with `./bin/dotfiles`.
 
 > [!NOTE]
 > The production catalog contains three shell modules and the `shell.minimal`
 > profile. Command and artifact prerequisite checks are available; application
-> checks and apply are not. Configuration planning is available and read-only.
+> checks remain deferred. Configuration planning and selected apply are
+> available.
 
 ## Quick start
 
@@ -38,19 +39,7 @@ Catalog-backed commands, including planning, require
 | Preview a composition | `dotfiles resolve ...` | [resolve](resolve.md) |
 | Check selected prerequisites | `dotfiles prerequisite check ...` | [prerequisite check](prerequisite/check.md) |
 | Build a read-only configuration plan | `dotfiles plan ...` | [plan](plan.md) |
-
-## Planned Phase 3 commands
-
-The following contract is documented for implementation but is not available
-in the current CLI:
-
-| I will be able to... | Planned command | Contract |
-| --- | --- | --- |
 | Recompute, confirm, and apply selected configuration | `dotfiles apply ...` | [apply](apply.md) |
-
-Apply will reuse the released planner and rendering foundation but requires its
-own implementation and tests. Phase 3 will not install software or support
-saved plans, replay, automatic rollback, or destructive removal.
 
 ## Typical workflow
 
@@ -59,6 +48,7 @@ saved plans, replay, automatic rollback, or destructive removal.
 3. Preview the final dependency-expanded composition with `resolve`.
 4. Check its declared command and artifact prerequisites.
 5. Preview selected home-target changes with `plan`.
+6. Apply the same explicit selection and review the freshly recomputed plan.
 
 ~~~console
 ./bin/dotfiles profile list
@@ -66,6 +56,7 @@ saved plans, replay, automatic rollback, or destructive removal.
 ./bin/dotfiles resolve --profile shell.minimal
 ./bin/dotfiles prerequisite check --profile shell.minimal
 ./bin/dotfiles plan --profile shell.minimal
+./bin/dotfiles apply --profile shell.minimal
 ~~~
 
 The example identifier above is released on macOS and Debian-family Linux.
@@ -97,6 +88,8 @@ Use `--all` with a list command to disable platform filtering. Do not combine
 | `3` | Invalid catalog, composition, platform, destination, prerequisite data, ownership, or comparison result |
 | `4` | Chezmoi/checker dependency is unavailable, or application checking is required |
 | `5` | A selected prerequisite is missing or a Chezmoi comparison failed |
+| `6` | A selected target failed during Chezmoi apply or post-write verification |
+| `129`, `130`, `143` | Handled HUP, INT, or TERM interruption |
 
 Errors are written to standard error. Invalid syntax also suggests
 `dotfiles help`.
@@ -129,12 +122,20 @@ Use a literal absolute HOME directory. Replace unsafe selected-path symlinks,
 directories, or special files outside this CLI, then rerun the plan. The
 planner does not repair or follow them.
 
+### Apply stops after a partial result
+
+The report identifies every changed target as completed, failed, or
+unattempted. Completed targets are not rolled back. Correct the failure and
+rerun `plan` or `apply`; the new invocation recomputes current state and omits
+targets that already converged.
+
 ## Safety
 
-The current CLI reads catalog data, basic operating-system facts, PATH and
-artifact metadata, and selected destination targets during planning. It does
-not open or invoke prerequisites, use the network, request elevated privileges,
-call providers, display destination contents, or change the machine.
+The CLI reads catalog data, basic operating-system facts, PATH and artifact
+metadata, and selected destination targets. It does not open or invoke
+prerequisites, use the network, request elevated privileges, call software
+providers, or display destination contents. Apply delegates only confirmed,
+freshly verified selected files to Chezmoi and performs no rollback or removal.
 
 For an end-to-end introduction, read the [user guide](../user-guide/README.md).
 Future commands are tracked in the [roadmap](../roadmap.md). Contributors adding

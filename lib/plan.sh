@@ -6,6 +6,15 @@ dotfiles_plan_cleanup() {
     [ -z "${DOTFILES_PLAN_PRIVATE:-}" ] || rm -rf -- "$DOTFILES_PLAN_PRIVATE"
 }
 
+dotfiles_plan_signal() {
+    local local_status=$1
+    if [ -n "${DOTFILES_PLAN_SIGNAL_HANDLER:-}" ] &&
+       declare -F "$DOTFILES_PLAN_SIGNAL_HANDLER" >/dev/null 2>&1; then
+        "$DOTFILES_PLAN_SIGNAL_HANDLER" "$local_status"
+    fi
+    exit "$local_status"
+}
+
 dotfiles_plan_valid_home() {
     local local_home=$1
     case "$local_home" in /*) ;; *) return 1 ;; esac
@@ -213,19 +222,86 @@ dotfiles_plan_compare_selection() {
         fi
     done
 
+    if [ -n "${DOTFILES_PLAN_AFTER_COMPARE:-}" ]; then
+        declare -F "$DOTFILES_PLAN_AFTER_COMPARE" >/dev/null 2>&1 || return 4
+        "$DOTFILES_PLAN_AFTER_COMPARE" "$@" "$DOTFILES_PLAN_RECORDS"
+        return $?
+    fi
+
     return 0
 }
 
+dotfiles_plan_format_records() {
+    if [ "$#" -ne 2 ]; then
+        return 3
+    fi
+
+    local local_record_file=$1
+    local local_platform=$2
+    local local_records
+    local local_module local_action local_source local_target local_extra
+    local local_count=0
+    local local_index=0
+
+    [ -f "$local_record_file" ] && [ ! -L "$local_record_file" ] || return 3
+    local_records=$(<"$local_record_file")
+    if [ -z "$local_records" ]; then
+        printf 'No changes.\n'
+        return 0
+    fi
+
+    while IFS=$'\t' read -r local_module local_action local_source local_target local_extra; do
+        [ -n "$local_module" ] || continue
+        if [ -n "$local_extra" ] ||
+           ! printf '%s' "$local_module" | grep -Eq '^[a-z][a-z0-9]*(\.[a-z][a-z0-9-]*)+$' ||
+           ! dotfiles_plan_has_mapping "$local_action" create update ||
+           ! dotfiles_render_scalar_safe "$local_source" ||
+           ! dotfiles_render_scalar_safe "$local_target"; then
+            printf 'error: invalid internal configuration plan record\n' >&2
+            return 3
+        fi
+        local_count=$((local_count + 1))
+    done <<< "$local_records"
+
+    printf 'Prerequisites: satisfied\n'
+    if [ "$local_count" -eq 1 ]; then
+        printf 'Plan: 1 configuration change for %s\n\n' "$local_platform"
+    else
+        printf 'Plan: %s configuration changes for %s\n\n' "$local_count" "$local_platform"
+    fi
+    while IFS=$'\t' read -r local_module local_action local_source local_target local_extra; do
+        [ -n "$local_module" ] || continue
+        local_index=$((local_index + 1))
+        printf '%s. %s %s chezmoi:target:%s\n' "$local_index" "$local_action" "$local_module" "$local_target"
+        printf '   source: %s\n' "$local_source"
+        printf '   network: no; privilege: none\n'
+        [ "$local_index" -eq "$local_count" ] || printf '\n'
+    done <<< "$local_records"
+}
+
 dotfiles_plan_selection() (
-    if [ "$#" -ne 4 ]; then
+    dotfiles_plan_selection_internal "" "$@"
+)
+
+dotfiles_plan_selection_then() (
+    if [ "$#" -ne 5 ] || ! declare -F "$1" >/dev/null 2>&1; then
+        printf 'error: internal planner callback is unavailable\n' >&2
+        return 4
+    fi
+    dotfiles_plan_selection_internal "$@"
+)
+
+dotfiles_plan_selection_internal() {
+    if [ "$#" -ne 5 ]; then
         printf 'error: internal planner requires profile, modules, additions, and platform\n' >&2
         return 2
     fi
 
-    local local_profile=$1
-    local local_modules=$2
-    local local_additional=$3
-    local local_platform=$4
+    local local_callback=$1
+    local local_profile=$2
+    local local_modules=$3
+    local local_additional=$4
+    local local_platform=$5
     local local_home=${HOME:-}
     local local_home_resolved
     local local_temp_parent=${TMPDIR:-/tmp}
@@ -234,10 +310,7 @@ dotfiles_plan_selection() (
     local local_prerequisite_records
     local local_status
     local local_module local_kind local_identifier local_extra
-    local local_count=0
-    local local_index=0
-    local local_action local_source local_target
-    local local_records=
+    local local_rerun_command=${DOTFILES_PLAN_RERUN_COMMAND:-plan}
 
     if [ -n "$local_profile" ] && [ -n "$local_modules" ]; then
         return 2
@@ -263,9 +336,9 @@ dotfiles_plan_selection() (
     fi
     DOTFILES_PLAN_PRIVATE=$local_private
     trap dotfiles_plan_cleanup EXIT
-    trap 'exit 129' HUP
-    trap 'exit 130' INT
-    trap 'exit 143' TERM
+    trap 'dotfiles_plan_signal 129' HUP
+    trap 'dotfiles_plan_signal 130' INT
+    trap 'dotfiles_plan_signal 143' TERM
     chmod 700 "$local_private" || return 4
 
     DOTFILES_PLAN_HOME=$local_home_resolved
@@ -303,7 +376,7 @@ dotfiles_plan_selection() (
                 [ -z "$local_extra" ] || continue
                 printf 'error: module %s requires %s %s on %s\n' "$local_module" "$local_kind" "$local_identifier" "$local_platform" >&2
             done <<< "${PREREQUISITE_MISSING_FACTS:-}"
-            printf 'Provide the missing prerequisites outside this project, then run dotfiles plan again.\n' >&2
+            printf 'Provide the missing prerequisites outside this project, then run dotfiles %s again.\n' "$local_rerun_command" >&2
         elif [ "$local_status" -eq 4 ]; then
             while IFS=$'\t' read -r local_module local_kind local_identifier local_extra; do
                 [ "$local_kind" = application ] || continue
@@ -316,10 +389,15 @@ dotfiles_plan_selection() (
         return "$local_status"
     fi
 
+    DOTFILES_PLAN_AFTER_COMPARE=$local_callback
+    DOTFILES_RENDER_SIGNAL_HANDLER=dotfiles_plan_signal
     if dotfiles_render_selection_then dotfiles_plan_compare_selection "$local_render_output" "$local_profile" "$local_modules" "$local_additional" "$local_platform" 2> "${local_private}/render-error.log"; then
         :
     else
         local_status=$?
+        if [ -n "$local_callback" ]; then
+            return "$local_status"
+        fi
         case "$local_status" in
             3) printf 'error: unsafe or malformed selected-target comparison; no plan was produced\n' >&2 ;;
             4) printf 'error: configuration renderer or Chezmoi comparison is unavailable\n' >&2 ;;
@@ -330,37 +408,9 @@ dotfiles_plan_selection() (
         return "$local_status"
     fi
 
-    local_records=$(<"$DOTFILES_PLAN_RECORDS")
-    if [ -z "$local_records" ]; then
-        printf 'No changes.\n'
+    if [ -n "$local_callback" ]; then
         return 0
     fi
 
-    while IFS=$'\t' read -r local_module local_action local_source local_target local_extra; do
-        [ -n "$local_module" ] || continue
-        if [ -n "$local_extra" ] ||
-           ! printf '%s' "$local_module" | grep -Eq '^[a-z][a-z0-9]*(\.[a-z][a-z0-9-]*)+$' ||
-           ! dotfiles_plan_has_mapping "$local_action" create update ||
-           ! dotfiles_render_scalar_safe "$local_source" ||
-           ! dotfiles_render_scalar_safe "$local_target"; then
-            printf 'error: invalid internal configuration plan record\n' >&2
-            return 3
-        fi
-        local_count=$((local_count + 1))
-    done <<< "$local_records"
-
-    printf 'Prerequisites: satisfied\n'
-    if [ "$local_count" -eq 1 ]; then
-        printf 'Plan: 1 configuration change for %s\n\n' "$local_platform"
-    else
-        printf 'Plan: %s configuration changes for %s\n\n' "$local_count" "$local_platform"
-    fi
-    while IFS=$'\t' read -r local_module local_action local_source local_target local_extra; do
-        [ -n "$local_module" ] || continue
-        local_index=$((local_index + 1))
-        printf '%s. %s %s chezmoi:target:%s\n' "$local_index" "$local_action" "$local_module" "$local_target"
-        printf '   source: %s\n' "$local_source"
-        printf '   network: no; privilege: none\n'
-        [ "$local_index" -eq "$local_count" ] || printf '\n'
-    done <<< "$local_records"
-)
+    dotfiles_plan_format_records "$DOTFILES_PLAN_RECORDS" "$local_platform"
+}

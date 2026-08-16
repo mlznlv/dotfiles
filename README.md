@@ -6,8 +6,8 @@ and Debian-family Linux.
 > [!IMPORTANT]
 > The read-only schema-1 shell catalog, resolver, command/artifact prerequisite
 > checks, isolated selected-source renderer, and configuration plan are
-> available. No public render command exists; managed home configuration and
-> apply are not implemented yet.
+> available. Safe selected configuration apply is also available. No public
+> render command or software installation behavior exists.
 
 ## Start here
 
@@ -45,7 +45,7 @@ Read the [architecture](docs/architecture.md) and
 [architecture decisions](docs/adr/README.md) for the normative design and
 proposals under review.
 
-## Read-only commands
+## Commands
 
 With chezmoi available, users and contributors can inspect and resolve the shell catalog:
 
@@ -57,11 +57,14 @@ With chezmoi available, users and contributors can inspect and resolve the shell
 ./bin/dotfiles resolve --profile shell.minimal --platform debian
 ./bin/dotfiles prerequisite check --profile shell.minimal --platform debian
 ./bin/dotfiles plan --profile shell.minimal --platform debian
+./bin/dotfiles apply --profile shell.minimal --platform debian
 ~~~
 
-These commands do not install packages, change configuration, call providers, or
-apply home state. Planning compares only selected targets and does not print
-their contents.
+Discovery, resolution, prerequisite checking, and planning are read-only.
+Planning compares only selected targets and does not print their contents.
+`apply` prints and recomputes the complete plan, requires exact interactive
+`yes` or `--yes`, and changes only verified selected home targets through
+Chezmoi. No command installs packages or calls software providers.
 
 ## Documentation
 
@@ -78,10 +81,11 @@ their contents.
 
 ## Project status
 
-The architecture foundation, schema-1 shell composition, prerequisite checks,
-selection-aware read-only shell rendering, and deterministic configuration
-planning are established. Application checks, managed home configuration, and
-apply remain later [roadmap](docs/roadmap.md) increments.
+The architecture foundation and minimal schema-1 shell vertical slice are
+complete: explicit composition, prerequisites, isolated rendering,
+deterministic planning, and safe idempotent selected apply are established.
+Application checks, saved selection, broader modules, and stable promotion
+remain later [roadmap](docs/roadmap.md) increments.
 
 Development integrates through `next`; `master` remains the stable branch until
 an explicitly reviewed promotion. See [Contributing](CONTRIBUTING.md) for the

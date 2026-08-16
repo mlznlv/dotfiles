@@ -440,7 +440,7 @@ case "$help_output" in
         ;;
     *) STATUS=1; OUTPUT=$help_output; fail 'built-in help lists the exact plan syntax' ;;
 esac
-case "$help_output" in *'dotfiles apply'*) STATUS=1; OUTPUT=$help_output; fail 'built-in help keeps apply unavailable' ;; *) pass 'built-in help keeps apply unavailable' ;; esac
+case "$help_output" in *'dotfiles apply'*) pass 'built-in help lists apply after plan' ;; *) STATUS=1; OUTPUT=$help_output; fail 'built-in help lists apply after plan' ;; esac
 
 cleanup_ok=1
 for path_log in "$PRIVATE_PATH_LOG" "$CONTEXT_PATH_LOG"; do
