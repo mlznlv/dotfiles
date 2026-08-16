@@ -41,8 +41,9 @@ After approval, apply independently rebuilds catalog resolution, ownership,
 prerequisites, the canonical artifact fact, render context, rendered files, and
 changed-target records from the original CLI input. The canonical records,
 selection, context, artifact fact, and rendered bytes must match the displayed
-plan's private snapshot exactly. Drift fails before Chezmoi mutation and asks
-the user to rerun the command.
+plan's private snapshot exactly. Changed destination base bytes are also
+snapshotted privately during both passes and must match. Drift fails before
+Chezmoi mutation and asks the user to rerun the command.
 
 ## Mutation boundary
 
@@ -55,10 +56,11 @@ symlinks, secret integration, and recursion are excluded. `--force` is passed
 only after CLI confirmation.
 
 Immediately before each invocation, apply rechecks the target and existing
-parents. Autosuggestions also revalidates the same canonical contained artifact
-immediately before applying the Zsh-owned `.zshrc`. After Chezmoi succeeds, the
-target must be a regular non-symlink file whose bytes equal the fresh render
-before it counts as completed.
+parents. An update target's bytes must still match its fresh post-confirmation
+base snapshot. Autosuggestions also revalidates the same canonical contained
+artifact immediately before applying the Zsh-owned `.zshrc`. After Chezmoi
+succeeds, the target must be a regular non-symlink file whose bytes equal the
+fresh render before it counts as completed.
 
 Omitted modules are outside the command's scope. Starship-only apply never
 inspects or changes `.zshrc`. A narrower Zsh selection may converge `.zshrc`
@@ -116,9 +118,10 @@ invocation. The new invocation recomputes current state, omits already
 converged targets, and never replays the earlier plan. No removal, repair,
 automatic retry, backup, or broad recovery action is performed.
 
-All Chezmoi output, raw paths, rendered files, plan authority, cache, state, and
-errors remain in mode-restricted temporary storage and are removed on success,
-no-change, cancellation, failure, and handled signals.
+All Chezmoi output, raw paths, destination base snapshots, rendered files, plan
+authority, cache, state, and errors remain in mode-restricted temporary storage
+and are removed on success, no-change, cancellation, failure, and handled
+signals.
 
 ## Exit codes
 

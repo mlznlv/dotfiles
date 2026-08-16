@@ -412,6 +412,19 @@ check_contains 'confirmation-time destination drift is actionable' 'configuratio
 check_equal 'confirmation-time destination drift invokes no apply' "$INVOCATIONS_AFTER" "$INVOCATIONS_BEFORE"
 check_private_output 'confirmation-time destination drift output is private'
 
+home=$(new_home update-state-drift)
+mkdir -p "$home/.config"
+printf 'first outdated state\n' > "$home/.config/starship.toml"
+export DOTFILES_CONFIRM_HOOK_TARGET="$home/.config/starship.toml"
+run_apply_tty yes "$home" "$starship_targets" --modules prompt.starship --platform debian
+check_equal 'confirmation-time update-to-different-update drift status' "$STATUS" 3
+check_contains 'confirmation-time update-to-different-update drift is actionable' \
+    'configuration changed or became unsafe after confirmation'
+check_equal 'confirmation-time update-to-different-update drift invokes no apply' \
+    "$INVOCATIONS_AFTER" "$INVOCATIONS_BEFORE"
+check_equal 'confirmation-time update-to-different-update preserves the newer bytes' \
+    "$(<"$home/.config/starship.toml")" 'changed while confirmation was pending'
+
 home=$(new_home prerequisite-drift)
 export DOTFILES_CONFIRM_HOOK_MODE=remove-prerequisite
 export DOTFILES_CONFIRM_HOOK_TARGET="$PROBE_BIN/starship"
@@ -499,6 +512,25 @@ export DOTFILES_APPLY_PROBE_TARGET=
 export DOTFILES_APPLY_PROBE_NEXT_TARGET=
 
 reset_artifact
+home=$(new_home between-target-edit)
+mkdir -p "$home/.config/zsh"
+printf 'first outdated state\n' > "$home/.config/zsh/autosuggestions.zsh"
+export DOTFILES_APPLY_PROBE_MODE=edit-next-target
+export DOTFILES_APPLY_PROBE_TARGET=.config/starship.toml
+export DOTFILES_APPLY_PROBE_NEXT_TARGET=.config/zsh/autosuggestions.zsh
+run_apply "$home" "$profile_targets" --profile shell.minimal --platform debian --yes
+check_equal 'between-target byte edit status' "$STATUS" 6
+check_contains 'between-target byte edit reports exact partial state' \
+    'Apply failed: 1 completed, 1 failed, 1 unattempted'
+check_equal 'between-target byte edit stops before affected invocation' \
+    "$((INVOCATIONS_AFTER - INVOCATIONS_BEFORE))" 1
+check_equal 'between-target byte edit preserves the newer bytes' \
+    "$(<"$home/.config/zsh/autosuggestions.zsh")" 'changed between target invocations'
+export DOTFILES_APPLY_PROBE_MODE=delegate
+export DOTFILES_APPLY_PROBE_TARGET=
+export DOTFILES_APPLY_PROBE_NEXT_TARGET=
+
+reset_artifact
 home=$(new_home directory-swap)
 export DOTFILES_APPLY_PROBE_MODE=swap-next-directory
 export DOTFILES_APPLY_PROBE_TARGET=.config/starship.toml
@@ -548,7 +580,7 @@ fi
 export DOTFILES_PTY_CONFIRM_HOOK=
 export DOTFILES_CONFIRM_HOOK_MODE=
 
-if [ -f "$APPLY_PRIVATE_MODE_LOG" ] && ! grep -Ev '^600 700 700 700 600 600 600 600$' "$APPLY_PRIVATE_MODE_LOG" | grep -q .; then
+if [ -f "$APPLY_PRIVATE_MODE_LOG" ] && ! grep -Ev '^600 700 700 700 600 600 600 600 700$' "$APPLY_PRIVATE_MODE_LOG" | grep -q .; then
     pass 'apply context, cache, records, and captures use restrictive modes'
 else
     STATUS=1; OUTPUT='unexpected apply private mode'; fail 'apply context, cache, records, and captures use restrictive modes'

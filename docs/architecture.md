@@ -206,17 +206,18 @@ Apply requires the exact interactive answer `yes`, or explicit `--yes` for
 non-interactive input. It first prints the complete current plan, then rebuilds
 every catalog, prerequisite, artifact, context, render, and comparison fact
 after confirmation. Canonical records, selected-source mappings, context,
-artifact identity, and rendered bytes must match the privately retained first
-pass before mutation begins.
+artifact identity, rendered bytes, and private snapshots of changed destination
+base bytes must match the privately retained first pass before mutation begins.
 
 Chezmoi applies one changed selected target at a time in plan order with user
 configuration, custom tools, prompts, externals, scripts, recursion, and
 unselected targets excluded. Apply rechecks destination safety immediately
-before each invocation and verifies the resulting regular file byte-for-byte
-against the fresh render before counting it completed. Autosuggestions is
-revalidated again immediately before the Zsh-owned `.zshrc` target. The first
-failure stops later invocations and reports completed, failed, and unattempted
-targets without rollback. Repeated apply converges idempotently.
+before each invocation, including equality with the fresh base snapshot for an
+update, and verifies the resulting regular file byte-for-byte against the fresh
+render before counting it completed. Autosuggestions is revalidated again
+immediately before the Zsh-owned `.zshrc` target. The first failure stops later
+invocations and reports completed, failed, and unattempted targets without
+rollback. Repeated apply converges idempotently.
 
 ## State, safety, and privacy
 

@@ -20,6 +20,85 @@ dotfiles_apply_record_count() {
     printf '%s\n' "$local_count"
 }
 
+dotfiles_apply_snapshot_bases() {
+    if [ "$#" -ne 2 ]; then
+        return 3
+    fi
+
+    local local_records=$1
+    local local_snapshot_directory=$2
+    local local_allowed=0
+    local local_index=0
+    local local_module local_action local_source local_target local_extra
+    local local_destination
+
+    if [ -n "${DOTFILES_APPLY_PRIVATE:-}" ]; then
+        case "$local_snapshot_directory" in
+            "$DOTFILES_APPLY_PRIVATE"/*) local_allowed=1 ;;
+        esac
+    fi
+    if [ -n "${DOTFILES_PLAN_PRIVATE:-}" ]; then
+        case "$local_snapshot_directory" in
+            "$DOTFILES_PLAN_PRIVATE"/*) local_allowed=1 ;;
+        esac
+    fi
+    [ "$local_allowed" -eq 1 ] || return 3
+    [ -f "$local_records" ] && [ ! -L "$local_records" ] || return 3
+    mkdir "$local_snapshot_directory" || return 4
+
+    while IFS=$'\t' read -r local_module local_action local_source local_target local_extra; do
+        [ -n "$local_module" ] || continue
+        local_index=$((local_index + 1))
+        if [ -n "$local_extra" ] || [ -z "$local_source" ] ||
+           ! dotfiles_plan_target_safe "$DOTFILES_PLAN_HOME" "$local_target"; then
+            return 3
+        fi
+        local_destination="${DOTFILES_PLAN_HOME}/${local_target}"
+        case "$local_action" in
+            create)
+                [ ! -e "$local_destination" ] && [ ! -L "$local_destination" ] || return 3
+                ;;
+            update)
+                [ -f "$local_destination" ] && [ ! -L "$local_destination" ] || return 3
+                cp -- "$local_destination" "${local_snapshot_directory}/${local_index}" || return 4
+                chmod 600 "${local_snapshot_directory}/${local_index}" || return 4
+                cmp -s "${local_snapshot_directory}/${local_index}" "$local_destination" || return 3
+                ;;
+            *) return 3 ;;
+        esac
+    done < "$local_records"
+}
+
+dotfiles_apply_bases_match() {
+    if [ "$#" -ne 3 ]; then
+        return 3
+    fi
+
+    local local_records=$1
+    local local_displayed_bases=$2
+    local local_fresh_bases=$3
+    local local_index=0
+    local local_module local_action local_source local_target local_extra
+
+    [ -d "$local_displayed_bases" ] && [ ! -L "$local_displayed_bases" ] || return 3
+    [ -d "$local_fresh_bases" ] && [ ! -L "$local_fresh_bases" ] || return 3
+    while IFS=$'\t' read -r local_module local_action local_source local_target local_extra; do
+        [ -n "$local_module" ] || continue
+        local_index=$((local_index + 1))
+        case "$local_action" in
+            create)
+                [ ! -e "${local_displayed_bases}/${local_index}" ] &&
+                    [ ! -e "${local_fresh_bases}/${local_index}" ] || return 3
+                ;;
+            update)
+                cmp -s "${local_displayed_bases}/${local_index}" \
+                    "${local_fresh_bases}/${local_index}" || return 3
+                ;;
+            *) return 3 ;;
+        esac
+    done < "$local_records"
+}
+
 dotfiles_apply_capture_displayed() {
     if [ "$#" -ne 9 ]; then
         return 3
@@ -58,10 +137,12 @@ dotfiles_apply_capture_displayed() {
         "${DOTFILES_APPLY_DISPLAYED}/selection.tsv" \
         "${DOTFILES_APPLY_DISPLAYED}/records.tsv" \
         "${DOTFILES_APPLY_DISPLAYED}/artifact" || return 4
+    dotfiles_apply_snapshot_bases "$local_records" \
+        "${DOTFILES_APPLY_DISPLAYED}/destination-bases"
 }
 
 dotfiles_apply_authority_matches() {
-    if [ "$#" -ne 5 ]; then
+    if [ "$#" -ne 6 ]; then
         return 3
     fi
 
@@ -70,12 +151,15 @@ dotfiles_apply_authority_matches() {
     local local_artifact=$3
     local local_render_output=$4
     local local_records=$5
+    local local_fresh_bases=$6
     local local_displayed_artifact
     local local_module local_source local_target local_extra
 
     cmp -s "${DOTFILES_APPLY_DISPLAYED}/context.toml" "$local_context" || return 3
     cmp -s "${DOTFILES_APPLY_DISPLAYED}/selection.tsv" "$local_selection_file" || return 3
     cmp -s "${DOTFILES_APPLY_DISPLAYED}/records.tsv" "$local_records" || return 3
+    dotfiles_apply_bases_match "$local_records" \
+        "${DOTFILES_APPLY_DISPLAYED}/destination-bases" "$local_fresh_bases" || return 3
     local_displayed_artifact=$(<"${DOTFILES_APPLY_DISPLAYED}/artifact")
     [ "$local_displayed_artifact" = "$local_artifact" ] || return 3
 
@@ -196,9 +280,12 @@ dotfiles_apply_recompute_and_apply() {
     local local_module local_action local_source local_target local_extra
     local local_destination
     local local_rendered_target
+    local local_base_snapshot="${DOTFILES_PLAN_PRIVATE}/destination-bases"
 
+    dotfiles_apply_snapshot_bases "$local_plan_records" "$local_base_snapshot" || return $?
     dotfiles_apply_authority_matches "$local_context" "$local_selection_file" \
-        "$local_artifact" "$local_render_output" "$local_plan_records" || return 3
+        "$local_artifact" "$local_render_output" "$local_plan_records" \
+        "$local_base_snapshot" || return 3
     command -v "$local_apply_chezmoi" >/dev/null 2>&1 || return 4
     local_total=$(dotfiles_apply_record_count "$local_plan_records") || return $?
     [ "$local_total" -gt 0 ] || return 3
@@ -224,22 +311,6 @@ dotfiles_apply_recompute_and_apply() {
         local_destination="${DOTFILES_PLAN_HOME}/${local_target}"
         local_rendered_target="${local_render_output}/${local_target}"
 
-        dotfiles_plan_target_safe "$DOTFILES_PLAN_HOME" "$local_target" || {
-            dotfiles_apply_fail_target "$local_plan_records" "$local_index" 3
-            return $?
-        }
-        case "$local_action" in
-            create) [ ! -e "$local_destination" ] || {
-                dotfiles_apply_fail_target "$local_plan_records" "$local_index" 3
-                return $?
-            } ;;
-            update) [ -f "$local_destination" ] && [ ! -L "$local_destination" ] || {
-                dotfiles_apply_fail_target "$local_plan_records" "$local_index" 3
-                return $?
-            } ;;
-            *) return 3 ;;
-        esac
-
         if [ "$local_target" = .zshrc ] && [ -n "$local_artifact" ]; then
             dotfiles_apply_recheck_artifact "$local_profile" "$local_modules" "$local_additional" \
                 "$local_platform" "$local_artifact" || {
@@ -248,6 +319,25 @@ dotfiles_apply_recompute_and_apply() {
                 return $?
             }
         fi
+
+        dotfiles_plan_target_safe "$DOTFILES_PLAN_HOME" "$local_target" || {
+            dotfiles_apply_fail_target "$local_plan_records" "$local_index" 3
+            return $?
+        }
+        case "$local_action" in
+            create) [ ! -e "$local_destination" ] && [ ! -L "$local_destination" ] || {
+                dotfiles_apply_fail_target "$local_plan_records" "$local_index" 3
+                return $?
+            } ;;
+            update)
+                if [ ! -f "$local_destination" ] || [ -L "$local_destination" ] ||
+                   ! cmp -s "${local_base_snapshot}/${local_index}" "$local_destination"; then
+                    dotfiles_apply_fail_target "$local_plan_records" "$local_index" 3
+                    return $?
+                fi
+                ;;
+            *) return 3 ;;
+        esac
 
         DOTFILES_APPLY_MUTATION_STARTED=1
         : > "$DOTFILES_APPLY_OUTPUT_LOG" || return 6

@@ -114,6 +114,11 @@ render_private=$(dirname -- "$context")
 [ -f "${apply_private}/apply-output.log" ] || fail_probe 89
 [ -f "${apply_private}/apply-error.log" ] || fail_probe 89
 [ -f "${apply_private}/apply-recheck.log" ] || fail_probe 89
+[ -d "${apply_private}/destination-bases" ] && [ ! -L "${apply_private}/destination-bases" ] || fail_probe 89
+for base_file in "${apply_private}/destination-bases"/*; do
+    [ -e "$base_file" ] || continue
+    [ -f "$base_file" ] && [ ! -L "$base_file" ] && [ "$(stat_mode "$base_file")" = 600 ] || fail_probe 89
+done
 [ "$apply_private" != "$render_private" ] || fail_probe 89
 [ "$(dirname -- "$state")" = "$apply_private" ] || fail_probe 89
 [ -d "$apply_private" ] && [ ! -L "$apply_private" ] || fail_probe 89
@@ -122,10 +127,11 @@ render_private=$(dirname -- "$context")
 [ -f "$context" ] && [ ! -L "$context" ] || fail_probe 89
 
 printf '%s\n%s\n' "$apply_private" "$render_private" >> "$DOTFILES_APPLY_PRIVATE_PATH_LOG"
-printf '%s %s %s %s %s %s %s %s\n' "$(stat_mode "$context")" "$(stat_mode "$render_private")" \
+printf '%s %s %s %s %s %s %s %s %s\n' "$(stat_mode "$context")" "$(stat_mode "$render_private")" \
     "$(stat_mode "$apply_private")" "$(stat_mode "$cache")" \
     "$(stat_mode "${apply_private}/records.tsv")" "$(stat_mode "${apply_private}/apply-output.log")" \
     "$(stat_mode "${apply_private}/apply-error.log")" "$(stat_mode "${apply_private}/apply-recheck.log")" \
+    "$(stat_mode "${apply_private}/destination-bases")" \
     >> "$DOTFILES_APPLY_PRIVATE_MODE_LOG"
 printf 'apply\t%s\n' "$relative_target" >> "$DOTFILES_APPLY_INVOCATION_LOG"
 
@@ -177,6 +183,13 @@ case ${DOTFILES_APPLY_PROBE_MODE:-delegate} in
             next_target="${HOME}/${DOTFILES_APPLY_PROBE_NEXT_TARGET}"
             rm -f -- "$next_target"
             mkdir -p "$next_target"
+        fi
+        ;;
+    edit-next-target)
+        run_real_apply "$@" || exit $?
+        if [ "$relative_target" = "$DOTFILES_APPLY_PROBE_TARGET" ]; then
+            next_target="${HOME}/${DOTFILES_APPLY_PROBE_NEXT_TARGET}"
+            printf 'changed between target invocations\n' > "$next_target"
         fi
         ;;
     term-target)
