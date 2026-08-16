@@ -25,6 +25,7 @@ supersedes an earlier one instead of rewriting history.
 | [0008](0008-define-portable-share-artifact-discovery.md) | Accepted | Define portable share artifact discovery |
 | [0009](0009-define-pre-release-schema-versioning.md) | Accepted | Define pre-release schema versioning |
 | [0010](0010-define-selection-aware-shell-rendering.md) | Accepted | Define selection-aware shell rendering |
+| [0011](0011-define-local-configuration-workflow.md) | Proposed | Define the local configuration workflow |
 
 ADR 0007 partially supersedes ADRs 0004 and 0006. Their unaffected safety
 decisions and immutable historical text remain accepted.
@@ -38,6 +39,11 @@ Its substantive configuration-only decisions remain accepted.
 
 ADR 0010 defines an ephemeral render context, exact shell-target ownership,
 and selection-aware activation for the later managed-shell implementation.
+
+ADR 0011 proposes a CLI-owned active-selection file and the Phase 4 command,
+precedence, safety, inspection, and cache boundaries. It is not binding and
+introduces no released behavior until the repository owner accepts it and
+focused implementation increments ship.
 
 Copy [the template](0000-template.md) when proposing a new decision. Use the next
 four-digit sequence number and a lowercase kebab-case filename.

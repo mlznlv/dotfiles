@@ -140,17 +140,41 @@ applications, remote access, or broad configuration sets.
 
 ## Phase 4: Configuration workflow
 
-**Status:** Planned.
+**Status:** Architecture gate proposed; implementation is blocked on owner
+acceptance of ADR 0011.
 
 **Objective:** make normal setup possible without editing TOML.
 
 **Deliverables:**
 
 - Interactive and flag-based configuration commands.
-- Local chezmoi configuration schema and validation.
+- A dedicated CLI-owned schema-1 active-selection file and validation.
 - Inspect and doctor commands.
 - Clear separation between changing choices and applying them.
-- Migration-free reset of generated cache data.
+- A generated-cache reset only if a real cache consumer is first accepted and
+  implemented.
+
+**Implementation increments:**
+
+1. **Architecture gate (proposed):** review and accept
+   [ADR 0011](adr/0011-define-local-configuration-workflow.md), which defines
+   local-selection purpose, storage, schema, precedence, command effects,
+   filesystem safety, diagnostics, and cache boundaries. Documentation only.
+2. **Flag-based local selection:** implement the private configuration-state
+   library and `config set` with isolated macOS and Debian coverage. Depends on
+   accepted ADR 0011 and is the first implementation increment it unlocks.
+3. **Interactive local selection:** implement exact, terminal-only selection
+   and confirmation on the same state library. Depends on increment 2.
+4. **Saved-selection consumption:** let `resolve`, `prerequisite check`, `plan`,
+   and `apply` load local intent only when an invocation omits an explicit
+   base. Preserve explicit-selector precedence and all fresh Phase 3 checks.
+   Depends on increment 2 and follows increment 3.
+5. **Inspect and doctor:** add read-only selection inspection and narrow local
+   state diagnosis. Depends on increment 2 and the consuming-command contract
+   in increment 4.
+6. **Generated-cache reset (conditional):** implement only after a named cache
+   consumer and exact entry allowlist are accepted and implemented. Otherwise
+   defer this increment indefinitely.
 
 **Acceptance criteria:**
 
@@ -158,8 +182,12 @@ applications, remote access, or broad configuration sets.
 - Configuration changes never apply system changes implicitly.
 - Local settings contain no secrets or repository-visible machine identity.
 - Invalid combinations are rejected before apply.
+- Explicit selectors remain independent of saved local state.
 
 **Depends on:** phase 3.
+
+Portable saved/shared profiles remain Phase 5 work. Broader workstation
+modules and profiles remain Phase 6 work.
 
 ## Phase 5: Saved and shared profiles
 
