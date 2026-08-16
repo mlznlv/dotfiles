@@ -197,13 +197,12 @@ reported, removed, or cleaned.
 ## Planned local selection
 
 The current CLI does not save a composition; continue passing `--profile` or
-`--modules` to selection-consuming commands. Proposed
+`--modules` to selection-consuming commands. Accepted
 [ADR 0011](../adr/0011-define-local-configuration-workflow.md) defines a later
 local active-selection workflow, but its `config` commands are not available
-until the decision is accepted and their focused implementation increments
-ship.
+until their focused implementation increments ship.
 
-The proposed workflow saves only the profile or module choice. Saving never
+The planned workflow saves only the profile or module choice. Saving never
 plans, applies, installs, repairs, or changes managed home configuration.
 Explicit selectors continue to override saved state without reading or
 combining with it, and `plan` and `apply` retain fresh validation and explicit

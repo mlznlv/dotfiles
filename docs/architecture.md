@@ -7,7 +7,7 @@ discovery commands, resolver, command/artifact prerequisite checks, and
 isolated selected-source renderer and planner are released. Safe selected
 configuration apply is also released. Application checks and saved local
 selection remain planned. [ADR 0011](adr/0011-define-local-configuration-workflow.md)
-proposes the local-selection architecture; it is non-binding and no described
+defines the accepted local-selection architecture, but no described
 configuration command is available yet.
 
 [ADR 0007](adr/0007-define-configuration-only-modules.md) defines the
@@ -51,22 +51,22 @@ flowchart LR
     F -->|"missing"| J["Actionable error; no mutation"]
 ~~~
 
-## Proposed local-selection input
+## Planned local-selection input
 
 Current selection-consuming commands require an explicit `--profile` or
-`--modules` base. ADR 0011 proposes one CLI-owned schema-1 active-selection
+`--modules` base. ADR 0011 defines one CLI-owned schema-1 active-selection
 file at `$XDG_CONFIG_HOME/dotfiles/active-selection.toml`, falling back to
 `$HOME/.config/dotfiles/active-selection.toml` only when `XDG_CONFIG_HOME` is
 unset or empty. The file records an exact profile or ordered module base plus
 ordered additional modules. It stores user intent, not resolved dependencies,
 platform facts, render data, plans, machine identity, or apply authorization.
 
-Under the proposal, an explicit invocation base remains fully authoritative
-and does not read, merge, validate, or rewrite saved state. Without an explicit
-base, a command loads the saved base and additions. Invocation `--add` can
-augment that local choice transiently, while `--platform` always remains an
-invocation fact. Missing, unsafe, non-canonical, or catalog-invalid state fails
-closed instead of selecting a default.
+Under the accepted contract, an explicit invocation base remains fully
+authoritative and does not read, merge, validate, or rewrite saved state.
+Without an explicit base, a command loads the saved base and additions.
+Invocation `--add` can augment that local choice transiently, while
+`--platform` always remains an invocation fact. Missing, unsafe, non-canonical,
+or catalog-invalid state fails closed instead of selecting a default.
 
 The planned `config set` and `config interactive` commands change only the
 active-selection file; users still run `plan` and `apply` separately. Planned
@@ -75,13 +75,13 @@ selection state. CLI-owned locking, restrictive permissions, same-directory
 atomic replacement, and fail-closed path checks protect the file. Chezmoi
 continues to own all managed-home rendering, comparison, and application.
 
-No persistent generated-cache consumer exists, so the proposal creates no
+No persistent generated-cache consumer exists, so the contract creates no
 cache and releases no reset command. A reset remains conditional on a later,
 named consumer and a bounded entry allowlist. See
 [ADR 0011](adr/0011-define-local-configuration-workflow.md) and the
-[Phase 4 roadmap](roadmap.md#phase-4-configuration-workflow). Acceptance of
-the ADR unlocks flag-based local selection first; it does not itself release
-any command.
+[Phase 4 roadmap](roadmap.md#phase-4-configuration-workflow). The accepted ADR
+unlocks flag-based local selection first; it does not itself release any
+command.
 
 ## Neutral core
 
@@ -258,7 +258,7 @@ rollback. Repeated apply converges idempotently.
 The target system derives state from versioned catalogs and chezmoi source
 state, generic prerequisite presence, and current selected destination state.
 The planner disables local chezmoi configuration and custom diff behavior. It
-has no custom state database. The Proposed ADR 0011 active-selection file is a
+has no custom state database. The accepted ADR 0011 active-selection file is a
 CLI-owned input convenience, not managed-home or plan state. Disposable
 generated caches must not become authority.
 
@@ -299,4 +299,4 @@ in [repository structure](repository-structure.md), and delivery order in the
 - [ADR 0008: Define portable share artifact discovery](adr/0008-define-portable-share-artifact-discovery.md)
 - [ADR 0009: Define pre-release schema versioning](adr/0009-define-pre-release-schema-versioning.md)
 - [ADR 0010: Define selection-aware shell rendering](adr/0010-define-selection-aware-shell-rendering.md)
-- [ADR 0011: Define the local configuration workflow (Proposed)](adr/0011-define-local-configuration-workflow.md)
+- [ADR 0011: Define the local configuration workflow](adr/0011-define-local-configuration-workflow.md)

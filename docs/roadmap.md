@@ -140,8 +140,7 @@ applications, remote access, or broad configuration sets.
 
 ## Phase 4: Configuration workflow
 
-**Status:** Architecture gate proposed; implementation is blocked on owner
-acceptance of ADR 0011.
+**Status:** Architecture accepted; implementation planned.
 
 **Objective:** make normal setup possible without editing TOML.
 
@@ -156,7 +155,7 @@ acceptance of ADR 0011.
 
 **Implementation increments:**
 
-1. **Architecture gate (proposed):** review and accept
+1. **Architecture gate (complete):** accepted
    [ADR 0011](adr/0011-define-local-configuration-workflow.md), which defines
    local-selection purpose, storage, schema, precedence, command effects,
    filesystem safety, diagnostics, and cache boundaries. Documentation only.

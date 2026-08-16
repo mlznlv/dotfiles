@@ -1,6 +1,6 @@
 # ADR 0011: Define the local configuration workflow
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-08-16
 - Supersedes: None
 - Superseded by: None
@@ -371,32 +371,54 @@ hostname, device identity, private infrastructure, secret, or unrelated path.
 
 Configuration writers use a mode-`0700` lock directory named
 `active-selection.lock` beside the file. Atomic lock-directory creation is the
-single-writer gate. A second writer does not wait, merge, or steal the lock; it
-fails deterministically with status 3. Handled exits remove only the lock they
-created. A stale lock is diagnosed but never deleted automatically. Recovery
-requires the user to confirm no writer exists before removing the abbreviated
-standard-root lock directory.
+single-writer gate for CLI writers that follow this contract. A second CLI
+writer does not wait, merge, or steal the lock; it fails deterministically with
+status 3. Handled exits remove only the lock they created. A stale lock is
+diagnosed but never deleted automatically. Recovery requires the user to
+confirm no writer exists before removing the abbreviated standard-root lock
+directory.
+
+The lock cannot serialize an editor or another process that ignores it. The
+CLI-owned document is not a supported concurrent-edit surface. Portable regular
+file replacement provides no atomic compare-and-swap conditioned on the
+previous file identity or bytes, so the hard non-overwrite guarantee applies
+only to lock-cooperating CLI writers. External drift receives the best-effort
+detection defined below; the contract does not claim that an uncooperative
+write in the final check-to-rename window can always be preserved or detected.
 
 After locking, the writer revalidates the parent and existing destination. It
 privately snapshots the prior regular file or its absence. It writes the
 complete validated canonical document to a mode-`0600` unpredictable temporary
 file in the same validated directory, flushes file data, and rechecks parent
 containment, types, ownership, permissions, and the byte-identical prior state.
-Any concurrent destination replacement or edit aborts the operation.
+Any external destination replacement or edit observed by this last pre-rename
+check aborts with status 3 and preserves the externally written destination.
 
-Only then may one atomic same-directory rename replace the destination. The
-critical rename and directory flush defer handled-signal reporting so a signal
-cannot produce a partial document or an ambiguous half-commit. Temporary files
-and the owned lock are removed on success and every handled pre-commit failure.
-No code follows a destination or parent symlink, writes through an unsafe type,
-or silently merges concurrent selections.
+Only then may one ordinary atomic same-directory rename replace the
+destination. This guarantees that readers observe one complete document, but
+the rename itself is unconditional: a non-cooperating write after the last
+pre-rename check may be displaced without detection. Immediately after rename,
+the writer revalidates the parent, destination type, ownership, permissions,
+and exact committed bytes before flushing the directory. Drift observed by
+that post-rename check reports uncertain status 4 with `config doctor`
+guidance. It cannot retroactively identify a file that was replaced before the
+rename.
+
+The critical rename, post-rename validation, and directory flush defer
+handled-signal reporting so a signal cannot produce a partial document or an
+ambiguous CLI result. Temporary files and the owned lock are removed on
+success and every handled pre-commit failure. No code follows a destination or
+parent symlink, writes through an unsafe type, or silently merges selections.
 
 Parse, schema, catalog, composition, cancellation, pre-rename interruption,
-temporary-write, flush, containment, concurrency, and rename failures preserve
-the prior file byte-for-byte. If the atomic rename completed but the directory
-flush cannot be confirmed, the command reports an uncertain status 4 and tells
-the user to run `config doctor`; the destination is still always one complete
-canonical document, never partial TOML.
+temporary-write, flush, containment, observed pre-rename drift, and rename
+failures preserve the destination byte-for-byte. If post-rename validation
+observes drift, the command reports uncertain status 4 and cannot assert the
+current external contents. If that validation succeeds but the directory flush
+cannot be confirmed, it also reports status 4; the validated destination was
+the complete canonical document. The CLI itself never publishes partial TOML.
+These preservation claims do not extend to the explicitly unsupported,
+undetectable non-cooperating write between the last check and rename.
 
 A missing local selection is recovered by an explicit `config set` or
 interactive choice. A malformed or unsafe existing file is never overwritten,
@@ -465,9 +487,17 @@ without relying on real host identity that:
 - new directory and file modes are `0700` and `0600`, and unsafe permissions,
   ownership, symlink swaps, wrong path types, containment escapes, repository
   paths, and unresolved roots fail closed;
-- locking, concurrent replacement, failed writes, failed flushes, rename
-  failures, and handled signals never leave partial state or overwrite a newer
-  selection;
+- lock-cooperating CLI writers serialize, and a second writer cannot merge or
+  overwrite the first writer's selection;
+- external replacement observed by the last pre-rename recheck aborts and
+  preserves the external bytes, while post-rename drift reports uncertain
+  status 4 with doctor guidance;
+- a deterministic replacement injected after the last recheck and before
+  rename proves the documented non-cooperating-writer limitation: the external
+  file may be displaced, but the destination is one complete canonical
+  document and no partial or merged state is published;
+- failed writes, failed flushes, rename failures, and handled signals preserve
+  the guarantees of their pre-commit or uncertain post-commit phase;
 - local state contains no platform, private path, artifact result, rendered
   data, destination fact, secret, username, hostname, timestamp, commit, or
   machine identity;
@@ -490,8 +520,9 @@ without relying on real host identity that:
 - Saving choices and changing HOME remain separate, reviewable operations.
 - Local schema and path safety add implementation and recovery work before
   selection consumption can ship.
-- Strict canonical state and fail-closed concurrency make drift observable at
-  the cost of refusing manual in-place TOML customization.
+- Strict canonical state, cooperating-writer serialization, and best-effort
+  external-drift checks make supported drift observable at the cost of refusing
+  manual in-place TOML customization.
 - Phase 5 can define portable saved/shared profiles without reusing this
   machine-local active-selection lifecycle.
 - Generated cache and reset remain absent until measured need justifies them.
