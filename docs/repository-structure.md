@@ -3,9 +3,9 @@
 ## Current layout
 
 The repository contains a read-only schema-1 catalog, resolver, shell
-prerequisite checker, and isolated selected-source renderer with three
-production modules and one profile. It contains no provider adapters, planning,
-apply behavior, or managed-home mutation.
+prerequisite checker, isolated selected-source renderer, and deterministic
+configuration planner with three production modules and one profile. It
+contains no provider adapters, apply behavior, or managed-home mutation.
 
 ~~~text
 .
@@ -41,6 +41,7 @@ apply behavior, or managed-home mutation.
 ├── lib/
 │   ├── catalog-records.tmpl
 │   ├── catalog.awk
+│   ├── plan.sh
 │   ├── prerequisite-check.sh
 │   └── render.sh
 ├── scripts/
@@ -48,7 +49,10 @@ apply behavior, or managed-home mutation.
 ├── tests/
 │   ├── fixtures/
 │   │   └── <case>/catalog/
-│   ├── helpers/chezmoi-render-probe.sh
+│   ├── helpers/
+│   │   ├── chezmoi-plan-probe.sh
+│   │   └── chezmoi-render-probe.sh
+│   ├── plan.sh
 │   ├── render.sh
 │   └── run.sh
 └── public repository files
@@ -89,8 +93,8 @@ release, reporting, or active triage consumer.
 
 Phase 3 is split into focused increments. The following target layout is
 defined by accepted ADR 0010 and is implemented for isolated read-only shell
-rendering. Application checks, managed home state, planning, and apply remain
-later increments.
+rendering and selected-target planning. Application checks, managed home state,
+and apply remain later increments.
 
 ~~~text
 .chezmoidata/
@@ -114,11 +118,14 @@ home/
 │       └── autosuggestions.zsh
 └── dot_zshrc.tmpl
 lib/
+├── plan.sh
 ├── prerequisite-check.sh
 └── render.sh
 tests/
 ├── helpers/
+│   ├── chezmoi-plan-probe.sh
 │   └── chezmoi-render-probe.sh
+├── plan.sh
 └── render.sh
 ~~~
 
@@ -126,9 +133,10 @@ tests/
 presence checks. Applications currently fail closed. It never runs a
 prerequisite or installer. `lib/render.sh` builds the closed temporary context
 and asks chezmoi to render only selected targets into an isolated non-home
-directory. A later `lib/plan.sh` will construct stable chezmoi-only
-configuration plans; CLI dispatch remains in `bin/dotfiles`. No Homebrew, mise,
-package-manager, or application-provider adapter is planned.
+directory. `lib/plan.sh` validates HOME and selected target paths, revalidates
+the current artifact fact, captures scoped Chezmoi status privately, and
+constructs stable create/update plans. CLI dispatch remains in `bin/dotfiles`.
+No Homebrew, mise, package-manager, or application-provider adapter is planned.
 
 `home/` is the chezmoi source root. `shell.zsh` alone owns
 `home/dot_zshrc.tmpl`; autosuggestions and Starship own their distinct tool
@@ -139,14 +147,15 @@ the sole engine for rendered home targets.
 No composition file exists. The internal renderer passes a mode-`0600`
 temporary override-data file to chezmoi and removes its private directory on
 every exit path; that local ephemeral file is not part of repository layout or
-saved state. Future plan/apply invocations will rebuild it rather than reuse a
-render result.
+saved state. Every plan invocation rebuilds it, and future apply invocations
+will do the same rather than reuse a render result or saved plan.
 
-Phase 3 fixtures remain non-production data. The render suite creates isolated
-catalog facts, prerequisite roots, output trees, and probe commands at runtime;
-none are saved as machine state or committed with local paths. Later plan
-fixtures will cover deterministic configuration-only output, no-change,
-cancellation, non-interactive refusal, and failure cases.
+Phase 3 fixtures remain non-production data. The render and plan suites create
+isolated catalog facts, prerequisite roots, HOME and output trees, and probe
+commands at runtime; none are saved as machine state or committed with local
+paths. Planning fixtures cover deterministic configuration-only output,
+no-change, selected scope, cancellation, unsafe paths, privacy, cleanup, and
+failure cases. Apply-specific confirmation and mutation fixtures remain later.
 
 ## Naming rules
 

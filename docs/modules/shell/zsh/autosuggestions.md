@@ -1,7 +1,7 @@
 # Zsh autosuggestions
 
-- Status: Available for discovery, resolution, prerequisite checking, and
-  internal read-only rendering
+- Status: Available for discovery, resolution, prerequisite checking,
+  internal read-only rendering, and configuration planning
 - Category: shell
 - Supported platforms: macOS and Debian-family Linux
 - Documentation owner: repository maintainer
@@ -41,7 +41,8 @@ There are no module options or local defaults.
 
 ## Plan, apply, verification, and recovery
 
-Plan and apply are unavailable. Verify dependency expansion with:
+Read-only planning is available; apply remains unavailable. Verify dependency
+expansion with:
 
 ~~~console
 $ ./bin/dotfiles resolve --modules shell.zsh.autosuggestions --platform macos
@@ -53,10 +54,14 @@ Check both prerequisites with:
 
 ~~~console
 ./bin/dotfiles prerequisite check --modules shell.zsh.autosuggestions --platform macos
+./bin/dotfiles plan --modules shell.zsh.autosuggestions --platform macos
 ~~~
 
-The command and internal renderer are read-only and need no recovery. Planned
-startup-file recovery will cover configuration only.
+Planning freshly revalidates the same canonical contained artifact immediately
+before comparing `.config/zsh/autosuggestions.zsh` and the dependency-owned
+`.zshrc`. It reports only changed selected targets. The commands and internal
+renderer are read-only and need no recovery. Planned startup-file recovery will
+cover configuration only.
 
 ## Platform, security, and privacy notes
 
@@ -67,5 +72,6 @@ privilege, provider process, secret, command history, or machine identity.
 
 Schema, dependency, ownership, discovery, profile resolution, and macOS/Ubuntu
 CI plus isolated command, artifact, and containment tests cover this module.
-Deterministic rendering, quoting, and stale-state tests are also available.
-Home initialization, configuration plan, and apply are deferred.
+Deterministic rendering, quoting, planning, artifact replacement, privacy, and
+stale-state tests are also available. Home initialization and apply are
+deferred.

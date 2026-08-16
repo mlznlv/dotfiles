@@ -21,8 +21,8 @@ Run it from the repository root:
 ~~~
 
 All three forms print the same human-readable output, including
-`prerequisite check`. The command does not read the catalog or inspect the
-machine.
+`prerequisite check` and `plan`. The command does not read the catalog or
+inspect the machine.
 
 ## Exit codes
 

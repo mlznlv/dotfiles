@@ -190,6 +190,7 @@ prerequisite_check_records() {
     local_records=$1
     PREREQUISITE_ARTIFACT_FACTS=
     PREREQUISITE_ARTIFACT_FACTS_INVALID=0
+    PREREQUISITE_MISSING_FACTS=
     while IFS=$'\t' read -r local_module local_kind local_identifier; do
         [ -n "$local_module" ] || continue
         if [ "$local_kind" = application ]; then
@@ -227,6 +228,8 @@ prerequisite_check_records() {
             printf 'present: %s %s %s\n' "$local_module" "$local_kind" "$local_identifier"
         else
             printf 'missing: %s %s %s — provide it outside this project\n' "$local_module" "$local_kind" "$local_identifier"
+            PREREQUISITE_MISSING_FACTS="${PREREQUISITE_MISSING_FACTS}${PREREQUISITE_MISSING_FACTS:+
+}${local_module}"$'\t'"${local_kind}"$'\t'"${local_identifier}"
             local_missing=1
         fi
     done <<< "$local_records"

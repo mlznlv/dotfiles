@@ -5,12 +5,13 @@ dotfiles composition. For exact syntax, use the [command guide](../cli/README.md
 
 > [!IMPORTANT]
 > The current release is read-only. It can inspect, validate, and resolve catalog
-> data and check selected command/artifact prerequisites, but it cannot install
-> packages, save a profile, or apply configuration.
+> data, check selected command/artifact prerequisites, and plan selected target
+> changes, but it cannot install packages, save a profile, or apply
+> configuration.
 >
 > The production catalog exposes the minimal shell composition. Prerequisite
 > identifiers use schema 1. Command and artifact presence checks are available;
-> application checks, managed home state, plan, and apply remain unavailable.
+> application checks, managed home state, and apply remain unavailable.
 > Future apply manages configuration only and never installs software.
 
 ## Before you start
@@ -144,6 +145,25 @@ The command reports every declared command and artifact as `present` or
 `missing`. Missing items must be provided outside this project. Artifact root
 paths below HOME are abbreviated as `$HOME`; no provider is inferred.
 
+## Plan selected configuration
+
+Preview only targets owned by the resolved composition:
+
+~~~console
+$ ./bin/dotfiles plan --modules shell.zsh --platform debian
+Prerequisites: satisfied
+Plan: 1 configuration change for debian
+
+1. create shell.zsh chezmoi:target:.zshrc
+   source: home/dot_zshrc.tmpl
+   network: no; privilege: none
+~~~
+
+Your result may say `update` or `No changes.` depending on the current selected
+target. Planning writes nothing to HOME and never prints raw destination
+contents. It requires a literal absolute HOME directory and fails closed on an
+unsafe selected path or unexpected Chezmoi result.
+
 ## Understand failures
 
 The CLI stops without partial output when a composition is invalid. Common
@@ -154,6 +174,8 @@ causes include:
 - Conflicting modules or two modules in one exclusive group.
 - Missing dependencies or a dependency cycle.
 - Invalid catalog data.
+- A missing selected prerequisite or unsafe destination target.
+- A failed or malformed selected-target comparison.
 
 Invalid syntax points back to help:
 
@@ -169,9 +191,9 @@ Exit codes are stable:
 | --- | --- |
 | `0` | Success, including an empty list |
 | `2` | Invalid command syntax |
-| `3` | Unsupported platform, invalid catalog, or failed resolution |
+| `3` | Invalid catalog, composition, platform, destination, prerequisite data, ownership, or comparison result |
 | `4` | Chezmoi/checker dependency is unavailable, or application checking is required |
-| `5` | One or more selected prerequisites are missing |
+| `5` | A selected prerequisite is missing or a Chezmoi comparison failed |
 
 ## Safety and current boundaries
 
@@ -182,12 +204,13 @@ Available commands do not:
 - Invoke Homebrew, mise, or another provider.
 - Open or invoke declared prerequisites.
 - Apply chezmoi state.
-- Read secrets or machine identity.
+- Display destination contents or machine identity, or inspect unselected home
+  targets.
 - Request elevated privileges.
 
-Saved profiles, configuration planning, apply, recovery, sharing, and repair
-commands remain planned. Software installation is outside the product
-boundary. Follow delivery in the [roadmap](../roadmap.md).
+Saved profiles, apply, recovery, sharing, and repair commands remain planned.
+Software installation is outside the product boundary. Follow delivery in the
+[roadmap](../roadmap.md).
 
 ## Command reference
 
@@ -201,3 +224,4 @@ boundary. Follow delivery in the [roadmap](../roadmap.md).
 - [Inspect a profile](../cli/profile/show.md)
 - [Resolve a composition](../cli/resolve.md)
 - [Check prerequisites](../cli/prerequisite/check.md)
+- [Build a configuration plan](../cli/plan.md)

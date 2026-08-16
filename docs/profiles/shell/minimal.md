@@ -1,7 +1,7 @@
 # Minimal shell
 
-- Status: Available for discovery, resolution, prerequisite checking, and
-  internal read-only rendering
+- Status: Available for discovery, resolution, prerequisite checking,
+  internal read-only rendering, and configuration planning
 - Intended targets: minimal interactive shell environments
 - Supported platforms: macOS and Debian-family Linux
 - Documentation owner: repository maintainer
@@ -45,24 +45,28 @@ Discovery and resolution are available:
 ./bin/dotfiles profile show shell.minimal
 ./bin/dotfiles resolve --profile shell.minimal --platform debian
 ./bin/dotfiles prerequisite check --profile shell.minimal --platform debian
+./bin/dotfiles plan --profile shell.minimal --platform debian
 ~~~
 
-Command and artifact prerequisite checks are available. Application checks and
-`dotfiles plan` are unavailable.
+Command and artifact prerequisite checks and read-only planning are available.
+Application checks and apply are unavailable.
 
 The internal ADR-0010 renderer selects exactly
 `.zshrc`, `.config/zsh/autosuggestions.zsh`, and `.config/starship.toml`.
 The Zsh-owned startup target activates autosuggestions from its validated
 canonical artifact path and then Starship, without scanning stale fragments.
 Rendering a smaller Zsh composition omits optional activation lines while
-leaving old optional files untouched in isolated output. No public render
-command, plan, apply, or home mutation is available.
+leaving old optional files untouched in isolated output. Planning compares
+exactly these selected targets and reports the changed create/update subset in
+target order, or `No changes.` No public render command, apply, or home mutation
+is available.
 
 ## Security, privacy, and connectivity
 
 Released commands invoke no providers, prerequisites, network access, privilege
 escalation, or home-state writes. Presence checks inspect executable and
-artifact metadata only and never install the named tools.
+artifact metadata only and never install the named tools. Planning compares
+selected target state without displaying destination contents.
 
 ## Verification and recovery
 
@@ -75,5 +79,6 @@ invalid catalog or selection input and retrying. No rollback or removal exists.
 Production discovery, show, macOS and Debian resolution, dependency ordering,
 provider/prerequisite non-invocation, isolated presence fixtures, and
 macOS/Ubuntu CI cover the profile. The complete read-only target and activation
-matrix is also tested on both platform inputs. Application checks, managed home
-state, configuration plan, apply, saving, and recovery are deferred.
+matrix and create/update/no-change plan matrix are tested on both platform
+inputs. Application checks, managed home state, apply, saving, and recovery are
+deferred.

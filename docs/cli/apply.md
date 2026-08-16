@@ -3,7 +3,8 @@
 ## Status
 
 This command is not available in the current CLI. Its configuration-only
-contract depends on accepted ADR 0010, read-only shell rendering, and planning.
+contract depends on accepted ADR 0010 and the released read-only renderer and
+planner.
 
 ## Synopsis
 

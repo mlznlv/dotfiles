@@ -69,6 +69,31 @@ case ${DOTFILES_CHEZMOI_PROBE_MODE:-delegate} in
         rm -f -- "$DOTFILES_RETARGET_LINK"
         ln -s /dev/null "$DOTFILES_RETARGET_LINK"
         ;;
+    retarget-contained)
+        case ${DOTFILES_RETARGET_LINK:-}:${DOTFILES_RETARGET_TARGET:-} in
+            "$DOTFILES_ALLOWED_TEST_ROOT"/*:"$DOTFILES_ALLOWED_TEST_ROOT"/*) ;;
+            *) exit 96 ;;
+        esac
+        rm -f -- "$DOTFILES_RETARGET_LINK"
+        ln -s "$(basename -- "$DOTFILES_RETARGET_TARGET")" "$DOTFILES_RETARGET_LINK"
+        ;;
+    break)
+        case ${DOTFILES_RETARGET_LINK:-} in
+            "$DOTFILES_ALLOWED_TEST_ROOT"/*) ;;
+            *) exit 96 ;;
+        esac
+        rm -f -- "$DOTFILES_RETARGET_LINK"
+        ;;
+    typechange)
+        case ${DOTFILES_RETARGET_LINK:-} in
+            "$DOTFILES_ALLOWED_TEST_ROOT"/*) ;;
+            *) exit 96 ;;
+        esac
+        if [ ! -d "$DOTFILES_RETARGET_LINK" ] || [ -L "$DOTFILES_RETARGET_LINK" ]; then
+            rm -f -- "$DOTFILES_RETARGET_LINK"
+            mkdir "$DOTFILES_RETARGET_LINK"
+        fi
+        ;;
     *)
         exit 98
         ;;

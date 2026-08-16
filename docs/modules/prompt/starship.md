@@ -1,7 +1,7 @@
 # Starship
 
-- Status: Available for discovery, resolution, prerequisite checking, and
-  internal read-only rendering
+- Status: Available for discovery, resolution, prerequisite checking,
+  internal read-only rendering, and configuration planning
 - Category: prompt
 - Supported platforms: macOS and Debian-family Linux
 - Documentation owner: repository maintainer
@@ -39,17 +39,20 @@ There are no module options or local defaults.
 
 ## Plan, apply, verification, and recovery
 
-Plan and apply are unavailable. Verify metadata with:
+Read-only planning is available; apply remains unavailable. Inspect metadata
+and preview only the Starship-owned target with:
 
 ~~~console
 ./bin/dotfiles module show prompt.starship
 ./bin/dotfiles resolve --modules prompt.starship --platform debian
 ./bin/dotfiles prerequisite check --modules prompt.starship --platform debian
+./bin/dotfiles plan --modules prompt.starship --platform debian
 ~~~
 
-These commands and internal rendering are read-only. They require no recovery;
-correct invalid catalog data and rerun them. Configuration recovery is deferred
-with apply.
+The plan can report create or update for `.config/starship.toml`, or
+`No changes.` It never selects or inspects `.zshrc`. These commands and internal
+rendering are read-only. Correct invalid input or prerequisites and rerun them;
+configuration recovery is deferred with apply.
 
 ## Platform, security, and privacy notes
 
@@ -61,5 +64,6 @@ is outside the product boundary.
 
 Schema, current ownership, discovery, explicit resolution, profile resolution,
 isolated command-presence tests, and macOS/Ubuntu CI cover this module. Isolated
-Starship-only and Zsh-composed rendering are covered; managed home
-configuration, plan, and apply are deferred.
+Starship-only and Zsh-composed rendering and planning are covered, including
+selected-path scope and zero HOME mutation. Managed home configuration and
+apply are deferred.

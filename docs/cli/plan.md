@@ -1,90 +1,97 @@
-# `dotfiles plan` (planned)
+# Build a configuration plan
 
-## Status
+[Command guide](README.md) / Plan
 
-This command is not available in the current CLI. Accepted ADR 0010 and the
-internal read-only shell renderer provide its rendering foundation; stable diff
-translation and plan presentation remain unimplemented.
+Preview deterministic create or update effects for an explicit composition.
 
-## Synopsis
+Available · Read-only · Chezmoi required.
+
+## Usage
 
 ~~~text
 dotfiles plan (--profile <profile-id> | --modules <id,id>)
               [--add <id,id>] [--platform macos|debian]
 ~~~
 
+Exactly one of `--profile` and `--modules` is required. `--add` uses the normal
+resolver, including dependency expansion, conflicts, exclusive groups,
+platform compatibility, and rendered-target ownership. Without `--platform`,
+the shared platform detector selects macOS or Debian-family Linux.
+
 ## Behavior
 
-The command resolves the explicit composition, rejects rendered-target
-collisions, and validates only the static prerequisites of selected modules.
-It checks command and application presence without running a prerequisite. A
-missing prerequisite names the module and identifier, tells the user to provide
-the tool outside this project, and fails before creating a plan eligible for
-apply.
+Planning validates the complete catalog and selected prerequisites before
+comparison. Command and artifact prerequisites are checked without invocation;
+application prerequisites continue to fail closed. Missing prerequisites name
+the module, kind, and identifier and must be provided outside this project.
 
-After preconditions pass, the command will call the internal renderer to rebuild
-a mode-`0600` temporary override-data file from the platform, ordered resolved
-module IDs, selected source IDs, and the currently validated autosuggestions
-artifact path when required. It will request diffs limited to selected sources,
-remove temporary state before return, and print one deterministic configuration
-plan.
+The command freshly rebuilds the selected-source render context and rendered
+targets. Autosuggestions revalidates its canonical contained artifact
+immediately before comparison and requires the same candidate used by that
+render. No context, rendered output, comparison result, cache, state, or plan is
+retained.
 
-Every step contains an ordinal, module, normalized `chezmoi:target` key,
-action, and sanitized description. HOME paths use `$HOME`; other non-generic
-local roots use origin tokens rather than raw private prefixes. Steps sort by
-target and then module. `No changes.` is a successful plan.
+Chezmoi compares only exact targets owned by the resolved modules. User
+configuration, pagers, color, custom diffs, external refresh, interactivity,
+and TTY behavior are disabled. Selected sources use no secret command
+integration. The public result contains no raw diff, destination content, HOME
+path, artifact root, or temporary path.
 
-The accepted shell contract makes target omission explicit. A smaller
-composition that still selects `shell.zsh` may show `.zshrc` converging without
-previous optional activation lines. An omitted owner produces no target step:
-the plan does not claim removal or deactivation of its existing file.
+Changed steps sort by normalized target and module. An absent target is
+`create`; a differing regular file is `update`; an unchanged target is omitted.
+The planner never invents delete, remove, deactivate, install, repair, or
+provider effects. If all selected targets match, it prints exactly
+`No changes.`
 
-Planning never installs or updates software, invokes Homebrew or mise, calls an
-operating-system package manager, executes a prerequisite, writes home state,
-or saves a plan or render context. Plans contain no secrets, raw private roots,
-or machine identity and cannot be replayed by apply.
+A narrower selection remains narrow. Starship-only planning does not inspect
+or report `.zshrc`. Selecting Zsh after a broader composition may report an
+`.zshrc` update because the fresh render omits unselected activation, while
+files owned by omitted modules remain unreported and untouched.
 
 ## Examples
 
-Configuration-only plan:
+One absent selected target:
 
 ~~~console
-$ dotfiles plan --modules prompt.starship --platform macos
+$ ./bin/dotfiles plan --modules prompt.starship --platform macos
 Prerequisites: satisfied
 Plan: 1 configuration change for macos
 
-1. update prompt.starship chezmoi:target:.config/starship.toml
+1. create prompt.starship chezmoi:target:.config/starship.toml
    source: home/dot_config/starship.toml
    network: no; privilege: none
 ~~~
 
-This selection does not select Zsh or another shell.
-
 Missing prerequisite:
 
 ~~~console
-$ dotfiles plan --modules terminal.ghostty --platform macos
-error: terminal.ghostty requires application com.mitchellh.ghostty on macos
-Provide the application outside this project, then run the plan again.
-No configuration changes were planned or applied.
+$ ./bin/dotfiles plan --modules prompt.starship --platform debian
+error: module prompt.starship requires command starship on debian
+Provide the missing prerequisites outside this project, then run dotfiles plan again.
 ~~~
 
-Unsupported platform combinations and unsafe prerequisite data also fail
-before chezmoi diffing. Repeated planning after convergence is explicit:
+Already converged:
 
 ~~~console
-$ dotfiles plan --profile shell.minimal
+$ ./bin/dotfiles plan --profile shell.minimal
 No changes.
 ~~~
 
+Planning never installs or updates software, invokes a provider or declared
+prerequisite, writes home state, or creates apply authority. Correct a missing
+prerequisite or unsafe selected target and rerun the command.
+
 ## Exit codes
 
-| Code | Planned meaning |
+| Code | Meaning |
 | --- | --- |
-| `0` | Valid configuration plan, including `No changes.` |
-| `2` | Invalid syntax |
-| `3` | Invalid catalog, composition, platform, prerequisite data, or ownership |
-| `4` | Required CLI foundation component unavailable |
-| `5` | Prerequisite check or chezmoi diff failed; no actionable plan produced |
+| `0` | Valid plan, including `No changes.` |
+| `2` | Invalid command syntax |
+| `3` | Invalid catalog, composition, platform, prerequisite data, ownership, destination, or unsafe comparison result |
+| `4` | Required internal component or Chezmoi is unavailable |
+| `5` | Selected prerequisite is missing or Chezmoi comparison failed; no actionable plan was produced |
 
-Errors go to standard error. No failure path mutates software or home state.
+Errors go to standard error. No failure path prints a partial actionable plan
+or changes software or home state.
+
+Next: [apply selected configuration (planned)](apply.md).

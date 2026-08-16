@@ -4,7 +4,7 @@
 
 This document defines the target architecture. The read-only catalog,
 discovery commands, resolver, command/artifact prerequisite checks, and
-isolated selected-source renderer are released. Application checks, planning,
+isolated selected-source renderer and planner are released. Application checks,
 managed home state, and apply are planned.
 
 [ADR 0007](adr/0007-define-configuration-only-modules.md) defines the
@@ -109,13 +109,14 @@ system data roots with strict containment and disclosure rules. It performs no
 provider, registry, executable, shell-profile, or network discovery. The
 released checker implements this contract for selected artifact prerequisites.
 
-The released command and internal renderer check only resolved selected modules
-for the target platform. External commands are located through absolute PATH
-entries; applications fail closed until their platform semantics are accepted.
-Prerequisite validation is also a future plan and apply precondition. A missing
-tool produces an error naming the module, prerequisite kind, and identifier,
-with guidance to provide it outside this project. No chezmoi diff
-eligible for apply is produced, and no configuration changes occur.
+The released prerequisite command, renderer, and planner check only resolved
+selected modules for the target platform. External commands are located
+through absolute PATH entries; applications fail closed until their platform
+semantics are accepted. Prerequisite validation is a plan precondition and
+remains a future apply precondition. A missing tool produces an error naming
+the module, prerequisite kind, and identifier, with guidance to provide it
+outside this project. No actionable plan is produced, and no configuration
+changes occur.
 
 The initial platform identifiers remain `macos` and `debian`. Modules declare
 support and per-platform prerequisites explicitly. A future platform extends
@@ -167,13 +168,14 @@ activation and deletes no other output.
 
 The adapter stages only selected targets in an isolated caller-owned temporary
 directory by asking chezmoi to render each validated source mapping. Static
-files remain byte-identical. The result is test and future-planning input, not
-reusable authority, and is never applied to a home directory.
+files remain byte-identical. The result is planner input, not reusable
+authority, and is never applied to a home directory.
 
-## Planned configuration flow
+## Configuration planning and planned apply flow
 
-Steps 1–5 below are implemented by the internal renderer. Steps 6–8 remain
-future plan/apply work and are not available in the current CLI.
+Steps 1–5 below are implemented by the internal renderer. The released planner
+implements steps 6–7. Step 8 remains future apply work and is not available in
+the current CLI.
 
 1. Resolve the explicit composition for the detected or requested platform.
 2. Validate static catalog data, platform compatibility, and dependencies.
@@ -181,15 +183,25 @@ future plan/apply work and are not available in the current CLI.
 4. Check only prerequisites declared by selected modules, without executing
    them.
 5. Build the sanitized ephemeral render context.
-6. Ask chezmoi for diffs limited to the selected source paths.
+6. Ask chezmoi for status limited to exact selected target paths, with private
+   invocation state and user customization disabled.
 7. Print a stable, path-sanitized plan ordered by rendered target and module.
 8. On explicit apply intent, recompute all preconditions and the diff, then ask
    chezmoi to apply only those selected paths.
 
 A plan step contains an ordinal, module identifier, canonical target, action,
-and sanitized description. Every effect is a chezmoi-managed configuration
-effect. There are no package, provider-installation, download, or package-manager
-steps. A completely empty diff prints `No changes.`
+and validated source identifier. Every effect is a chezmoi-managed
+configuration effect. There are no package, provider-installation, download,
+or package-manager steps. A completely empty selected-target comparison prints
+`No changes.`
+
+Planning accepts only the current invocation's literal, canonical HOME. It
+rejects unsafe selected target types and path links, captures raw Chezmoi
+status privately, and assembles public output only after every status record
+maps to one selected owner. Unexpected, duplicate, out-of-order, deletion, or
+unselected records fail without partial plan output. The autosuggestions
+artifact is revalidated immediately before comparison and must resolve to the
+same canonical contained regular file used by the fresh render.
 
 Apply requires the exact interactive answer `yes`, or explicit `--yes` for
 non-interactive input. Any missing prerequisite, invalid catalog, collision,
@@ -200,12 +212,15 @@ must converge idempotently.
 ## State, safety, and privacy
 
 The target system derives state from versioned catalogs and chezmoi source
-state, local chezmoi configuration, generic prerequisite presence, and chezmoi
-diffs. It has no custom state database. Disposable generated caches must not
-become authority.
+state, generic prerequisite presence, and current selected destination state.
+The planner disables local chezmoi configuration and custom diff behavior. It
+has no custom state database. Disposable generated caches must not become
+authority.
 
 - Catalog and imported profile data are static and never evaluated as code.
 - Render data is closed, ephemeral, sanitized, and never authority.
+- Raw comparison output, cache, and persistent state remain mode-restricted and
+  are removed before the planner returns.
 - Plans and logs exclude secrets, usernames, hostnames, private addresses, and
   machine identity.
 - Unsupported module/platform combinations fail before configuration changes.
