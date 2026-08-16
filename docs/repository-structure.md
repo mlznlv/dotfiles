@@ -2,10 +2,10 @@
 
 ## Current layout
 
-The repository contains a read-only schema-1 catalog, resolver, shell
-prerequisite checker, isolated selected-source renderer, and deterministic
-configuration planner with three production modules and one profile. It
-contains no provider adapters, apply behavior, or managed-home mutation.
+The repository contains a schema-1 catalog, resolver, shell prerequisite
+checker, isolated selected-source renderer, deterministic configuration
+planner, and safe selected-target apply path with three production modules and
+one profile. It contains no software-provider adapters or saved local state.
 
 ~~~text
 .
@@ -41,6 +41,7 @@ contains no provider adapters, apply behavior, or managed-home mutation.
 ├── lib/
 │   ├── catalog-records.tmpl
 │   ├── catalog.awk
+│   ├── apply.sh
 │   ├── plan.sh
 │   ├── prerequisite-check.sh
 │   └── render.sh
@@ -50,8 +51,10 @@ contains no provider adapters, apply behavior, or managed-home mutation.
 │   ├── fixtures/
 │   │   └── <case>/catalog/
 │   ├── helpers/
-│   │   ├── chezmoi-plan-probe.sh
-│   │   └── chezmoi-render-probe.sh
+│   │   ├── chezmoi-{apply,plan,render}-probe.sh
+│   │   ├── apply-confirmation-hook.sh
+│   │   └── pty-confirm.py
+│   ├── apply.sh
 │   ├── plan.sh
 │   ├── render.sh
 │   └── run.sh
@@ -91,10 +94,10 @@ release, reporting, or active triage consumer.
 
 ## Phase 3 layout
 
-Phase 3 is split into focused increments. The following target layout is
-defined by accepted ADR 0010 and is implemented for isolated read-only shell
-rendering and selected-target planning. Application checks, managed home state,
-and apply remain later increments.
+Phase 3 is split into focused increments. The following layout implements the
+accepted ADR-0010 shell sources, read-only rendering, selected-target planning,
+and safe apply. Application checks and saved local selection remain later
+increments.
 
 ~~~text
 .chezmoidata/
@@ -118,13 +121,16 @@ home/
 │       └── autosuggestions.zsh
 └── dot_zshrc.tmpl
 lib/
+├── apply.sh
 ├── plan.sh
 ├── prerequisite-check.sh
 └── render.sh
 tests/
 ├── helpers/
-│   ├── chezmoi-plan-probe.sh
-│   └── chezmoi-render-probe.sh
+│   ├── chezmoi-{apply,plan,render}-probe.sh
+│   ├── apply-confirmation-hook.sh
+│   └── pty-confirm.py
+├── apply.sh
 ├── plan.sh
 └── render.sh
 ~~~
@@ -136,6 +142,9 @@ and asks chezmoi to render only selected targets into an isolated non-home
 directory. `lib/plan.sh` validates HOME and selected target paths, revalidates
 the current artifact fact, captures scoped Chezmoi status privately, and
 constructs stable create/update plans. CLI dispatch remains in `bin/dotfiles`.
+`lib/apply.sh` privately snapshots the displayed canonical plan, recomputes it
+after exact confirmation, delegates one changed target at a time to Chezmoi,
+and verifies each resulting file before reporting completion.
 No Homebrew, mise, package-manager, or application-provider adapter is planned.
 
 `home/` is the chezmoi source root. `shell.zsh` alone owns
@@ -147,15 +156,15 @@ the sole engine for rendered home targets.
 No composition file exists. The internal renderer passes a mode-`0600`
 temporary override-data file to chezmoi and removes its private directory on
 every exit path; that local ephemeral file is not part of repository layout or
-saved state. Every plan invocation rebuilds it, and future apply invocations
-will do the same rather than reuse a render result or saved plan.
+saved state. Every plan and apply pass rebuilds it; apply compares two
+invocation-local passes and never reuses a render result or saved plan.
 
-Phase 3 fixtures remain non-production data. The render and plan suites create
-isolated catalog facts, prerequisite roots, HOME and output trees, and probe
-commands at runtime; none are saved as machine state or committed with local
-paths. Planning fixtures cover deterministic configuration-only output,
-no-change, selected scope, cancellation, unsafe paths, privacy, cleanup, and
-failure cases. Apply-specific confirmation and mutation fixtures remain later.
+Phase 3 fixtures remain non-production data. The render, plan, and apply suites
+create isolated catalog facts, prerequisite roots, HOME and output trees, and
+probe commands at runtime; none are saved as machine state or committed with
+local paths. Apply fixtures cover PTY confirmation, fresh-plan drift, exact
+target mutation, verification, idempotency, partial failure, signals, privacy,
+and cleanup on macOS and Debian inputs.
 
 ## Naming rules
 

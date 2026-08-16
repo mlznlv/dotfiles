@@ -4,8 +4,9 @@
 
 This document defines the target architecture. The read-only catalog,
 discovery commands, resolver, command/artifact prerequisite checks, and
-isolated selected-source renderer and planner are released. Application checks,
-managed home state, and apply are planned.
+isolated selected-source renderer and planner are released. Safe selected
+configuration apply is also released. Application checks and saved local
+selection remain planned.
 
 [ADR 0007](adr/0007-define-configuration-only-modules.md) defines the
 configuration-only direction. [ADR 0009](adr/0009-define-pre-release-schema-versioning.md)
@@ -109,14 +110,13 @@ system data roots with strict containment and disclosure rules. It performs no
 provider, registry, executable, shell-profile, or network discovery. The
 released checker implements this contract for selected artifact prerequisites.
 
-The released prerequisite command, renderer, and planner check only resolved
-selected modules for the target platform. External commands are located
-through absolute PATH entries; applications fail closed until their platform
-semantics are accepted. Prerequisite validation is a plan precondition and
-remains a future apply precondition. A missing tool produces an error naming
-the module, prerequisite kind, and identifier, with guidance to provide it
-outside this project. No actionable plan is produced, and no configuration
-changes occur.
+The released prerequisite command, renderer, planner, and apply path check only
+resolved selected modules for the target platform. External commands are
+located through absolute PATH entries; applications fail closed until their
+platform semantics are accepted. Prerequisite validation is a plan and apply
+precondition. A missing tool produces an error naming the module, prerequisite
+kind, and identifier, with guidance to provide it outside this project. No
+actionable plan or configuration mutation is produced.
 
 The initial platform identifiers remain `macos` and `debian`. Modules declare
 support and per-platform prerequisites explicitly. A future platform extends
@@ -171,11 +171,10 @@ directory by asking chezmoi to render each validated source mapping. Static
 files remain byte-identical. The result is planner input, not reusable
 authority, and is never applied to a home directory.
 
-## Configuration planning and planned apply flow
+## Configuration planning and apply flow
 
-Steps 1–5 below are implemented by the internal renderer. The released planner
-implements steps 6–7. Step 8 remains future apply work and is not available in
-the current CLI.
+Steps 1–5 below are implemented by the internal renderer, steps 6–7 by the
+planner, and step 8 by the released apply path.
 
 1. Resolve the explicit composition for the detected or requested platform.
 2. Validate static catalog data, platform compatibility, and dependencies.
@@ -204,10 +203,20 @@ artifact is revalidated immediately before comparison and must resolve to the
 same canonical contained regular file used by the fresh render.
 
 Apply requires the exact interactive answer `yes`, or explicit `--yes` for
-non-interactive input. Any missing prerequisite, invalid catalog, collision,
-unsupported platform, or diff failure stops before mutation. Apply performs no
-automatic rollback, removal, prune, uninstall, or broad cleanup. Repeated apply
-must converge idempotently.
+non-interactive input. It first prints the complete current plan, then rebuilds
+every catalog, prerequisite, artifact, context, render, and comparison fact
+after confirmation. Canonical records, selected-source mappings, context,
+artifact identity, and rendered bytes must match the privately retained first
+pass before mutation begins.
+
+Chezmoi applies one changed selected target at a time in plan order with user
+configuration, custom tools, prompts, externals, scripts, recursion, and
+unselected targets excluded. Apply rechecks destination safety immediately
+before each invocation and verifies the resulting regular file byte-for-byte
+against the fresh render before counting it completed. Autosuggestions is
+revalidated again immediately before the Zsh-owned `.zshrc` target. The first
+failure stops later invocations and reports completed, failed, and unattempted
+targets without rollback. Repeated apply converges idempotently.
 
 ## State, safety, and privacy
 
@@ -221,11 +230,16 @@ authority.
 - Render data is closed, ephemeral, sanitized, and never authority.
 - Raw comparison output, cache, and persistent state remain mode-restricted and
   are removed before the planner returns.
+- Displayed-plan authority, apply output, fresh render data, cache, and state
+  remain mode-restricted and are removed on success, cancellation, failure, and
+  handled signals.
 - Plans and logs exclude secrets, usernames, hostnames, private addresses, and
   machine identity.
 - Unsupported module/platform combinations fail before configuration changes.
 - Missing tools fail closed and never trigger installation.
 - Commands display intended configuration changes before mutation.
+- Apply recomputes that intent after confirmation and delegates only exact
+  changed selected targets to Chezmoi.
 - Managed state is additive or convergent and never destructively cleans
   unrelated files.
 

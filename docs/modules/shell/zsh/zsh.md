@@ -1,15 +1,15 @@
 # Zsh
 
 - Status: Available for discovery, resolution, prerequisite checking,
-  internal read-only rendering, and configuration planning
+  internal read-only rendering, configuration planning, and selected apply
 - Category: shell
 - Supported platforms: macOS and Debian-family Linux
 - Documentation owner: repository maintainer
 
 ## Purpose and result
 
-`shell.zsh` declares the primary interactive Zsh capability. Current commands
-expose its catalog intent but do not install Zsh or change the active shell.
+`shell.zsh` declares the primary interactive Zsh capability. Apply can converge
+its selected `.zshrc`; no command installs Zsh or changes the active shell.
 
 ## Dependencies and conflicts
 
@@ -36,22 +36,23 @@ There are no module options or local defaults.
 
 ## Plan, apply, verification, and recovery
 
-Read-only planning is available; apply remains unavailable. The internal
-renderer exercises the source in isolated temporary output. Verify metadata
-and preview the selected `.zshrc` target with:
+The internal renderer exercises the source in isolated temporary output. Verify
+metadata, preview the selected `.zshrc`, then apply the same explicit selection:
 
 ~~~console
 ./bin/dotfiles module show shell.zsh
 ./bin/dotfiles resolve --modules shell.zsh --platform debian
 ./bin/dotfiles prerequisite check --modules shell.zsh --platform debian
 ./bin/dotfiles plan --modules shell.zsh --platform debian
+./bin/dotfiles apply --modules shell.zsh --platform debian
 ~~~
 
 The plan reports create or update for `.zshrc`, or `No changes.` A narrower Zsh
 selection may update `.zshrc` to omit unselected integrations but never reports
-or removes their separately owned files. These read-only commands need no
-recovery. Planned apply will manage only explicitly selected configuration and
-will not change the login shell.
+or removes their separately owned files. Apply recomputes the plan after
+confirmation, verifies the resulting bytes, and never changes the login shell.
+On failure, correct the reported target and retry; completed targets are not
+rolled back.
 
 ## Platform, security, and privacy notes
 
@@ -63,6 +64,6 @@ and login-shell changes are outside the product boundary.
 
 Schema, ownership, exclusive-group, discovery, dependency resolution, profile
 resolution, isolated command-presence tests, and macOS/Ubuntu CI cover this
-module. Read-only `.zshrc` rendering and planning cover create, update,
-no-change, stale optional state, privacy, and zero HOME mutation. Home
-convergence and apply are deferred.
+module. Rendering, planning, and apply cover create, update, no-change, stale
+optional state, exact confirmation, byte verification, idempotency, privacy,
+and partial failure.

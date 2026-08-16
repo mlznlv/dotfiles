@@ -94,4 +94,4 @@ prerequisite or unsafe selected target and rerun the command.
 Errors go to standard error. No failure path prints a partial actionable plan
 or changes software or home state.
 
-Next: [apply selected configuration (planned)](apply.md).
+Next: [apply selected configuration](apply.md).

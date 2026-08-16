@@ -1,18 +1,19 @@
 # User guide
 
-This guide shows the shortest path from cloning the repository to previewing a
-dotfiles composition. For exact syntax, use the [command guide](../cli/README.md).
+This guide shows the shortest path from cloning the repository to previewing
+and applying an explicit dotfiles composition. For exact syntax, use the
+[command guide](../cli/README.md).
 
 > [!IMPORTANT]
-> The current release is read-only. It can inspect, validate, and resolve catalog
-> data, check selected command/artifact prerequisites, and plan selected target
-> changes, but it cannot install packages, save a profile, or apply
-> configuration.
+> The current release can inspect, validate, and resolve catalog data, check
+> selected command/artifact prerequisites, plan selected target changes, and
+> explicitly apply those selected home files through Chezmoi. It cannot install
+> packages or save a profile.
 >
 > The production catalog exposes the minimal shell composition. Prerequisite
 > identifiers use schema 1. Command and artifact presence checks are available;
-> application checks, managed home state, and apply remain unavailable.
-> Future apply manages configuration only and never installs software.
+> application checks remain unavailable. Apply manages configuration only and
+> never installs software.
 
 ## Before you start
 
@@ -164,6 +165,35 @@ target. Planning writes nothing to HOME and never prints raw destination
 contents. It requires a literal absolute HOME directory and fails closed on an
 unsafe selected path or unexpected Chezmoi result.
 
+## Apply selected configuration
+
+Use the same explicit selection to recompute, review, confirm, and apply only
+its changed targets:
+
+~~~console
+$ ./bin/dotfiles apply --modules shell.zsh --platform debian
+Prerequisites: satisfied
+Plan: 1 configuration change for debian
+
+1. create shell.zsh chezmoi:target:.zshrc
+   source: home/dot_zshrc.tmpl
+   network: no; privilege: none
+
+Software installation: none
+
+Apply this configuration? Type yes to continue:
+~~~
+
+Type exactly `yes` to continue. Any other answer or EOF cancels without CLI
+mutation. For redirected or automated input, use explicit `--yes`; the command
+still prints and independently recomputes the complete current plan before
+mutation.
+
+Apply invokes Chezmoi once for each changed selected target, verifies the
+written bytes, and stops at the first failure. A second identical apply prints
+exactly `No changes.` without prompting. Omitted module files are not inspected,
+reported, removed, or cleaned.
+
 ## Understand failures
 
 The CLI stops without partial output when a composition is invalid. Common
@@ -176,6 +206,8 @@ causes include:
 - Invalid catalog data.
 - A missing selected prerequisite or unsafe destination target.
 - A failed or malformed selected-target comparison.
+- State or prerequisite drift after confirmation.
+- A Chezmoi apply or post-target verification failure.
 
 Invalid syntax points back to help:
 
@@ -194,23 +226,31 @@ Exit codes are stable:
 | `3` | Invalid catalog, composition, platform, destination, prerequisite data, ownership, or comparison result |
 | `4` | Chezmoi/checker dependency is unavailable, or application checking is required |
 | `5` | A selected prerequisite is missing or a Chezmoi comparison failed |
+| `6` | Chezmoi apply or post-target verification failed after mutation began |
+| `129`, `130`, `143` | Handled HUP, INT, or TERM interruption |
+
+If apply reports a partial result, completed targets remain in place. Correct
+the failed prerequisite or target and rerun `plan` or `apply`. The retry builds
+a new plan from current state, skips already converged targets, and does not
+roll back or replay the earlier plan.
 
 ## Safety and current boundaries
 
 Available commands do not:
 
 - Install, remove, or upgrade packages.
-- Write home configuration or save a composition.
+- Save a composition or reusable plan.
 - Invoke Homebrew, mise, or another provider.
 - Open or invoke declared prerequisites.
-- Apply chezmoi state.
 - Display destination contents or machine identity, or inspect unselected home
   targets.
 - Request elevated privileges.
+- Remove, prune, clean, or roll back configuration.
 
-Saved profiles, apply, recovery, sharing, and repair commands remain planned.
-Software installation is outside the product boundary. Follow delivery in the
-[roadmap](../roadmap.md).
+Only `apply` writes managed home configuration, and only after printing and
+recomputing the selected plan with exact intent. Saved profiles, generalized
+recovery, sharing, and repair commands remain planned. Software installation is
+outside the product boundary. Follow delivery in the [roadmap](../roadmap.md).
 
 ## Command reference
 
@@ -225,3 +265,4 @@ Software installation is outside the product boundary. Follow delivery in the
 - [Resolve a composition](../cli/resolve.md)
 - [Check prerequisites](../cli/prerequisite/check.md)
 - [Build a configuration plan](../cli/plan.md)
+- [Apply selected configuration](../cli/apply.md)

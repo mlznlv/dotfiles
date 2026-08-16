@@ -126,6 +126,25 @@ case ${DOTFILES_PLAN_PROBE_MODE:-delegate} in
     delegate)
         "$DOTFILES_REAL_CHEZMOI" "$@"
         result=$?
+        if [ "$result" -eq 0 ] && [ -n "${DOTFILES_PLAN_PROBE_AFTER_STATUS_MODE:-}" ]; then
+            status_number=$(wc -l < "$DOTFILES_PLAN_INVOCATION_LOG" | tr -d ' ')
+            if [ "$status_number" -eq "${DOTFILES_PLAN_PROBE_AFTER_STATUS_AT:-2}" ]; then
+                case "$DOTFILES_PLAN_PROBE_AFTER_STATUS_MODE" in
+                    retarget-artifact)
+                        rm -f -- "$DOTFILES_RETARGET_LINK"
+                        ln -s "$(basename -- "$DOTFILES_RETARGET_TARGET")" "$DOTFILES_RETARGET_LINK"
+                        ;;
+                    break-artifact)
+                        rm -f -- "$DOTFILES_RETARGET_LINK"
+                        ;;
+                    typechange-artifact)
+                        rm -f -- "$DOTFILES_RETARGET_LINK"
+                        mkdir "$DOTFILES_RETARGET_LINK"
+                        ;;
+                    *) exit 98 ;;
+                esac
+            fi
+        fi
         if [ -e "$state" ]; then
             printf 'state %s\n' "$(stat_mode "$state")" >> "$DOTFILES_PLAN_STATE_MODE_LOG"
         else
