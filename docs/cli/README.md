@@ -61,6 +61,22 @@ Catalog-backed commands, including planning, require
 
 The example identifier above is released on macOS and Debian-family Linux.
 
+## Planned local selection workflow
+
+Current selection-consuming commands still require an explicit `--profile` or
+`--modules` base. [ADR 0011](../adr/0011-define-local-configuration-workflow.md)
+defines later `config set`, `config interactive`, `config inspect`, and
+`config doctor` commands for one local active selection. These commands are
+not available, so they have no command-reference pages yet.
+
+The planned save commands change only the CLI-owned selection file and never
+plan or apply managed home configuration. Explicit selectors remain
+independent of local state; omission of an explicit base would be the only way
+a later consuming command loads the saved choice. Delivery is split into
+focused increments in the
+[Phase 4 roadmap](../roadmap.md#phase-4-configuration-workflow), beginning with
+flag-based selection now that ADR 0011 is accepted.
+
 ## Choose a platform
 
 List and resolve commands detect the local platform by default. Use

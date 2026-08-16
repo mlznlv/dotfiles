@@ -166,6 +166,35 @@ local paths. Apply fixtures cover PTY confirmation, fresh-plan drift, exact
 target mutation, verification, idempotency, partial failure, signals, privacy,
 and cleanup on macOS and Debian inputs.
 
+## Planned Phase 4 local state
+
+[ADR 0011](adr/0011-define-local-configuration-workflow.md) is Accepted but
+does not change the current repository layout or released CLI. When
+implemented, one CLI-owned active-selection file will live outside both the
+repository and managed HOME sources:
+
+~~~text
+$XDG_CONFIG_HOME/
+└── dotfiles/
+    └── active-selection.toml
+
+$HOME/.config/
+└── dotfiles/
+    └── active-selection.toml
+~~~
+
+The HOME form is a fallback only when `XDG_CONFIG_HOME` is unset or empty. The
+dedicated directory and file are planned with modes `0700` and `0600`, strict
+ownership and no-symlink validation, an adjacent writer lock, and atomic
+same-directory replacement. The file contains canonical schema-1 selection
+intent only. It is not repository data, `.chezmoidata`, a file below `home/`,
+a Chezmoi general configuration file, or a managed home target.
+
+The accepted decision reserves `$XDG_CACHE_HOME/dotfiles/generated/`, with a
+validated `$HOME/.cache/dotfiles/generated/` fallback, only if a future
+implementation proves a persistent generated-cache need. No cache directory or
+reset command is part of the current or first planned implementation increment.
+
 ## Naming rules
 
 - Module identifiers use dotted category names, such as shell.zsh.
