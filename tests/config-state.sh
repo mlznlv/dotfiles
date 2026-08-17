@@ -260,17 +260,30 @@ additional_modules = []'
 LOCK_HANDLE_PROBE="${TEST_ROOT}/lock-handle-probe"
 mkdir "$LOCK_HANDLE_PROBE"
 DOTFILES_CONFIG_LOCK_PATH=$LOCK_HANDLE_PROBE
+DOTFILES_CONFIG_DIRECTORY=$TEST_ROOT
+DOTFILES_CONFIG_LOCK_DEVICE=$(dotfiles_config_stat_device "$DOTFILES_CONFIG_DIRECTORY")
 DOTFILES_CONFIG_LOCK_FD=
 DOTFILES_CONFIG_LOCK_FD_OPEN=0
 if dotfiles_config_open_lock_handle; then
-    check_equal "lock-handle inode follows the descriptor on this platform" \
-        "$(dotfiles_config_stat_inode "/dev/fd/${DOTFILES_CONFIG_LOCK_FD}")" \
-        "$(dotfiles_config_stat_inode "$LOCK_HANDLE_PROBE")"
+    check_equal "lock-handle identity includes the created directory device and inode" \
+        "$(dotfiles_config_lock_handle_identity)" \
+        "$(dotfiles_config_stat_identity "$LOCK_HANDLE_PROBE")"
+    LOCK_HANDLE_OTHER_PROBE="${TEST_ROOT}/lock-handle-other-probe"
+    mkdir "$LOCK_HANDLE_OTHER_PROBE"
+    DOTFILES_CONFIG_LOCK_PATH=$LOCK_HANDLE_OTHER_PROBE
+    if ! dotfiles_config_lock_handle_matches_path; then
+        pass "lock-handle identity rejects a different device or inode"
+    else
+        STATUS=1
+        OUTPUT='a different directory matched the retained descriptor'
+        fail "lock-handle identity rejects a different device or inode"
+    fi
     dotfiles_config_close_lock_handle
 else
     STATUS=1
     OUTPUT='no private lock descriptor available'
-    fail "lock-handle inode follows the descriptor on this platform"
+    fail "lock-handle identity includes the created directory device and inode"
+    fail "lock-handle identity rejects a different device or inode"
 fi
 
 run_command "$CLI" help

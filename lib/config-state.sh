@@ -239,11 +239,19 @@ dotfiles_config_stat_identity() {
     fi
 }
 
-dotfiles_config_stat_inode() {
+dotfiles_config_stat_device() {
+    if stat -f '%d' "$1" >/dev/null 2>&1; then
+        stat -f '%d' "$1"
+    else
+        stat -c '%d' "$1" 2>/dev/null
+    fi
+}
+
+dotfiles_config_stat_followed_inode() {
     if stat -f '%i' "$1" >/dev/null 2>&1; then
         stat -f '%i' "$1"
     else
-        stat -Lc '%i' "$1" 2>/dev/null
+        stat -L -c '%i' "$1" 2>/dev/null
     fi
 }
 
@@ -522,17 +530,30 @@ dotfiles_config_close_lock_handle() {
     fi
 }
 
+dotfiles_config_lock_handle_identity() {
+    local inode
+
+    [ "${DOTFILES_CONFIG_LOCK_FD_OPEN:-0}" -eq 1 ] || return 1
+    [ -n "${DOTFILES_CONFIG_LOCK_FD:-}" ] || return 1
+    [ -n "${DOTFILES_CONFIG_LOCK_DEVICE:-}" ] || return 1
+    # macOS exposes the target inode through /dev/fd but reports the devfs
+    # device. A newly created directory inherits the validated parent device,
+    # captured before mkdir, so that device plus the followed inode is exact.
+    inode=$(dotfiles_config_stat_followed_inode "/dev/fd/${DOTFILES_CONFIG_LOCK_FD}") || return 1
+    printf '%s:%s\n' "$DOTFILES_CONFIG_LOCK_DEVICE" "$inode"
+}
+
 dotfiles_config_lock_handle_matches_path() {
-    local handle_inode
-    local path_inode
+    local handle_identity
+    local path_identity
 
     [ "${DOTFILES_CONFIG_LOCK_FD_OPEN:-0}" -eq 1 ] || return 1
     [ -n "${DOTFILES_CONFIG_LOCK_FD:-}" ] || return 1
     [ ! -L "$DOTFILES_CONFIG_LOCK_PATH" ] || return 1
     [ -d "$DOTFILES_CONFIG_LOCK_PATH" ] || return 1
-    path_inode=$(dotfiles_config_stat_inode "$DOTFILES_CONFIG_LOCK_PATH") || return 1
-    handle_inode=$(dotfiles_config_stat_inode "/dev/fd/${DOTFILES_CONFIG_LOCK_FD}") || return 1
-    [ "$path_inode" = "$handle_inode" ]
+    path_identity=$(dotfiles_config_stat_identity "$DOTFILES_CONFIG_LOCK_PATH") || return 1
+    handle_identity=$(dotfiles_config_lock_handle_identity) || return 1
+    [ "$path_identity" = "$handle_identity" ]
 }
 
 dotfiles_config_owned_lock_matches() {
@@ -592,6 +613,10 @@ dotfiles_config_acquire_lock() {
         return 3
     fi
 
+    DOTFILES_CONFIG_LOCK_DEVICE=$(dotfiles_config_stat_device "$DOTFILES_CONFIG_DIRECTORY") || {
+        dotfiles_config_uncertain_error
+        return 4
+    }
     umask 077
     mkdir "$DOTFILES_CONFIG_LOCK_PATH" 2>/dev/null || {
         dotfiles_config_lock_error
@@ -762,6 +787,7 @@ dotfiles_config_state_set_core() {
     DOTFILES_CONFIG_SNAPSHOT_OWNED=0
     DOTFILES_CONFIG_LOCK_OWNED=0
     DOTFILES_CONFIG_LOCK_IDENTITY=
+    DOTFILES_CONFIG_LOCK_DEVICE=
     DOTFILES_CONFIG_LOCK_FD=
     DOTFILES_CONFIG_LOCK_FD_OPEN=0
     DOTFILES_CONFIG_PRIOR_PRESENT=0
