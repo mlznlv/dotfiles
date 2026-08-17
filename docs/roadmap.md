@@ -140,8 +140,8 @@ applications, remote access, or broad configuration sets.
 
 ## Phase 4: Configuration workflow
 
-**Status:** In progress; architecture and flag-based local selection complete,
-interactive local selection next.
+**Status:** In progress; architecture, flag-based selection, and terminal-only
+interactive local selection complete; saved-selection consumption next.
 
 **Objective:** make normal setup possible without editing TOML.
 
@@ -164,9 +164,10 @@ interactive local selection next.
    configuration-state library and `config set` with isolated macOS and Debian
    coverage. Depends on accepted ADR 0011 and is the first implementation
    increment it unlocks.
-3. **Interactive local selection (next):** implement exact, terminal-only selection
-   and confirmation on the same state library. Depends on increment 2.
-4. **Saved-selection consumption:** let `resolve`, `prerequisite check`, `plan`,
+3. **Interactive local selection (complete):** implemented exact, terminal-only
+   selection, deterministic compatible inventory, no-change preflight, and
+   confirmation on the same state library. Depends on increment 2.
+4. **Saved-selection consumption (next):** let `resolve`, `prerequisite check`, `plan`,
    and `apply` load local intent only when an invocation omits an explicit
    base. Preserve explicit-selector precedence and all fresh Phase 3 checks.
    Depends on increment 2 and follows increment 3.

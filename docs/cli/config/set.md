@@ -120,9 +120,9 @@ paths.
 
 Saved selection is not consumed by `resolve`, `prerequisite check`, `plan`, or
 `apply` yet. Continue passing an explicit `--profile` or `--modules` base to
-those commands. Interactive selection, saved-state consumption, inspect, and
-doctor remain later [Phase 4](../../roadmap.md#phase-4-configuration-workflow)
-increments.
+those commands. Terminal-only [interactive saving](interactive.md) is
+available. Saved-state consumption, inspect, and doctor remain later
+[Phase 4](../../roadmap.md#phase-4-configuration-workflow) increments.
 
 Next: [resolve the same explicit composition](../resolve.md) or return to the
 [command guide](../README.md).
