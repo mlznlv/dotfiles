@@ -1,11 +1,12 @@
-[Command guide](../README.md) / Config set
-
 # Save a local selection
+
+[Command guide](../README.md) / Config set
 
 Validate a profile or explicit module composition and save that exact intent
 as the local active selection.
 
-**Available · Mutates only CLI-owned local state · Chezmoi required for catalog validation**
+Available · Mutates only CLI-owned local state · Chezmoi required for catalog
+validation.
 
 ## Usage
 
