@@ -257,6 +257,22 @@ EXTERNAL_CONFLICT_BODY='schema = 1
 modules = ["shell.zsh"]
 additional_modules = []'
 
+LOCK_HANDLE_PROBE="${TEST_ROOT}/lock-handle-probe"
+mkdir "$LOCK_HANDLE_PROBE"
+DOTFILES_CONFIG_LOCK_PATH=$LOCK_HANDLE_PROBE
+DOTFILES_CONFIG_LOCK_FD=
+DOTFILES_CONFIG_LOCK_FD_OPEN=0
+if dotfiles_config_open_lock_handle; then
+    check_equal "lock-handle inode follows the descriptor on this platform" \
+        "$(dotfiles_config_stat_inode "/dev/fd/${DOTFILES_CONFIG_LOCK_FD}")" \
+        "$(dotfiles_config_stat_inode "$LOCK_HANDLE_PROBE")"
+    dotfiles_config_close_lock_handle
+else
+    STATUS=1
+    OUTPUT='no private lock descriptor available'
+    fail "lock-handle inode follows the descriptor on this platform"
+fi
+
 run_command "$CLI" help
 check_status "help succeeds" 0
 check_contains "help lists config set" 'dotfiles config set (--profile <profile-id> | --modules <id,id>)'
