@@ -57,7 +57,7 @@ Managed home configuration: unchanged.
 Choose the exact base type `profile` or `modules`. A profile base then asks only
 for `Profile ID:`. A module base instead asks only for `Module IDs (comma-separated):`.
 The additions prompt is always shown; an empty line means no additions. Empty
-inventory categories display `  none`.
+inventory categories display `none` with two leading spaces.
 
 Every line is literal. There are no defaults, numeric menu choices, trimming,
 case folding, fuzzy matches, quoting, escape interpretation, shell evaluation,
