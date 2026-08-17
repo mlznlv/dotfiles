@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-# Private local-selection persistence for `dotfiles config set`.
+# Private local-selection comparison and persistence for configuration commands.
 # This file is sourced by bin/dotfiles and intentionally exposes no CLI path
-# override. Tests use dotfiles_config_state_set_internal with an isolated root.
+# override. Tests use private internal wrappers with an isolated root.
 
 dotfiles_config_identifier_is_valid() {
     [[ $1 =~ ^[a-z][a-z0-9]*([.][a-z][a-z0-9-]*)+$ ]]
@@ -402,10 +402,14 @@ dotfiles_config_prepare_root() {
     [ "$created" -eq 0 ] || return 0
 }
 
-dotfiles_config_prepare_directory() {
+dotfiles_config_set_paths() {
     DOTFILES_CONFIG_DIRECTORY="${DOTFILES_CONFIG_ROOT}/dotfiles"
     DOTFILES_CONFIG_STATE_PATH="${DOTFILES_CONFIG_DIRECTORY}/active-selection.toml"
     DOTFILES_CONFIG_LOCK_PATH="${DOTFILES_CONFIG_DIRECTORY}/active-selection.lock"
+}
+
+dotfiles_config_prepare_directory() {
+    dotfiles_config_set_paths
 
     if [ -e "$DOTFILES_CONFIG_DIRECTORY" ] || [ -L "$DOTFILES_CONFIG_DIRECTORY" ]; then
         dotfiles_config_real_directory_is_safe "$DOTFILES_CONFIG_DIRECTORY" || {
@@ -745,6 +749,50 @@ dotfiles_config_validate_saved_selection() {
     [ -n "$result" ] || return 3
 }
 
+dotfiles_config_capture_current_state() {
+    local platform=$1
+    local current_status
+
+    DOTFILES_CONFIG_PRIOR_PRESENT=0
+    if [ ! -e "$DOTFILES_CONFIG_STATE_PATH" ]; then
+        return 0
+    fi
+
+    DOTFILES_CONFIG_PRIOR_PRESENT=1
+    dotfiles_config_make_private_file snapshot "${DOTFILES_CONFIG_DIRECTORY}/.active-selection.prior.XXXXXX" || {
+        dotfiles_config_uncertain_error
+        return 4
+    }
+    cp "$DOTFILES_CONFIG_STATE_PATH" "$DOTFILES_CONFIG_SNAPSHOT_PATH" 2>/dev/null || {
+        dotfiles_config_uncertain_error
+        return 4
+    }
+    chmod 600 "$DOTFILES_CONFIG_SNAPSHOT_PATH" 2>/dev/null || {
+        dotfiles_config_uncertain_error
+        return 4
+    }
+    DOTFILES_CONFIG_SNAPSHOT_IDENTITY=$(dotfiles_config_stat_identity "$DOTFILES_CONFIG_SNAPSHOT_PATH") || {
+        dotfiles_config_uncertain_error
+        return 4
+    }
+    dotfiles_config_revalidate_tree && \
+        cmp -s "$DOTFILES_CONFIG_STATE_PATH" "$DOTFILES_CONFIG_SNAPSHOT_PATH" || {
+        dotfiles_config_state_error
+        return 3
+    }
+    dotfiles_config_validate_saved_selection "$DOTFILES_CONFIG_SNAPSHOT_PATH" "$platform"
+    current_status=$?
+    if [ "$current_status" -ne 0 ]; then
+        dotfiles_config_state_error
+        [ "$current_status" -eq 4 ] && return 4
+        return 3
+    fi
+    dotfiles_config_snapshot_matches_current || {
+        dotfiles_config_state_error
+        return 3
+    }
+}
+
 dotfiles_config_print_result() {
     local result=$1
     local output_mode=$2
@@ -761,17 +809,8 @@ dotfiles_config_print_result() {
     fi
 }
 
-dotfiles_config_state_set_core() {
-    local output_mode=$1
-    local private_root=$2
-    local profile=$3
-    local modules=$4
-    local additional=$5
-    local platform=$6
-    local proposed_body
-    local current_status
-    local post_commit_failure=0
-    local rename_status=0
+dotfiles_config_initialize_operation() {
+    local private_root=$1
 
     DOTFILES_CONFIG_PRIVATE_ROOT_ACTIVE=$private_root
     DOTFILES_CONFIG_ROOT=
@@ -798,7 +837,93 @@ dotfiles_config_state_set_core() {
     trap 'dotfiles_config_handle_signal 129' HUP
     trap 'dotfiles_config_handle_signal 130' INT
     trap 'dotfiles_config_handle_signal 143' TERM
+}
 
+dotfiles_config_state_compare_core() {
+    local private_root=$1
+    local profile=$2
+    local modules=$3
+    local additional=$4
+    local platform=$5
+    local proposed_body
+    local comparison=different
+
+    dotfiles_config_initialize_operation "$private_root"
+    dotfiles_config_validate_intent "$profile" "$modules" "$additional" || return $?
+    dotfiles_config_build_body "$profile" "$modules" "$additional"
+    proposed_body=$DOTFILES_CONFIG_BODY
+    dotfiles_config_require_tools || return $?
+    dotfiles_config_derive_root "$private_root" || return $?
+    dotfiles_config_set_paths
+
+    if [ ! -e "$DOTFILES_CONFIG_ROOT" ] && [ ! -L "$DOTFILES_CONFIG_ROOT" ]; then
+        printf 'different\n'
+        return 0
+    fi
+    dotfiles_config_real_directory_is_safe "$DOTFILES_CONFIG_ROOT" || {
+        dotfiles_config_storage_error
+        return 3
+    }
+    [ -w "$DOTFILES_CONFIG_ROOT" ] && [ -x "$DOTFILES_CONFIG_ROOT" ] || {
+        dotfiles_config_storage_error
+        return 3
+    }
+
+    if [ ! -e "$DOTFILES_CONFIG_DIRECTORY" ] && [ ! -L "$DOTFILES_CONFIG_DIRECTORY" ]; then
+        printf 'different\n'
+        return 0
+    fi
+    dotfiles_config_revalidate_directories || {
+        dotfiles_config_storage_error
+        return 3
+    }
+    dotfiles_config_validate_state_path || {
+        dotfiles_config_state_error
+        return 3
+    }
+
+    if [ ! -e "$DOTFILES_CONFIG_STATE_PATH" ]; then
+        if [ -e "$DOTFILES_CONFIG_LOCK_PATH" ] || [ -L "$DOTFILES_CONFIG_LOCK_PATH" ]; then
+            dotfiles_config_lock_error
+            return 3
+        fi
+        printf 'different\n'
+        return 0
+    fi
+
+    dotfiles_config_acquire_lock || return $?
+    dotfiles_config_revalidate_tree || {
+        dotfiles_config_state_error
+        return 3
+    }
+    dotfiles_config_capture_current_state "$platform" || return $?
+    if [ "$DOTFILES_CONFIG_PRIOR_PRESENT" -eq 1 ] && \
+        dotfiles_config_state_matches_body "$proposed_body"; then
+        comparison=same
+    fi
+    dotfiles_config_revalidate_tree && dotfiles_config_snapshot_matches_current || {
+        dotfiles_config_state_error
+        return 3
+    }
+    dotfiles_config_release_lock || {
+        dotfiles_config_uncertain_error
+        return 4
+    }
+    printf '%s\n' "$comparison"
+}
+
+dotfiles_config_state_set_core() {
+    local output_mode=$1
+    local private_root=$2
+    local profile=$3
+    local modules=$4
+    local additional=$5
+    local platform=$6
+    local proposed_body
+    local post_commit_failure=0
+    local rename_status=0
+
+    dotfiles_config_initialize_operation "$private_root"
     dotfiles_config_validate_intent "$profile" "$modules" "$additional" || return $?
     dotfiles_config_build_body "$profile" "$modules" "$additional"
     proposed_body=$DOTFILES_CONFIG_BODY
@@ -823,41 +948,8 @@ dotfiles_config_state_set_core() {
         return 3
     }
 
-    if [ -e "$DOTFILES_CONFIG_STATE_PATH" ]; then
-        DOTFILES_CONFIG_PRIOR_PRESENT=1
-        dotfiles_config_make_private_file snapshot "${DOTFILES_CONFIG_DIRECTORY}/.active-selection.prior.XXXXXX" || {
-            dotfiles_config_uncertain_error
-            return 4
-        }
-        cp "$DOTFILES_CONFIG_STATE_PATH" "$DOTFILES_CONFIG_SNAPSHOT_PATH" 2>/dev/null || {
-            dotfiles_config_uncertain_error
-            return 4
-        }
-        chmod 600 "$DOTFILES_CONFIG_SNAPSHOT_PATH" 2>/dev/null || {
-            dotfiles_config_uncertain_error
-            return 4
-        }
-        DOTFILES_CONFIG_SNAPSHOT_IDENTITY=$(dotfiles_config_stat_identity "$DOTFILES_CONFIG_SNAPSHOT_PATH") || {
-            dotfiles_config_uncertain_error
-            return 4
-        }
-        dotfiles_config_revalidate_tree && \
-            cmp -s "$DOTFILES_CONFIG_STATE_PATH" "$DOTFILES_CONFIG_SNAPSHOT_PATH" || {
-            dotfiles_config_state_error
-            return 3
-        }
-        dotfiles_config_validate_saved_selection "$DOTFILES_CONFIG_SNAPSHOT_PATH" "$platform"
-        current_status=$?
-        if [ "$current_status" -ne 0 ]; then
-            dotfiles_config_state_error
-            [ "$current_status" -eq 4 ] && return 4
-            return 3
-        fi
-        dotfiles_config_snapshot_matches_current || {
-            dotfiles_config_state_error
-            return 3
-        }
-
+    dotfiles_config_capture_current_state "$platform" || return $?
+    if [ "$DOTFILES_CONFIG_PRIOR_PRESENT" -eq 1 ]; then
         if dotfiles_config_state_matches_body "$proposed_body"; then
             dotfiles_config_revalidate_tree && dotfiles_config_snapshot_matches_current || {
                 dotfiles_config_state_error
@@ -971,6 +1063,14 @@ dotfiles_config_state_set_core() {
 
 dotfiles_config_state_set_internal() (
     dotfiles_config_state_set_core internal "$@"
+)
+
+dotfiles_config_state_compare_internal() (
+    dotfiles_config_state_compare_core "$@"
+)
+
+dotfiles_config_state_compare() (
+    dotfiles_config_state_compare_core "" "$@"
 )
 
 dotfiles_config_state_set() {

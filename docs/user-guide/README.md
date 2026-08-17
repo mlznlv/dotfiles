@@ -197,8 +197,45 @@ reported, removed, or cleaned.
 
 ## Save local selection
 
-Save the exact profile or ordered module intent without changing managed home
-configuration:
+For a guided workflow, start with terminal stdin and choose from the compatible
+released identifiers:
+
+~~~console
+$ ./bin/dotfiles config interactive --platform debian
+Available profiles for debian:
+  shell.minimal
+Available modules for debian:
+  prompt.starship
+  shell.zsh
+  shell.zsh.autosuggestions
+Base type (profile or modules):
+profile
+Profile ID:
+shell.minimal
+Additional module IDs (comma-separated, empty for none):
+
+Proposed local selection:
+Base: profile shell.minimal
+Additional modules: none
+Resolved modules for debian:
+  shell.zsh
+  shell.zsh.autosuggestions
+  prompt.starship
+Save this local selection? Type yes to continue:
+yes
+Local selection saved.
+Managed home configuration: unchanged.
+~~~
+
+Enter exact identifiers and exact lowercase `yes`; the command does not trim,
+guess, interpret quoting, or reprompt. Any other confirmation answer cancels
+without changing local state. Piped, redirected, or closed stdin is refused
+before inventory or state access. See
+[config interactive](../cli/config/interactive.md) for the literal input,
+terminal, cancellation, and no-change contracts.
+
+For scripts or users who already know the identifiers, save the exact profile
+or ordered module intent with flags:
 
 ~~~console
 $ ./bin/dotfiles config set --profile shell.minimal --platform debian
@@ -213,17 +250,18 @@ Local selection saved.
 Managed home configuration: unchanged.
 ~~~
 
-The command saves only the profile or module choice and optional additions in
-canonical schema-1 TOML. Saving never checks prerequisites, plans, applies,
-installs, repairs, or changes managed home configuration. See
-[config set](../cli/config/set.md) for explicit module syntax, local path rules,
-recovery, and concurrency limits.
+The config commands save only the profile or module choice and optional
+additions in canonical schema-1 TOML. Saving never checks prerequisites, plans,
+applies, installs, repairs, or changes managed home configuration. Both forms
+use the same validator, proposal, canonical bytes, and hardened state writer.
+See [config set](../cli/config/set.md) for explicit module syntax, local path
+rules, recovery, and concurrency limits.
 
 > [!WARNING]
 > `resolve`, `prerequisite check`, `plan`, and `apply` do not consume saved
 > selection yet. Continue passing `--profile` or `--modules` to those commands.
-> Interactive selection, saved-state consumption, inspect, and doctor remain
-> later [Phase 4](../roadmap.md#phase-4-configuration-workflow) increments.
+> Saved-state consumption, inspect, and doctor remain later
+> [Phase 4](../roadmap.md#phase-4-configuration-workflow) increments.
 
 ## Understand failures
 
@@ -279,11 +317,12 @@ Available commands do not:
 - Remove, prune, clean, or roll back configuration.
 
 Only `apply` writes managed home configuration, and only after printing and
-recomputing the selected plan with exact intent. `config set` writes only the
-CLI-owned active-selection file and necessary owned configuration directories.
-Interactive selection, generalized recovery, sharing, and repair commands
-remain planned. Software installation is outside the product boundary. Follow
-delivery in the [roadmap](../roadmap.md).
+recomputing the selected plan with exact intent. `config set` and
+`config interactive` write only the CLI-owned active-selection file and
+necessary owned configuration directories. Saved-selection consumption,
+generalized recovery, sharing, and repair commands remain planned. Software
+installation is outside the product boundary. Follow delivery in the
+[roadmap](../roadmap.md).
 
 ## Command reference
 
@@ -297,6 +336,7 @@ delivery in the [roadmap](../roadmap.md).
 - [Inspect a profile](../cli/profile/show.md)
 - [Resolve a composition](../cli/resolve.md)
 - [Save local selection](../cli/config/set.md)
+- [Choose local selection interactively](../cli/config/interactive.md)
 - [Check prerequisites](../cli/prerequisite/check.md)
 - [Build a configuration plan](../cli/plan.md)
 - [Apply selected configuration](../cli/apply.md)

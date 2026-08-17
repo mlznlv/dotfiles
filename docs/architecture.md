@@ -5,8 +5,8 @@
 This document defines the target architecture. The read-only catalog,
 discovery commands, resolver, command/artifact prerequisite checks, and
 isolated selected-source renderer and planner are released. Safe selected
-configuration apply and flag-based local selection are also released.
-Application checks, interactive selection, saved-selection consumption,
+configuration apply and flag-based and terminal-only interactive local
+selection are also released. Application checks, saved-selection consumption,
 inspect, and doctor remain planned.
 [ADR 0011](adr/0011-define-local-configuration-workflow.md) defines the
 accepted local-selection architecture implemented first by `config set`.
@@ -55,8 +55,9 @@ flowchart LR
 ## Local-selection input
 
 Current selection-consuming commands require an explicit `--profile` or
-`--modules` base. Released `config set` writes one CLI-owned schema-1
-active-selection file at `$XDG_CONFIG_HOME/dotfiles/active-selection.toml`,
+`--modules` base. Released `config set` and `config interactive` write one
+CLI-owned schema-1 active-selection file at
+`$XDG_CONFIG_HOME/dotfiles/active-selection.toml`,
 falling back to
 `$HOME/.config/dotfiles/active-selection.toml` only when `XDG_CONFIG_HOME` is
 unset or empty. The file records an exact profile or ordered module base plus
@@ -69,9 +70,9 @@ base and remains independent of local state. A later focused increment will
 implement the accepted precedence contract: an explicit invocation base stays
 fully authoritative, while only omission of that base loads the saved choice.
 
-Released `config set` changes only the active-selection file and necessary
+Released config commands change only the active-selection file and necessary
 owned configuration directories; users still run `plan` and `apply` separately
-with an explicit base. It validates canonical schema-1 state, path containment,
+with an explicit base. They validate canonical schema-1 state, path containment,
 types, ownership, modes, current catalog meaning, and byte identity. An
 adjacent directory lock serializes cooperating writers, and same-directory
 temporary publication, pre/post checks, and file/directory flushes provide the
@@ -79,17 +80,23 @@ accepted atomic and durability boundary. Invalid current state is never
 repaired or overwritten. The lock cannot serialize non-cooperating processes,
 and the portable final check-to-rename window remains irreducible.
 
-Planned `config interactive` will reuse this state library. Planned `config
-inspect` and `config doctor` are read-only and narrowly scoped to selection
-state. Chezmoi continues to own all managed-home rendering, comparison, and
-application.
+Released `config interactive` is a thin input and presentation layer over the
+same resolver, proposal formatter, private state comparison, and hardened state
+writer as `config set`. It requires terminal stdin, presents compatible catalog
+identifiers in catalog order, reads exact literal intent, and requires exact
+`yes` only for a differing proposal. Cancellation does not create state, while
+byte-identical valid state returns unchanged without confirmation. Planned
+`config inspect` and `config doctor` are read-only and narrowly scoped to
+selection state. Chezmoi continues to own all managed-home rendering,
+comparison, and application.
 
 No persistent generated-cache consumer exists, so the contract creates no
 cache and releases no reset command. A reset remains conditional on a later,
 named consumer and a bounded entry allowlist. See
 [ADR 0011](adr/0011-define-local-configuration-workflow.md) and the
-[Phase 4 roadmap](roadmap.md#phase-4-configuration-workflow). Flag-based local
-selection is complete; interactive selection is the next increment.
+[Phase 4 roadmap](roadmap.md#phase-4-configuration-workflow). Flag-based and
+interactive local selection are complete; saved-selection consumption is the
+next increment.
 
 ## Neutral core
 
@@ -267,9 +274,10 @@ The target system derives state from versioned catalogs and chezmoi source
 state, generic prerequisite presence, and current selected destination state.
 The planner disables local chezmoi configuration and custom diff behavior. It
 has no custom state database. The schema-1 active-selection file is a narrow
-CLI-owned intent document, not managed-home or plan state. `config set` is its
-only current reader and writer; selection-consuming commands do not load it
-yet. Disposable generated caches must not become authority.
+CLI-owned intent document, not managed-home or plan state. `config set` and
+`config interactive` are its only current readers and writers;
+selection-consuming commands do not load it yet. Disposable generated caches
+must not become authority.
 
 - Catalog and imported profile data are static and never evaluated as code.
 - Render data is closed, ephemeral, sanitized, and never authority.
