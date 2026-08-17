@@ -5,10 +5,11 @@
 This document defines the target architecture. The read-only catalog,
 discovery commands, resolver, command/artifact prerequisite checks, and
 isolated selected-source renderer and planner are released. Safe selected
-configuration apply is also released. Application checks and saved local
-selection remain planned. [ADR 0011](adr/0011-define-local-configuration-workflow.md)
-defines the accepted local-selection architecture, but no described
-configuration command is available yet.
+configuration apply and flag-based local selection are also released.
+Application checks, interactive selection, saved-selection consumption,
+inspect, and doctor remain planned.
+[ADR 0011](adr/0011-define-local-configuration-workflow.md) defines the
+accepted local-selection architecture implemented first by `config set`.
 
 [ADR 0007](adr/0007-define-configuration-only-modules.md) defines the
 configuration-only direction. [ADR 0009](adr/0009-define-pre-release-schema-versioning.md)
@@ -51,37 +52,44 @@ flowchart LR
     F -->|"missing"| J["Actionable error; no mutation"]
 ~~~
 
-## Planned local-selection input
+## Local-selection input
 
 Current selection-consuming commands require an explicit `--profile` or
-`--modules` base. ADR 0011 defines one CLI-owned schema-1 active-selection
-file at `$XDG_CONFIG_HOME/dotfiles/active-selection.toml`, falling back to
+`--modules` base. Released `config set` writes one CLI-owned schema-1
+active-selection file at `$XDG_CONFIG_HOME/dotfiles/active-selection.toml`,
+falling back to
 `$HOME/.config/dotfiles/active-selection.toml` only when `XDG_CONFIG_HOME` is
 unset or empty. The file records an exact profile or ordered module base plus
 ordered additional modules. It stores user intent, not resolved dependencies,
 platform facts, render data, plans, machine identity, or apply authorization.
 
-Under the accepted contract, an explicit invocation base remains fully
-authoritative and does not read, merge, validate, or rewrite saved state.
-Without an explicit base, a command loads the saved base and additions.
-Invocation `--add` can augment that local choice transiently, while
-`--platform` always remains an invocation fact. Missing, unsafe, non-canonical,
-or catalog-invalid state fails closed instead of selecting a default.
+The current release writes but does not consume this file. Every invocation of
+`resolve`, `prerequisite check`, `plan`, and `apply` still requires an explicit
+base and remains independent of local state. A later focused increment will
+implement the accepted precedence contract: an explicit invocation base stays
+fully authoritative, while only omission of that base loads the saved choice.
 
-The planned `config set` and `config interactive` commands change only the
-active-selection file; users still run `plan` and `apply` separately. Planned
-`config inspect` and `config doctor` are read-only and narrowly scoped to
-selection state. CLI-owned locking, restrictive permissions, same-directory
-atomic replacement, and fail-closed path checks protect the file. Chezmoi
-continues to own all managed-home rendering, comparison, and application.
+Released `config set` changes only the active-selection file and necessary
+owned configuration directories; users still run `plan` and `apply` separately
+with an explicit base. It validates canonical schema-1 state, path containment,
+types, ownership, modes, current catalog meaning, and byte identity. An
+adjacent directory lock serializes cooperating writers, and same-directory
+temporary publication, pre/post checks, and file/directory flushes provide the
+accepted atomic and durability boundary. Invalid current state is never
+repaired or overwritten. The lock cannot serialize non-cooperating processes,
+and the portable final check-to-rename window remains irreducible.
+
+Planned `config interactive` will reuse this state library. Planned `config
+inspect` and `config doctor` are read-only and narrowly scoped to selection
+state. Chezmoi continues to own all managed-home rendering, comparison, and
+application.
 
 No persistent generated-cache consumer exists, so the contract creates no
 cache and releases no reset command. A reset remains conditional on a later,
 named consumer and a bounded entry allowlist. See
 [ADR 0011](adr/0011-define-local-configuration-workflow.md) and the
-[Phase 4 roadmap](roadmap.md#phase-4-configuration-workflow). The accepted ADR
-unlocks flag-based local selection first; it does not itself release any
-command.
+[Phase 4 roadmap](roadmap.md#phase-4-configuration-workflow). Flag-based local
+selection is complete; interactive selection is the next increment.
 
 ## Neutral core
 
@@ -258,17 +266,20 @@ rollback. Repeated apply converges idempotently.
 The target system derives state from versioned catalogs and chezmoi source
 state, generic prerequisite presence, and current selected destination state.
 The planner disables local chezmoi configuration and custom diff behavior. It
-has no custom state database. The accepted ADR 0011 active-selection file is a
-CLI-owned input convenience, not managed-home or plan state. Disposable
-generated caches must not become authority.
+has no custom state database. The schema-1 active-selection file is a narrow
+CLI-owned intent document, not managed-home or plan state. `config set` is its
+only current reader and writer; selection-consuming commands do not load it
+yet. Disposable generated caches must not become authority.
 
 - Catalog and imported profile data are static and never evaluated as code.
 - Render data is closed, ephemeral, sanitized, and never authority.
-- Raw comparison output, cache, and persistent state remain mode-restricted and
+- Raw comparison output and ephemeral planner state remain mode-restricted and
   are removed before the planner returns.
-- Displayed-plan authority, apply output, fresh render data, cache, and state
-  remain mode-restricted and are removed on success, cancellation, failure, and
-  handled signals.
+- The persistent active-selection document is mode `0600` below a mode-`0700`
+  dedicated directory and contains only canonical selection intent.
+- Displayed-plan authority, apply output, fresh render data, cache, and
+  apply-private state remain mode-restricted and are removed on success,
+  cancellation, failure, and handled signals.
 - Plans and logs exclude secrets, usernames, hostnames, private addresses, and
   machine identity.
 - Unsupported module/platform combinations fail before configuration changes.

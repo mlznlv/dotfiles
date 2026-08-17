@@ -13,6 +13,7 @@ PREREQUISITE_PROGRAM="${PROJECT_ROOT}/lib/prerequisite-check.sh"
 RENDER_PROGRAM="${PROJECT_ROOT}/lib/render.sh"
 PLAN_PROGRAM="${PROJECT_ROOT}/lib/plan.sh"
 APPLY_PROGRAM="${PROJECT_ROOT}/lib/apply.sh"
+CONFIG_STATE_PROGRAM="${PROJECT_ROOT}/lib/config-state.sh"
 
 usage() {
     cat <<'EOF'
@@ -25,11 +26,12 @@ Usage:
   dotfiles profile list [--platform macos|debian | --all]
   dotfiles profile show <profile-id>
   dotfiles resolve (--profile <profile-id> | --modules <id,id>) [--add <id,id>] [--platform macos|debian]
+  dotfiles config set (--profile <profile-id> | --modules <id,id>) [--add <id,id>] [--platform macos|debian]
   dotfiles prerequisite check (--profile <profile-id> | --modules <id,id>) [--add <id,id>] [--platform macos|debian]
   dotfiles plan (--profile <profile-id> | --modules <id,id>) [--add <id,id>] [--platform macos|debian]
   dotfiles apply (--profile <profile-id> | --modules <id,id>) [--add <id,id>] [--platform macos|debian] [--yes]
 
-All commands except apply are read-only. Apply changes only confirmed selected configuration.
+Config set changes only private local selection state. Apply changes only confirmed selected configuration.
 EOF
 }
 
@@ -393,6 +395,103 @@ resolve_command() {
     run_catalog resolve "$platform" 0 "" "$profile" "$modules" "$additional"
 }
 
+config_set_command() {
+    local profile=
+    local modules=
+    local additional=
+    local platform=
+    local profile_seen=0
+    local modules_seen=0
+    local additional_seen=0
+    local platform_seen=0
+    local option
+    local resolved_modules
+    local resolved_module
+
+    while [ "$#" -gt 0 ]; do
+        option=$1
+        case "$option" in
+            --profile|--modules|--add|--platform)
+                shift
+                [ "$#" -gt 0 ] || usage_error "${option} requires a value"
+                case "$1" in ""|--*) usage_error "${option} requires a value" ;; esac
+                case "$option" in
+                    --profile)
+                        [ "$profile_seen" -eq 0 ] || usage_error "--profile may be specified only once"
+                        profile_seen=1
+                        profile=$1
+                        ;;
+                    --modules)
+                        [ "$modules_seen" -eq 0 ] || usage_error "--modules may be specified only once"
+                        modules_seen=1
+                        modules=$1
+                        ;;
+                    --add)
+                        [ "$additional_seen" -eq 0 ] || usage_error "--add may be specified only once"
+                        additional_seen=1
+                        additional=$1
+                        ;;
+                    --platform)
+                        [ "$platform_seen" -eq 0 ] || usage_error "--platform may be specified only once"
+                        platform_seen=1
+                        platform=$1
+                        ;;
+                esac
+                ;;
+            -h|--help)
+                usage
+                return 0
+                ;;
+            *) usage_error "unknown config set option" ;;
+        esac
+        shift
+    done
+
+    if [ -n "$profile" ] && [ -n "$modules" ]; then
+        usage_error "--profile and --modules are mutually exclusive"
+    fi
+    if [ -z "$profile" ] && [ -z "$modules" ]; then
+        usage_error "config set requires --profile or --modules"
+    fi
+    if [ -z "$platform" ]; then
+        platform=$(detect_platform) || exit $?
+    fi
+    validate_platform "$platform" || return $?
+    if [ ! -f "$CONFIG_STATE_PROGRAM" ]; then
+        printf 'error: local selection state implementation is missing\n' >&2
+        return 4
+    fi
+
+    # shellcheck source=../lib/config-state.sh
+    source "$CONFIG_STATE_PROGRAM"
+    dotfiles_config_validate_intent "$profile" "$modules" "$additional" || return $?
+    dotfiles_config_build_body "$profile" "$modules" "$additional"
+    resolved_modules=$(run_catalog resolve "$platform" 0 "" "$profile" "$modules" "$additional") || return $?
+    [ -n "$resolved_modules" ] || {
+        printf 'error: local selection resolved to no modules\n' >&2
+        return 3
+    }
+
+    printf 'Proposed local selection:\n'
+    if [ -n "$profile" ]; then
+        printf 'Base: profile %s\n' "$profile"
+    else
+        printf 'Base: modules %s\n' "$modules"
+    fi
+    if [ -n "$additional" ]; then
+        printf 'Additional modules: %s\n' "$additional"
+    else
+        printf 'Additional modules: none\n'
+    fi
+    printf 'Resolved modules for %s:\n' "$platform"
+    while IFS= read -r resolved_module; do
+        [ -n "$resolved_module" ] || continue
+        printf '  %s\n' "$resolved_module"
+    done <<< "$resolved_modules"
+
+    dotfiles_config_state_set "$profile" "$modules" "$additional" "$platform"
+}
+
 prerequisite_check_command() {
     profile=
     modules=
@@ -608,6 +707,15 @@ main() {
             ;;
         resolve)
             resolve_command "$@"
+            ;;
+        config)
+            [ "$#" -gt 0 ] || usage_error "config requires a subcommand"
+            subcommand=$1
+            shift
+            case "$subcommand" in
+                set) config_set_command "$@" ;;
+                *) usage_error "unknown config subcommand $subcommand" ;;
+            esac
             ;;
         prerequisite)
             [ "$#" -gt 0 ] || usage_error "prerequisite requires a subcommand"
