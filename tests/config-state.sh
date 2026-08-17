@@ -115,6 +115,19 @@ check_equal() {
     fi
 }
 
+check_not_equal() {
+    local name=$1
+    local actual=$2
+    local unexpected=$3
+    if [ "$actual" != "$unexpected" ]; then
+        pass "$name"
+    else
+        STATUS=1
+        OUTPUT="unexpected equal value: ${unexpected}"
+        fail "$name"
+    fi
+}
+
 check_contains() {
     local name=$1
     local text=$2
@@ -166,6 +179,9 @@ tree_snapshot() {
 }
 
 reset_hooks() {
+    unset DOTFILES_CONFIG_TEST_AFTER_LOCK_CREATE
+    unset DOTFILES_CONFIG_TEST_LOCK_IDENTITY_CAPTURE
+    unset DOTFILES_CONFIG_TEST_LOCK_IDENTITY_VALIDATION
     unset DOTFILES_CONFIG_TEST_AFTER_LOCK
     unset DOTFILES_CONFIG_TEST_AFTER_TEMP_WRITE
     unset DOTFILES_CONFIG_TEST_FILE_FLUSH
@@ -188,6 +204,22 @@ assert_no_owned_debris() {
     else
         STATUS=1
         OUTPUT="temporary material remains"
+        fail "$name"
+    fi
+}
+
+assert_no_private_files() {
+    local name=$1
+    local directory=$2
+    local debris=
+    if [ -d "$directory" ]; then
+        debris=$(find "$directory" -maxdepth 1 -name '.active-selection.*' -print)
+    fi
+    if [ -z "$debris" ]; then
+        pass "$name"
+    else
+        STATUS=1
+        OUTPUT="private temporary material remains"
         fail "$name"
     fi
 }
@@ -218,6 +250,41 @@ ALTERNATE_BODY='schema = 1
 [selection]
 modules = ["prompt.starship"]
 additional_modules = []'
+
+EXTERNAL_CONFLICT_BODY='schema = 1
+
+[selection]
+modules = ["shell.zsh"]
+additional_modules = []'
+
+LOCK_HANDLE_PROBE="${TEST_ROOT}/lock-handle-probe"
+mkdir "$LOCK_HANDLE_PROBE"
+DOTFILES_CONFIG_LOCK_PATH=$LOCK_HANDLE_PROBE
+DOTFILES_CONFIG_DIRECTORY=$TEST_ROOT
+DOTFILES_CONFIG_LOCK_DEVICE=$(dotfiles_config_stat_device "$DOTFILES_CONFIG_DIRECTORY")
+DOTFILES_CONFIG_LOCK_FD=
+DOTFILES_CONFIG_LOCK_FD_OPEN=0
+if dotfiles_config_open_lock_handle; then
+    check_equal "lock-handle identity includes the created directory device and inode" \
+        "$(dotfiles_config_lock_handle_identity)" \
+        "$(dotfiles_config_stat_identity "$LOCK_HANDLE_PROBE")"
+    LOCK_HANDLE_OTHER_PROBE="${TEST_ROOT}/lock-handle-other-probe"
+    mkdir "$LOCK_HANDLE_OTHER_PROBE"
+    DOTFILES_CONFIG_LOCK_PATH=$LOCK_HANDLE_OTHER_PROBE
+    if ! dotfiles_config_lock_handle_matches_path; then
+        pass "lock-handle identity rejects a different device or inode"
+    else
+        STATUS=1
+        OUTPUT='a different directory matched the retained descriptor'
+        fail "lock-handle identity rejects a different device or inode"
+    fi
+    dotfiles_config_close_lock_handle
+else
+    STATUS=1
+    OUTPUT='no private lock descriptor available'
+    fail "lock-handle identity includes the created directory device and inode"
+    fail "lock-handle identity rejects a different device or inode"
+fi
 
 run_command "$CLI" help
 check_status "help succeeds" 0
@@ -298,6 +365,16 @@ check_status "explicit module selection saves on macOS" 0
 check_contains "module summary preserves requested base order" 'Base: modules prompt.starship,shell.zsh'
 check_contains "module summary preserves addition order" 'Additional modules: shell.zsh.autosuggestions'
 check_file_exact "module state preserves explicit intent without dependency expansion" "$MODULE_ROOT/dotfiles/active-selection.toml" "$MODULE_BODY"
+
+PUBLIC_HOOK_ROOT="${TEST_ROOT}/public-hook-isolation"
+run_command env XDG_CONFIG_HOME="$PUBLIC_HOOK_ROOT" HOME="$PROFILE_HOME" DOTFILES_CHEZMOI_BIN="$CHEZMOI_PROBE" \
+    DOTFILES_CONFIG_TEST_AFTER_LOCK_CREATE=unavailable_private_hook \
+    DOTFILES_CONFIG_TEST_LOCK_IDENTITY_CAPTURE=unavailable_private_hook \
+    DOTFILES_CONFIG_TEST_LOCK_IDENTITY_VALIDATION=unavailable_private_hook \
+    "$CLI" config set --modules prompt.starship --platform debian
+check_status "public config set cannot reach private lock failure seams" 0
+check_file_exact "public hook isolation still saves canonical state" "$PUBLIC_HOOK_ROOT/dotfiles/active-selection.toml" "$ALTERNATE_BODY"
+assert_no_owned_debris "public hook isolation leaves no owned debris" "$PUBLIC_HOOK_ROOT/dotfiles"
 
 OVERLAP_ROOT="${TEST_ROOT}/profile-overlap"
 run_command env XDG_CONFIG_HOME="$OVERLAP_ROOT" HOME="$PROFILE_HOME" DOTFILES_CHEZMOI_BIN="$CHEZMOI_PROBE" "$CLI" config set \
@@ -616,9 +693,27 @@ fi
 LOCK_ROOT="${TEST_ROOT}/active-lock"
 mkdir -p "$LOCK_ROOT/dotfiles/active-selection.lock"
 chmod 700 "$LOCK_ROOT/dotfiles" "$LOCK_ROOT/dotfiles/active-selection.lock"
+printf 'pre-existing lock sentinel\n' > "$LOCK_ROOT/dotfiles/active-selection.lock/sentinel"
+LOCK_IDENTITY_BEFORE=$(identity_of "$LOCK_ROOT/dotfiles/active-selection.lock")
+LOCK_MODE_BEFORE=$(mode_of "$LOCK_ROOT/dotfiles/active-selection.lock")
+LOCK_SENTINEL_BEFORE=$(cksum < "$LOCK_ROOT/dotfiles/active-selection.lock/sentinel")
 run_state "$LOCK_ROOT" shell.minimal "" "" debian
 check_status "active or stale writer lock is refused" 3
-if [ -d "$LOCK_ROOT/dotfiles/active-selection.lock" ]; then STATUS=0; OUTPUT=; pass "writer never steals or removes a pre-existing lock"; else STATUS=1; OUTPUT='lock removed'; fail "writer never steals or removes a pre-existing lock"; fi
+check_equal "pre-existing lock identity is unchanged" "$(identity_of "$LOCK_ROOT/dotfiles/active-selection.lock")" "$LOCK_IDENTITY_BEFORE"
+check_equal "pre-existing lock mode is unchanged" "$(mode_of "$LOCK_ROOT/dotfiles/active-selection.lock")" "$LOCK_MODE_BEFORE"
+check_equal "pre-existing lock contents are unchanged" "$(cksum < "$LOCK_ROOT/dotfiles/active-selection.lock/sentinel")" "$LOCK_SENTINEL_BEFORE"
+
+LOCK_FILE_ROOT="${TEST_ROOT}/lock-file"
+mkdir -p "$LOCK_FILE_ROOT/dotfiles"
+chmod 700 "$LOCK_FILE_ROOT/dotfiles"
+printf 'unowned lock object\n' > "$LOCK_FILE_ROOT/dotfiles/active-selection.lock"
+chmod 600 "$LOCK_FILE_ROOT/dotfiles/active-selection.lock"
+LOCK_FILE_IDENTITY=$(identity_of "$LOCK_FILE_ROOT/dotfiles/active-selection.lock")
+LOCK_FILE_CHECKSUM=$(cksum < "$LOCK_FILE_ROOT/dotfiles/active-selection.lock")
+run_state "$LOCK_FILE_ROOT" shell.minimal "" "" debian
+check_status "pre-existing non-directory lock is refused" 3
+check_equal "pre-existing non-directory lock identity is unchanged" "$(identity_of "$LOCK_FILE_ROOT/dotfiles/active-selection.lock")" "$LOCK_FILE_IDENTITY"
+check_equal "pre-existing non-directory lock bytes are unchanged" "$(cksum < "$LOCK_FILE_ROOT/dotfiles/active-selection.lock")" "$LOCK_FILE_CHECKSUM"
 
 LOCK_LINK_ROOT="${TEST_ROOT}/lock-link"
 mkdir -p "$LOCK_LINK_ROOT/dotfiles" "${TEST_ROOT}/lock-link-target"
@@ -629,13 +724,34 @@ check_status "symlink writer lock is refused" 3
 if [ -L "$LOCK_LINK_ROOT/dotfiles/active-selection.lock" ]; then STATUS=0; OUTPUT=; pass "writer never follows or removes a symlink lock"; else STATUS=1; OUTPUT='lock link changed'; fail "writer never follows or removes a symlink lock"; fi
 
 hook_fail() { return 1; }
+hook_record_lock_mode_and_fail() {
+    mode_of "$DOTFILES_CONFIG_LOCK_PATH" > "$DOTFILES_CONFIG_TEST_LOCK_MODE_FILE"
+    return 1
+}
+hook_make_lock_mode_unsafe() {
+    chmod 755 "$DOTFILES_CONFIG_LOCK_PATH"
+}
+hook_replace_lock_with_symlink() {
+    rmdir "$DOTFILES_CONFIG_LOCK_PATH"
+    ln -s "$DOTFILES_CONFIG_TEST_LOCK_REPLACEMENT_TARGET" "$DOTFILES_CONFIG_LOCK_PATH"
+}
+hook_replace_lock_with_directory() {
+    rmdir "$DOTFILES_CONFIG_LOCK_PATH"
+    mkdir "$DOTFILES_CONFIG_LOCK_PATH"
+    chmod 700 "$DOTFILES_CONFIG_LOCK_PATH"
+    identity_of "$DOTFILES_CONFIG_LOCK_PATH" > "$DOTFILES_CONFIG_TEST_LOCK_REPLACEMENT_IDENTITY_FILE"
+}
 hook_external_drift() {
     printf 'external writer bytes\n' > "$DOTFILES_CONFIG_STATE_PATH"
     chmod 600 "$DOTFILES_CONFIG_STATE_PATH"
 }
 hook_external_final_window() {
-    printf '%s\n' "$ALTERNATE_BODY" > "$DOTFILES_CONFIG_STATE_PATH"
-    chmod 600 "$DOTFILES_CONFIG_STATE_PATH"
+    local conflict_path="${DOTFILES_CONFIG_DIRECTORY}/.external-conflict"
+    printf '%s\n' "$EXTERNAL_CONFLICT_BODY" > "$conflict_path"
+    chmod 600 "$conflict_path"
+    mv -f "$conflict_path" "$DOTFILES_CONFIG_STATE_PATH"
+    identity_of "$DOTFILES_CONFIG_STATE_PATH" > "$DOTFILES_CONFIG_TEST_FINAL_WINDOW_IDENTITY_FILE"
+    cksum < "$DOTFILES_CONFIG_STATE_PATH" > "$DOTFILES_CONFIG_TEST_FINAL_WINDOW_CHECKSUM_FILE"
 }
 hook_post_rename_drift() {
     printf '%s\n' "$PROFILE_BODY" > "$DOTFILES_CONFIG_STATE_PATH"
@@ -650,6 +766,75 @@ hook_replace_temp_with_symlink() {
 hook_hup() { dotfiles_config_handle_signal 129; }
 hook_int() { dotfiles_config_handle_signal 130; }
 hook_term() { dotfiles_config_handle_signal 143; }
+
+lock_failure_case() {
+    local name=$1
+    local hook_variable=$2
+    local hook_function=${3:-hook_fail}
+    local root="${TEST_ROOT}/lock-failure-${checks}"
+    local before
+    reset_hooks
+    write_state "$root" "${PROFILE_BODY}"$'\n'
+    before=$(cksum < "$root/dotfiles/active-selection.toml")
+    printf -v "$hook_variable" '%s' "$hook_function"
+    run_state "$root" "" prompt.starship "" debian
+    if [ "$STATUS" -eq 4 ] && [ "$(cksum < "$root/dotfiles/active-selection.toml")" = "$before" ]; then
+        pass "$name"
+    else
+        fail "$name"
+    fi
+    assert_no_owned_debris "${name} cleans the exact owned lock" "$root/dotfiles"
+    check_not_contains "${name} hides the raw configuration root" "$root"
+    check_not_contains "${name} hides the username" "$(id -un)"
+    check_not_contains "${name} hides the hostname" "$(hostname)"
+    reset_hooks
+}
+
+DOTFILES_CONFIG_TEST_LOCK_MODE_FILE="${TEST_ROOT}/created-lock-mode"
+CALLER_UMASK=$(umask)
+umask 000
+lock_failure_case "failure immediately after lock creation is cleaned" DOTFILES_CONFIG_TEST_AFTER_LOCK_CREATE hook_record_lock_mode_and_fail
+umask "$CALLER_UMASK"
+check_equal "lock creation ignores a permissive caller umask" "$(< "$DOTFILES_CONFIG_TEST_LOCK_MODE_FILE")" 700
+lock_failure_case "identity capture failure is cleaned through exact lock authority" DOTFILES_CONFIG_TEST_LOCK_IDENTITY_CAPTURE
+lock_failure_case "identity validation failure cleans the registered lock" DOTFILES_CONFIG_TEST_LOCK_IDENTITY_VALIDATION
+lock_failure_case "validation failure after registration cleans the owned lock" DOTFILES_CONFIG_TEST_AFTER_LOCK
+lock_failure_case "permission validation failure cleans the exact owned lock" DOTFILES_CONFIG_TEST_AFTER_LOCK_CREATE hook_make_lock_mode_unsafe
+
+LOCK_SETUP_SIGNAL_ROOT="${TEST_ROOT}/lock-setup-signal"
+write_state "$LOCK_SETUP_SIGNAL_ROOT" "${PROFILE_BODY}"$'\n'
+LOCK_SETUP_SIGNAL_BEFORE=$(cksum < "$LOCK_SETUP_SIGNAL_ROOT/dotfiles/active-selection.toml")
+DOTFILES_CONFIG_TEST_AFTER_LOCK_CREATE=hook_hup
+run_state "$LOCK_SETUP_SIGNAL_ROOT" "" prompt.starship "" debian
+check_status "HUP during lock setup returns 129" 129
+check_equal "HUP during lock setup preserves prior state" "$(cksum < "$LOCK_SETUP_SIGNAL_ROOT/dotfiles/active-selection.toml")" "$LOCK_SETUP_SIGNAL_BEFORE"
+assert_no_owned_debris "HUP during lock setup cleans the exact owned lock" "$LOCK_SETUP_SIGNAL_ROOT/dotfiles"
+reset_hooks
+
+LOCK_REPLACEMENT_TARGET="${TEST_ROOT}/lock-replacement-target"
+mkdir "$LOCK_REPLACEMENT_TARGET"
+chmod 700 "$LOCK_REPLACEMENT_TARGET"
+DOTFILES_CONFIG_TEST_LOCK_REPLACEMENT_TARGET=$LOCK_REPLACEMENT_TARGET
+LOCK_REPLACED_LINK_ROOT="${TEST_ROOT}/lock-replaced-link"
+write_state "$LOCK_REPLACED_LINK_ROOT" "${PROFILE_BODY}"$'\n'
+DOTFILES_CONFIG_TEST_AFTER_LOCK_CREATE=hook_replace_lock_with_symlink
+run_state "$LOCK_REPLACED_LINK_ROOT" "" prompt.starship "" debian
+check_status "symlink replacement during lock setup fails safely" 4
+if [ -L "$LOCK_REPLACED_LINK_ROOT/dotfiles/active-selection.lock" ]; then STATUS=0; OUTPUT=; pass "cleanup leaves a symlink replacement untouched"; else STATUS=1; OUTPUT='symlink replacement changed'; fail "cleanup leaves a symlink replacement untouched"; fi
+check_equal "cleanup never follows the symlink replacement" "$(identity_of "$LOCK_REPLACEMENT_TARGET")" "$(identity_of "$(readlink "$LOCK_REPLACED_LINK_ROOT/dotfiles/active-selection.lock")")"
+assert_no_private_files "symlink replacement failure leaves no private files" "$LOCK_REPLACED_LINK_ROOT/dotfiles"
+reset_hooks
+
+LOCK_REPLACED_DIRECTORY_ROOT="${TEST_ROOT}/lock-replaced-directory"
+LOCK_REPLACEMENT_IDENTITY_FILE="${TEST_ROOT}/lock-replacement-identity"
+DOTFILES_CONFIG_TEST_LOCK_REPLACEMENT_IDENTITY_FILE=$LOCK_REPLACEMENT_IDENTITY_FILE
+write_state "$LOCK_REPLACED_DIRECTORY_ROOT" "${PROFILE_BODY}"$'\n'
+DOTFILES_CONFIG_TEST_AFTER_LOCK_CREATE=hook_replace_lock_with_directory
+run_state "$LOCK_REPLACED_DIRECTORY_ROOT" "" prompt.starship "" debian
+check_status "different-directory replacement during lock setup fails safely" 4
+check_equal "cleanup preserves the different lock identity" "$(identity_of "$LOCK_REPLACED_DIRECTORY_ROOT/dotfiles/active-selection.lock")" "$(< "$LOCK_REPLACEMENT_IDENTITY_FILE")"
+assert_no_private_files "different-directory replacement leaves no private files" "$LOCK_REPLACED_DIRECTORY_ROOT/dotfiles"
+reset_hooks
 
 failure_case() {
     local name=$1
@@ -723,10 +908,43 @@ reset_hooks
 
 FINAL_WINDOW_ROOT="${TEST_ROOT}/final-window"
 write_state "$FINAL_WINDOW_ROOT" "${PROFILE_BODY}"$'\n'
+FINAL_WINDOW_PRIOR_IDENTITY=$(identity_of "$FINAL_WINDOW_ROOT/dotfiles/active-selection.toml")
+FINAL_WINDOW_PRIOR_CHECKSUM=$(cksum < "$FINAL_WINDOW_ROOT/dotfiles/active-selection.toml")
+FINAL_WINDOW_PROPOSED_FILE="${TEST_ROOT}/final-window-proposed"
+FINAL_WINDOW_CONFLICT_FILE="${TEST_ROOT}/final-window-conflict"
+printf '%s\n' "$ALTERNATE_BODY" > "$FINAL_WINDOW_PROPOSED_FILE"
+printf '%s\n' "$EXTERNAL_CONFLICT_BODY" > "$FINAL_WINDOW_CONFLICT_FILE"
+FINAL_WINDOW_PROPOSED_CHECKSUM=$(cksum < "$FINAL_WINDOW_PROPOSED_FILE")
+FINAL_WINDOW_CONFLICT_CHECKSUM=$(cksum < "$FINAL_WINDOW_CONFLICT_FILE")
+run_command dotfiles_config_parse_file "$FINAL_WINDOW_ROOT/dotfiles/active-selection.toml"
+check_status "final-window prior body is canonical schema 1" 0
+run_command dotfiles_config_parse_file "$FINAL_WINDOW_PROPOSED_FILE"
+check_status "final-window proposed body is canonical schema 1" 0
+run_command dotfiles_config_parse_file "$FINAL_WINDOW_CONFLICT_FILE"
+check_status "final-window external-conflict body is canonical schema 1" 0
+FINAL_WINDOW_EXTERNAL_IDENTITY_FILE="${TEST_ROOT}/final-window-external-identity"
+FINAL_WINDOW_EXTERNAL_CHECKSUM_FILE="${TEST_ROOT}/final-window-external-checksum"
+DOTFILES_CONFIG_TEST_FINAL_WINDOW_IDENTITY_FILE=$FINAL_WINDOW_EXTERNAL_IDENTITY_FILE
+DOTFILES_CONFIG_TEST_FINAL_WINDOW_CHECKSUM_FILE=$FINAL_WINDOW_EXTERNAL_CHECKSUM_FILE
 DOTFILES_CONFIG_TEST_AFTER_FINAL_CHECK=hook_external_final_window
 run_state "$FINAL_WINDOW_ROOT" "" prompt.starship "" debian
 check_status "non-cooperating write in the final check-to-rename window cannot be serialized portably" 0
+FINAL_WINDOW_EXTERNAL_IDENTITY=$(< "$FINAL_WINDOW_EXTERNAL_IDENTITY_FILE")
+FINAL_WINDOW_EXTERNAL_CHECKSUM=$(< "$FINAL_WINDOW_EXTERNAL_CHECKSUM_FILE")
+FINAL_WINDOW_RESULT_IDENTITY=$(identity_of "$FINAL_WINDOW_ROOT/dotfiles/active-selection.toml")
+FINAL_WINDOW_RESULT_CHECKSUM=$(cksum < "$FINAL_WINDOW_ROOT/dotfiles/active-selection.toml")
+check_not_equal "final-window prior and external conflict are distinct canonical states" "$FINAL_WINDOW_PRIOR_CHECKSUM" "$FINAL_WINDOW_EXTERNAL_CHECKSUM"
+check_not_equal "final-window external conflict differs from the proposal" "$FINAL_WINDOW_EXTERNAL_CHECKSUM" "$FINAL_WINDOW_PROPOSED_CHECKSUM"
+check_equal "final-window hook published the complete conflicting canonical document" "$FINAL_WINDOW_EXTERNAL_CHECKSUM" "$FINAL_WINDOW_CONFLICT_CHECKSUM"
+check_not_equal "final-window hook replaced the prior destination object" "$FINAL_WINDOW_EXTERNAL_IDENTITY" "$FINAL_WINDOW_PRIOR_IDENTITY"
+check_not_equal "ordinary rename displaced the external conflict object" "$FINAL_WINDOW_RESULT_IDENTITY" "$FINAL_WINDOW_EXTERNAL_IDENTITY"
 check_file_exact "final-window replacement still publishes one complete canonical document" "$FINAL_WINDOW_ROOT/dotfiles/active-selection.toml" "$ALTERNATE_BODY"
+check_equal "final-window destination checksum is exactly the proposal" "$FINAL_WINDOW_RESULT_CHECKSUM" "$FINAL_WINDOW_PROPOSED_CHECKSUM"
+check_not_equal "final-window destination is not the prior document" "$FINAL_WINDOW_RESULT_CHECKSUM" "$FINAL_WINDOW_PRIOR_CHECKSUM"
+check_not_equal "final-window destination is not the external conflict" "$FINAL_WINDOW_RESULT_CHECKSUM" "$FINAL_WINDOW_EXTERNAL_CHECKSUM"
+run_command dotfiles_config_parse_file "$FINAL_WINDOW_ROOT/dotfiles/active-selection.toml"
+check_status "final-window destination strictly parses as canonical schema 1" 0
+assert_no_owned_debris "final-window replacement leaves no owned debris" "$FINAL_WINDOW_ROOT/dotfiles"
 reset_hooks
 
 SIGNAL_HUP_ROOT="${TEST_ROOT}/signal-hup"
