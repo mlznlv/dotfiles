@@ -5,9 +5,10 @@
 The repository contains a schema-1 catalog, resolver, shell prerequisite
 checker, isolated selected-source renderer, deterministic configuration
 planner, and safe selected-target apply path with three production modules and
-one profile. It also contains the flag-based local-selection state library and
-tests. It contains no software-provider adapters; the saved state itself lives
-outside the repository and managed home sources.
+one profile. It also contains flag-based and terminal-only interactive local
+selection over one shared state library. It contains no software-provider
+adapters; the saved state itself lives outside the repository and managed home
+sources.
 
 ~~~text
 .
@@ -28,7 +29,7 @@ outside the repository and managed home sources.
 ├── docs/
 │   ├── adr/
 │   ├── cli/
-│   │   └── config/set.md
+│   │   └── config/{interactive,set}.md
 │   ├── modules/{shell/zsh,prompt}/
 │   ├── profiles/
 │   ├── user-guide/
@@ -57,8 +58,11 @@ outside the repository and managed home sources.
 │   ├── helpers/
 │   │   ├── chezmoi-{apply,plan,render}-probe.sh
 │   │   ├── apply-confirmation-hook.sh
-│   │   └── pty-confirm.py
+│   │   ├── interactive-state-hook.sh
+│   │   ├── pty-confirm.py
+│   │   └── pty-interactive.py
 │   ├── apply.sh
+│   ├── config-interactive.sh
 │   ├── config-state.sh
 │   ├── plan.sh
 │   ├── render.sh
@@ -101,8 +105,8 @@ release, reporting, or active triage consumer.
 
 Phase 3 is split into focused increments. The following layout implements the
 accepted ADR-0010 shell sources, read-only rendering, selected-target planning,
-and safe apply. Application checks remain a later increment; flag-based local
-selection is implemented in Phase 4.
+and safe apply. Application checks remain a later increment; flag-based and
+interactive local selection are implemented in Phase 4.
 
 ~~~text
 .chezmoidata/
@@ -172,12 +176,12 @@ local paths. Apply fixtures cover PTY confirmation, fresh-plan drift, exact
 target mutation, verification, idempotency, partial failure, signals, privacy,
 and cleanup on macOS and Debian inputs.
 
-## Implemented Phase 4 local state
+## Implemented Phase 4 local selection
 
 [ADR 0011](adr/0011-define-local-configuration-workflow.md) is Accepted, and
-`lib/config-state.sh` plus `dotfiles config set` implement its first state
-increment. One CLI-owned active-selection file lives outside both the
-repository and managed HOME sources:
+`lib/config-state.sh` plus `dotfiles config set` and `dotfiles config interactive`
+implement the first two state increments. One CLI-owned active-selection file
+lives outside both the repository and managed HOME sources:
 
 ~~~text
 $XDG_CONFIG_HOME/
@@ -203,9 +207,17 @@ link safety, lock contention, drift, injected durability failures, signals,
 privacy, non-invocation, and zero managed-home mutation. The private seam is
 not a CLI flag or environment-selected production destination.
 
+`tests/config-interactive.sh` drives real terminal stdin through
+`tests/helpers/pty-interactive.py`. It covers deterministic macOS and Debian
+inventory, literal prompt input, exact confirmation and cancellation, shared
+proposal and canonical bytes, no-change comparison, signals, privacy,
+non-invocation, and zero managed-home mutation. The focused state hook proves
+that the writer freshly validates after confirmation and remains unreachable
+from the public CLI.
+
 Existing `resolve`, `prerequisite check`, `plan`, and `apply` commands do not
-read this file and continue to require an explicit base. Interactive selection,
-saved-state consumption, inspect, and doctor remain later Phase 4 increments.
+read this file and continue to require an explicit base. Saved-state
+consumption, inspect, and doctor remain later Phase 4 increments.
 
 The accepted decision reserves `$XDG_CACHE_HOME/dotfiles/generated/`, with a
 validated `$HOME/.cache/dotfiles/generated/` fallback, only if a future
