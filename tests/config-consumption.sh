@@ -134,6 +134,22 @@ run_cli_without_xdg() {
     OUTPUT="${STDOUT}${STDOUT:+$'\n'}${STDERR}"
 }
 
+run_cli_with_low_descriptors_occupied() {
+    local root=$1
+    local home=$2
+    shift 2
+    local stdout_file="${TEST_ROOT}/stdout"
+    local stderr_file="${TEST_ROOT}/stderr"
+    (
+        exec 3</dev/null 4</dev/null 5</dev/null 6</dev/null 7</dev/null 8</dev/null 9</dev/null
+        XDG_CONFIG_HOME="$root" HOME="$home" "$CLI" "$@"
+    ) > "$stdout_file" 2> "$stderr_file"
+    STATUS=$?
+    STDOUT=$(< "$stdout_file")
+    STDERR=$(< "$stderr_file")
+    OUTPUT="${STDOUT}${STDOUT:+$'\n'}${STDERR}"
+}
+
 run_tty() {
     local answer=$1
     local root=$2
@@ -537,6 +553,20 @@ stable_before=$(state_snapshot "$stable_root")
 run_cli "$stable_root" "$stable_home" resolve --platform macos
 check_status 'strict read succeeds on macOS input' 0
 check_equal 'strict read creates no lock, snapshot, temporary file, or metadata change' "$(state_snapshot "$stable_root")" "$stable_before"
+run_cli_with_low_descriptors_occupied "$stable_root" "$stable_home" resolve --platform macos
+check_status 'strict read succeeds with inherited descriptors 3 through 9 occupied' 0
+check_equal 'occupied low descriptors preserve exact resolution output' "$STDOUT" 'prompt.starship'
+
+fail_read_handle_open() {
+    return 4
+}
+DOTFILES_CONFIG_TEST_READ_HANDLE_OPEN=fail_read_handle_open
+OUTPUT=$(dotfiles_config_state_load_internal "$stable_root" macos 2>&1)
+STATUS=$?
+unset DOTFILES_CONFIG_TEST_READ_HANDLE_OPEN
+check_status 'read-handle allocation exhaustion is status 4' 4
+check_contains 'read-handle allocation exhaustion has capability guidance' 'local selection read handle is unavailable'
+check_not_contains 'read-handle allocation exhaustion is not reported as state drift' 'changed or was replaced while being read'
 
 privacy_root=$(new_root privacy)
 write_state "$privacy_root" 'private-state-contents-must-not-appear'

@@ -352,6 +352,11 @@ dotfiles_config_read_drift_error() {
     printf 'Rerun the command or pass --profile or --modules.\n' >&2
 }
 
+dotfiles_config_read_handle_error() {
+    printf 'error: local selection read handle is unavailable\n' >&2
+    printf 'Close inherited file descriptors or pass --profile or --modules.\n' >&2
+}
+
 dotfiles_config_lock_error() {
     printf 'error: local selection writer lock exists at %s/dotfiles/active-selection.lock\n' "$DOTFILES_CONFIG_ROOT_LABEL" >&2
     printf 'Confirm that no writer is active before removing the lock manually.\n' >&2
@@ -552,7 +557,11 @@ dotfiles_config_hook() {
 dotfiles_config_open_read_handle() {
     local fd
 
-    for fd in 9 8 7 6 5 4 3; do
+    dotfiles_config_hook READ_HANDLE_OPEN || return 1
+    # Bash 3.2 has no dynamic {var} descriptor allocation. Scan its portable
+    # numeric range instead, preserving every descriptor inherited by callers.
+    # Descriptor 255 is reserved internally by Bash 3.2 while reading scripts.
+    for ((fd = 254; fd >= 3; fd--)); do
         if (: <&"$fd") 2>/dev/null; then
             continue
         fi
@@ -591,34 +600,41 @@ dotfiles_config_read_verified_once() {
     local expected_size
     local LC_ALL=C
 
-    dotfiles_config_open_read_handle || return 1
+    if ! dotfiles_config_open_read_handle; then
+        if dotfiles_config_validate_read_directories &&
+           dotfiles_config_validate_state_path &&
+           [ "$(dotfiles_config_stat_identity "$DOTFILES_CONFIG_STATE_PATH")" = "$expected_identity" ]; then
+            return 4
+        fi
+        return 3
+    fi
     handle_identity=$(dotfiles_config_read_handle_identity) || {
         dotfiles_config_close_read_handle
-        return 1
+        return 3
     }
     if [ "$handle_identity" != "$expected_identity" ] ||
        ! dotfiles_config_validate_read_directories ||
        ! dotfiles_config_validate_state_path ||
        [ "$(dotfiles_config_stat_identity "$DOTFILES_CONFIG_STATE_PATH")" != "$expected_identity" ]; then
         dotfiles_config_close_read_handle
-        return 1
+        return 3
     fi
 
     size_before=$(dotfiles_config_stat_followed_size "/dev/fd/${DOTFILES_CONFIG_READ_FD}") || {
         dotfiles_config_close_read_handle
-        return 1
+        return 3
     }
     body=$(cat <&$DOTFILES_CONFIG_READ_FD) || {
         dotfiles_config_close_read_handle
-        return 1
+        return 3
     }
     size_after=$(dotfiles_config_stat_followed_size "/dev/fd/${DOTFILES_CONFIG_READ_FD}") || {
         dotfiles_config_close_read_handle
-        return 1
+        return 3
     }
     handle_identity=$(dotfiles_config_read_handle_identity) || {
         dotfiles_config_close_read_handle
-        return 1
+        return 3
     }
     dotfiles_config_close_read_handle
 
@@ -632,6 +648,24 @@ dotfiles_config_read_verified_once() {
 
     DOTFILES_CONFIG_READ_BODY=$body
     DOTFILES_CONFIG_READ_SIZE=$size_before
+}
+
+dotfiles_config_read_verified_or_report() {
+    local status
+
+    dotfiles_config_read_verified_once "$1"
+    status=$?
+    case "$status" in
+        0) return 0 ;;
+        3)
+            dotfiles_config_read_drift_error
+            return 3
+            ;;
+        *)
+            dotfiles_config_read_handle_error
+            return 4
+            ;;
+    esac
 }
 
 dotfiles_config_flush() {
@@ -964,18 +998,12 @@ dotfiles_config_state_load_core() {
         return 3
     }
     dotfiles_config_hook BEFORE_READ_OPEN || return 4
-    dotfiles_config_read_verified_once "$identity" || {
-        dotfiles_config_read_drift_error
-        return 3
-    }
+    dotfiles_config_read_verified_or_report "$identity" || return $?
     first_body=$DOTFILES_CONFIG_READ_BODY
     first_size=$DOTFILES_CONFIG_READ_SIZE
 
     dotfiles_config_hook AFTER_FIRST_READ || return 4
-    dotfiles_config_read_verified_once "$identity" || {
-        dotfiles_config_read_drift_error
-        return 3
-    }
+    dotfiles_config_read_verified_or_report "$identity" || return $?
     second_body=$DOTFILES_CONFIG_READ_BODY
     second_size=$DOTFILES_CONFIG_READ_SIZE
     [ "$first_size" = "$second_size" ] && [ "$first_body" = "$second_body" ] || {
@@ -1012,10 +1040,7 @@ dotfiles_config_state_load_core() {
         dotfiles_config_read_drift_error
         return 3
     }
-    dotfiles_config_read_verified_once "$identity" || {
-        dotfiles_config_read_drift_error
-        return 3
-    }
+    dotfiles_config_read_verified_or_report "$identity" || return $?
     [ "$DOTFILES_CONFIG_READ_SIZE" = "$second_size" ] &&
         [ "$DOTFILES_CONFIG_READ_BODY" = "$second_body" ] || {
         dotfiles_config_read_drift_error
