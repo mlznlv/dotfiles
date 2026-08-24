@@ -2,21 +2,26 @@
 
 [Command guide](README.md) / Plan
 
-Preview deterministic create or update effects for an explicit composition.
+Preview deterministic create or update effects for an explicit or saved
+composition.
 
 Available · Read-only · Chezmoi required.
 
 ## Usage
 
 ~~~text
-dotfiles plan (--profile <profile-id> | --modules <id,id>)
+dotfiles plan [--profile <profile-id> | --modules <id,id>]
               [--add <id,id>] [--platform macos|debian]
 ~~~
 
-Exactly one of `--profile` and `--modules` is required. `--add` uses the normal
+The explicit base options remain mutually exclusive. If either is present,
+that invocation bypasses local selection completely. If both are omitted, the
+planner strictly loads the standard saved selection. An invocation `--add`
+then follows saved additions in memory only. Every path uses the normal
 resolver, including dependency expansion, conflicts, exclusive groups,
 platform compatibility, and rendered-target ownership. Without `--platform`,
-the shared platform detector selects macOS or Debian-family Linux.
+the shared detector selects macOS or Debian-family Linux; platform is never
+loaded from or written to selection state.
 
 ## Behavior
 
@@ -30,6 +35,11 @@ targets. Autosuggestions revalidates its canonical contained artifact
 immediately before comparison and requires the same candidate used by that
 render. No context, rendered output, comparison result, cache, state, or plan is
 retained.
+
+Loading saved intent is strictly read-only. A missing, unsafe, malformed,
+non-canonical, drifting, or catalog-invalid selection fails with guidance to
+run `dotfiles config set` or pass an explicit base. No local-state failure
+chooses a default or produces a partial actionable plan.
 
 Chezmoi compares only exact targets owned by the resolved modules. User
 configuration, pagers, color, custom diffs, external refresh, interactivity,
@@ -87,7 +97,7 @@ prerequisite or unsafe selected target and rerun the command.
 | --- | --- |
 | `0` | Valid plan, including `No changes.` |
 | `2` | Invalid command syntax |
-| `3` | Invalid catalog, composition, platform, prerequisite data, ownership, destination, or unsafe comparison result |
+| `3` | Missing/invalid local selection, invalid catalog/composition/platform/prerequisite data/ownership/destination, or unsafe comparison result |
 | `4` | Required internal component or Chezmoi is unavailable |
 | `5` | Selected prerequisite is missing or Chezmoi comparison failed; no actionable plan was produced |
 

@@ -689,18 +689,6 @@ run_tty "$EVENTS" "$PROJECT_ROOT" "$CASE_CONFIG" "$CASE_HOME" config interactive
 check_status "TERM while awaiting confirmation returns 143" 143
 check_path_absent "TERM while awaiting confirmation creates no state" "$CASE_CONFIG"
 
-new_case explicit-consumers
-EVENTS=$(selection_events profile shell.minimal "" yes)
-run_tty "$EVENTS" "$PROJECT_ROOT" "$CASE_CONFIG" "$CASE_HOME" config interactive --platform debian
-check_status "saved state for explicit-consumer checks succeeds" 0
-for command in resolve prerequisite plan apply; do
-    case "$command" in
-        prerequisite) run_command env XDG_CONFIG_HOME="$CASE_CONFIG" HOME="$CASE_HOME" "$CLI" prerequisite check --platform debian ;;
-        *) run_command env XDG_CONFIG_HOME="$CASE_CONFIG" HOME="$CASE_HOME" "$CLI" "$command" --platform debian ;;
-    esac
-    check_status "${command} still requires an explicit base" 2
-done
-
 if [ ! -s "$PROBE_LOG" ]; then
     pass "interactive selection invokes no provider, prerequisite, installer, network, pager, editor, privilege, render, plan, apply, or cache helper"
 else

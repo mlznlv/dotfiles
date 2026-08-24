@@ -12,7 +12,8 @@ Run commands from the repository root with `./bin/dotfiles`.
 > profile. Command and artifact prerequisite checks are available; application
 > checks remain deferred. Configuration planning and selected apply are
 > available. Flag-based and terminal-only interactive local selection are
-> available, but selection-consuming commands do not load saved state yet.
+> available, and the four selection-consuming commands use saved intent only
+> when an explicit base is omitted. Inspect and doctor remain deferred.
 
 ## Quick start
 
@@ -49,12 +50,12 @@ Catalog-backed commands, including planning, require
 
 1. List available modules or profiles.
 2. Inspect an identifier with `show`.
-3. Preview the final dependency-expanded composition with `resolve`.
-4. Optionally save the same explicit intent with `config set`, or choose it in
-   a terminal with `config interactive`.
-5. Check its declared command and artifact prerequisites.
-6. Preview selected home-target changes with `plan`.
-7. Apply the same explicit selection and review the freshly recomputed plan.
+3. Preview the final dependency-expanded composition with an explicit base.
+4. Save that intent with `config set`, or choose it in a terminal with
+   `config interactive`.
+5. Run `resolve`, prerequisite checking, planning, and apply without repeating
+   the base; each command strictly reloads and freshly validates saved intent.
+6. Review apply's freshly recomputed plan and confirm it independently.
 
 ~~~console
 ./bin/dotfiles profile list
@@ -62,9 +63,9 @@ Catalog-backed commands, including planning, require
 ./bin/dotfiles resolve --profile shell.minimal
 ./bin/dotfiles config set --profile shell.minimal
 # Or: ./bin/dotfiles config interactive
-./bin/dotfiles prerequisite check --profile shell.minimal
-./bin/dotfiles plan --profile shell.minimal
-./bin/dotfiles apply --profile shell.minimal
+./bin/dotfiles prerequisite check
+./bin/dotfiles plan
+./bin/dotfiles apply
 ~~~
 
 The example identifier above is released on macOS and Debian-family Linux.
@@ -92,9 +93,13 @@ plan, apply, or install software. See [config set](config/set.md) for the flag
 form and [config interactive](config/interactive.md) for exact prompts,
 cancellation, and terminal requirements.
 
-Current selection-consuming commands still require an explicit `--profile` or
-`--modules` base and do not read or combine with saved state. Consumption,
-inspect, and doctor remain later focused increments in the
+`resolve`, `prerequisite check`, `plan`, and `apply` load saved intent only when
+an explicit `--profile` or `--modules` base is omitted. An explicit base and
+its invocation `--add` bypass local state completely. With no explicit base,
+an invocation `--add` is appended after saved additions in memory and is never
+persisted. Saved selection is convenience input, not apply approval; apply
+still prints, confirms, reloads the state, and recomputes every Phase 3 fact.
+Inspect and doctor remain later focused increments in the
 [Phase 4 roadmap](../roadmap.md#phase-4-configuration-workflow).
 
 ## Choose a platform
@@ -121,8 +126,8 @@ Use `--all` with a list command to disable platform filtering. Do not combine
 | --- | --- |
 | `0` | Success, including an empty list |
 | `2` | Invalid command syntax |
-| `3` | Invalid catalog, composition, platform, destination, prerequisite data, ownership, or comparison result |
-| `4` | A required component or safe local-state update is unavailable, a post-rename result is uncertain, or application checking is required |
+| `3` | Missing or unsafe local selection, invalid catalog/composition/platform/destination/prerequisite data/ownership, or an unsafe comparison result |
+| `4` | A required component or safe local-state read/update is unavailable, a post-rename result is uncertain, or application checking is required |
 | `5` | A selected prerequisite is missing or a Chezmoi comparison failed |
 | `6` | A selected target failed during Chezmoi apply or post-write verification |
 | `129`, `130`, `143` | Handled HUP, INT, or TERM interruption |
@@ -150,9 +155,10 @@ The shell identifiers documented in this guide are released.
 ### Local selection is unsafe or invalid
 
 Preserve or move the abbreviated active-selection file aside, or repair its
-path and permissions, before rerunning a config command. Neither command
-repairs, normalizes, or deletes existing state. See [config set](config/set.md)
-for lock and uncertain-write recovery.
+path and permissions, before rerunning a consuming command. A missing file can
+be created with `config set`; an explicit `--profile` or `--modules` invocation
+bypasses local state. No consumer repairs, normalizes, locks, or deletes it.
+See [config set](config/set.md) for writer lock and uncertain-write recovery.
 
 ### Interactive selection refuses input
 
@@ -182,7 +188,8 @@ targets that already converged.
 
 The CLI reads catalog data, basic operating-system facts, PATH and artifact
 metadata, selected destination targets, and the standard local selection path
-only when a config command safely compares or updates it. It does not open or
+only for a config command or a consumer with no explicit base. State reads are
+strict, non-mutating, and never print file contents. The CLI does not open or
 invoke prerequisites, use the network, request elevated privileges, call
 software providers, or display destination or state contents. Apply delegates
 only confirmed, freshly verified selected files to Chezmoi and performs no

@@ -140,8 +140,8 @@ applications, remote access, or broad configuration sets.
 
 ## Phase 4: Configuration workflow
 
-**Status:** In progress; architecture, flag-based selection, and terminal-only
-interactive local selection complete; saved-selection consumption next.
+**Status:** In progress; architecture, flag-based and terminal-only selection,
+and saved-selection consumption complete; inspect and doctor next.
 
 **Objective:** make normal setup possible without editing TOML.
 
@@ -167,11 +167,12 @@ interactive local selection complete; saved-selection consumption next.
 3. **Interactive local selection (complete):** implemented exact, terminal-only
    selection, deterministic compatible inventory, no-change preflight, and
    confirmation on the same state library. Depends on increment 2.
-4. **Saved-selection consumption (next):** let `resolve`, `prerequisite check`, `plan`,
-   and `apply` load local intent only when an invocation omits an explicit
-   base. Preserve explicit-selector precedence and all fresh Phase 3 checks.
+4. **Saved-selection consumption (complete):** `resolve`, `prerequisite check`,
+   `plan`, and `apply` load local intent only when an invocation omits an
+   explicit base. Explicit-selector precedence, invocation-only additions,
+   strict read-only state safety, and all fresh Phase 3 checks remain intact.
    Depends on increment 2 and follows increment 3.
-5. **Inspect and doctor:** add read-only selection inspection and narrow local
+5. **Inspect and doctor (next):** add read-only selection inspection and narrow local
    state diagnosis. Depends on increment 2 and the consuming-command contract
    in increment 4.
 6. **Generated-cache reset (conditional):** implement only after a named cache

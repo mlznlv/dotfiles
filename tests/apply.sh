@@ -255,7 +255,7 @@ profile_targets=$(printf '%s\n' '.config/starship.toml' '.config/zsh/autosuggest
 
 help_output=$("${PROJECT_ROOT}/bin/dotfiles" help)
 case "$help_output" in
-    *'dotfiles apply (--profile <profile-id> | --modules <id,id>) [--add <id,id>] [--platform macos|debian] [--yes]'*) pass 'help lists exact apply syntax' ;;
+    *'dotfiles apply [--profile <profile-id> | --modules <id,id>] [--add <id,id>] [--platform macos|debian] [--yes]'*) pass 'help lists exact apply syntax' ;;
     *) STATUS=1; OUTPUT=$help_output; fail 'help lists exact apply syntax' ;;
 esac
 
@@ -267,8 +267,7 @@ for arguments in \
     '--modules shell.zsh --yes --yes' \
     '--modules shell.zsh -y' \
     '--modules shell.zsh --unknown' \
-    '--modules' \
-    '--platform debian --yes'; do
+    '--modules'; do
     home=$(new_home "usage-${checks}")
     # Intentional word splitting supplies static invalid argument fixtures.
     # shellcheck disable=SC2086

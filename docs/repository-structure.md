@@ -6,9 +6,9 @@ The repository contains a schema-1 catalog, resolver, shell prerequisite
 checker, isolated selected-source renderer, deterministic configuration
 planner, and safe selected-target apply path with three production modules and
 one profile. It also contains flag-based and terminal-only interactive local
-selection over one shared state library. It contains no software-provider
-adapters; the saved state itself lives outside the repository and managed home
-sources.
+selection plus strict saved-selection consumption over one shared state
+library. It contains no software-provider adapters; the saved state itself
+lives outside the repository and managed home sources.
 
 ~~~text
 .
@@ -62,6 +62,7 @@ sources.
 │   │   ├── pty-confirm.py
 │   │   └── pty-interactive.py
 │   ├── apply.sh
+│   ├── config-consumption.sh
 │   ├── config-interactive.sh
 │   ├── config-state.sh
 │   ├── plan.sh
@@ -153,7 +154,9 @@ the current artifact fact, captures scoped Chezmoi status privately, and
 constructs stable create/update plans. CLI dispatch remains in `bin/dotfiles`.
 `lib/apply.sh` privately snapshots the displayed canonical plan, recomputes it
 after exact confirmation, delegates one changed target at a time to Chezmoi,
-and verifies each resulting file before reporting completion.
+and verifies each resulting file before reporting completion. Saved-intent
+apply also compares the exact state identity, bytes, and effective selection
+across its two independently loaded passes.
 No Homebrew, mise, package-manager, or application-provider adapter is planned.
 
 `home/` is the chezmoi source root. `shell.zsh` alone owns
@@ -180,8 +183,9 @@ and cleanup on macOS and Debian inputs.
 
 [ADR 0011](adr/0011-define-local-configuration-workflow.md) is Accepted, and
 `lib/config-state.sh` plus `dotfiles config set` and `dotfiles config interactive`
-implement the first two state increments. One CLI-owned active-selection file
-lives outside both the repository and managed HOME sources:
+implement the saving lifecycle. The same library now provides the strict
+read-only consumer path. One CLI-owned active-selection file lives outside both
+the repository and managed HOME sources:
 
 ~~~text
 $XDG_CONFIG_HOME/
@@ -215,9 +219,15 @@ non-invocation, and zero managed-home mutation. The focused state hook proves
 that the writer freshly validates after confirmation and remains unreachable
 from the public CLI.
 
-Existing `resolve`, `prerequisite check`, `plan`, and `apply` commands do not
-read this file and continue to require an explicit base. Saved-state
-consumption, inspect, and doctor remain later Phase 4 increments.
+`bin/dotfiles` owns one effective-selection adapter for `resolve`, `prerequisite
+check`, `plan`, and `apply`. Explicit bases bypass the state component. Omitted
+bases use the library reader, which creates no state-side object and verifies
+the regular-file identity, repeated bytes, canonical schema, and current
+catalog meaning. `tests/config-consumption.sh` covers syntax, precedence,
+macOS and Debian inputs, XDG/HOME roots, state safety and drift, explicit
+bypass with the state component absent, output equivalence, invocation-only
+additions, and apply confirmation-time reloading. Inspect and doctor remain
+later Phase 4 increments.
 
 The accepted decision reserves `$XDG_CACHE_HOME/dotfiles/generated/`, with a
 validated `$HOME/.cache/dotfiles/generated/` fallback, only if a future

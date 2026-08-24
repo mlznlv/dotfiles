@@ -257,11 +257,22 @@ use the same validator, proposal, canonical bytes, and hardened state writer.
 See [config set](../cli/config/set.md) for explicit module syntax, local path
 rules, recovery, and concurrency limits.
 
-> [!WARNING]
-> `resolve`, `prerequisite check`, `plan`, and `apply` do not consume saved
-> selection yet. Continue passing `--profile` or `--modules` to those commands.
-> Saved-state consumption, inspect, and doctor remain later
-> [Phase 4](../roadmap.md#phase-4-configuration-workflow) increments.
+Use the saved intent without repeating its base:
+
+~~~console
+$ ./bin/dotfiles resolve --platform debian
+$ ./bin/dotfiles prerequisite check --platform debian
+$ ./bin/dotfiles plan --platform debian
+$ ./bin/dotfiles apply --platform debian
+~~~
+
+These commands strictly reload and freshly validate the state when no explicit
+base is present. Passing `--profile` or `--modules` bypasses local state. An
+`--add` with no explicit base follows the saved additions for that invocation
+only. Saving is never apply approval: apply still prints the complete plan,
+requires exact confirmation, reloads state, and recomputes before mutation.
+Inspect and doctor remain later
+[Phase 4](../roadmap.md#phase-4-configuration-workflow) increments.
 
 ## Understand failures
 
@@ -308,7 +319,7 @@ roll back or replay the earlier plan.
 Available commands do not:
 
 - Install, remove, or upgrade packages.
-- Save a reusable plan or apply a saved selection implicitly.
+- Save a reusable plan or apply merely because a selection was saved.
 - Invoke Homebrew, mise, or another provider.
 - Open or invoke declared prerequisites.
 - Display destination contents or machine identity, or inspect unselected home
@@ -319,10 +330,10 @@ Available commands do not:
 Only `apply` writes managed home configuration, and only after printing and
 recomputing the selected plan with exact intent. `config set` and
 `config interactive` write only the CLI-owned active-selection file and
-necessary owned configuration directories. Saved-selection consumption,
-generalized recovery, sharing, and repair commands remain planned. Software
-installation is outside the product boundary. Follow delivery in the
-[roadmap](../roadmap.md).
+necessary owned configuration directories. Selection consumers read that file
+strictly and never rewrite it. Inspection, diagnosis, generalized recovery,
+sharing, and repair commands remain planned. Software installation is outside
+the product boundary. Follow delivery in the [roadmap](../roadmap.md).
 
 ## Command reference
 

@@ -2,14 +2,14 @@
 
 [Command guide](README.md) / Apply
 
-Recompute, confirm, and converge an explicit selected configuration.
+Recompute, confirm, and converge an explicit or saved selected configuration.
 
 Available · Mutating · Chezmoi required · Software installation: none.
 
 ## Usage
 
 ~~~text
-dotfiles apply (--profile <profile-id> | --modules <id,id>)
+dotfiles apply [--profile <profile-id> | --modules <id,id>]
                [--add <id,id>] [--platform macos|debian] [--yes]
 ~~~
 
@@ -18,8 +18,12 @@ Selection and platform rules are identical to [`dotfiles plan`](plan.md).
 invocation. It does not suppress validation, recomputation, output, or failure
 reporting. There is no `-y`, saved plan, default profile, or environment-based
 approval.
-The current command does not load the local selection saved by `config set`;
-an explicit base remains required.
+
+An explicit `--profile` or `--modules` base bypasses local selection
+completely. When both are omitted, apply strictly loads the standard saved
+selection. An invocation `--add` follows saved additions for this invocation
+only and is never persisted. Saved selection supplies composition intent; it
+is not approval to change managed home state.
 
 ## Confirmation flow
 
@@ -41,11 +45,14 @@ the complete plan.
 
 After approval, apply independently rebuilds catalog resolution, ownership,
 prerequisites, the canonical artifact fact, render context, rendered files, and
-changed-target records from the original CLI input. The canonical records,
-selection, context, artifact fact, and rendered bytes must match the displayed
-plan's private snapshot exactly. Changed destination base bytes are also
-snapshotted privately during both passes and must match. Drift fails before
-Chezmoi mutation and asks the user to rerun the command.
+changed-target records from the original CLI input. For saved intent, this
+second pass independently re-derives the standard root and reloads state. The
+exact state identity and bytes plus the effective profile/modules/additions
+must match the first pass, even when a replacement would resolve to similar
+modules. The canonical records, context, artifact fact, rendered bytes, and
+changed destination base bytes must also match their displayed-plan private
+snapshot. Any deletion, unsafe replacement, corruption, selection change, or
+other drift fails before Chezmoi mutation and asks the user to rerun.
 
 ## Mutation boundary
 
@@ -91,6 +98,15 @@ Already converged:
 ~~~console
 $ ./bin/dotfiles apply --modules prompt.starship --platform macos
 No changes.
+~~~
+
+After saving local intent, omit the explicit base without weakening
+confirmation:
+
+~~~console
+$ ./bin/dotfiles apply --platform macos
+...
+Apply this configuration? Type yes to continue:
 ~~~
 
 Cancellation:

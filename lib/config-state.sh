@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Private local-selection comparison and persistence for configuration commands.
+# Private local-selection reading, comparison, and persistence for commands.
 # This file is sourced by bin/dotfiles and intentionally exposes no CLI path
 # override. Tests use private internal wrappers with an isolated root.
 
@@ -155,22 +155,22 @@ dotfiles_config_parse_array() {
     DOTFILES_CONFIG_PARSED_ARRAY=$csv
 }
 
-dotfiles_config_parse_file() {
-    local file=$1
+dotfiles_config_parse_body() {
+    local body=$1
+    local byte_count=$2
     local line
     local base_value
     local additional_value
-    local actual_body
-    local byte_count
     local expected_size
     local profile=
     local modules=
     local additional=
+    local LC_ALL=C
     local -a lines=()
 
     while IFS= read -r line || [ -n "$line" ]; do
         lines+=("$line")
-    done < "$file" || return 1
+    done <<< "$body" || return 1
 
     [ "${#lines[@]}" -eq 5 ] || return 1
     [ "${lines[0]}" = 'schema = 1' ] || return 1
@@ -203,16 +203,24 @@ dotfiles_config_parse_file() {
 
     dotfiles_config_validate_intent "$profile" "$modules" "$additional" >/dev/null 2>&1 || return 1
     dotfiles_config_build_body "$profile" "$modules" "$additional"
-    actual_body=$(< "$file") || return 1
-    [ "$actual_body" = "$DOTFILES_CONFIG_BODY" ] || return 1
-    byte_count=$(LC_ALL=C wc -c < "$file") || return 1
-    byte_count=${byte_count//[[:space:]]/}
+    [ "$body" = "$DOTFILES_CONFIG_BODY" ] || return 1
     expected_size=$((${#DOTFILES_CONFIG_BODY} + 1))
     [ "$byte_count" -eq "$expected_size" ] 2>/dev/null || return 1
 
     DOTFILES_CONFIG_PARSED_PROFILE=$profile
     DOTFILES_CONFIG_PARSED_MODULES=$modules
     DOTFILES_CONFIG_PARSED_ADDITIONAL=$additional
+}
+
+dotfiles_config_parse_file() {
+    local file=$1
+    local actual_body
+    local byte_count
+
+    actual_body=$(< "$file") || return 1
+    byte_count=$(LC_ALL=C wc -c < "$file") || return 1
+    byte_count=${byte_count//[[:space:]]/}
+    dotfiles_config_parse_body "$actual_body" "$byte_count"
 }
 
 dotfiles_config_stat_owner() {
@@ -252,6 +260,22 @@ dotfiles_config_stat_followed_inode() {
         stat -f '%i' "$1"
     else
         stat -L -c '%i' "$1" 2>/dev/null
+    fi
+}
+
+dotfiles_config_stat_followed_size() {
+    if stat -f '%z' "$1" >/dev/null 2>&1; then
+        stat -f '%z' "$1"
+    else
+        stat -L -c '%s' "$1" 2>/dev/null
+    fi
+}
+
+dotfiles_config_stat_links() {
+    if stat -f '%l' "$1" >/dev/null 2>&1; then
+        stat -f '%l' "$1"
+    else
+        stat -c '%h' "$1" 2>/dev/null
     fi
 }
 
@@ -302,12 +326,30 @@ dotfiles_config_path_is_outside_project() {
 
 dotfiles_config_storage_error() {
     printf 'error: unsafe local selection storage under %s\n' "$DOTFILES_CONFIG_ROOT_LABEL" >&2
-    printf 'Use a current-user-owned, real, writable configuration directory outside the repository.\n' >&2
+    if [ "${DOTFILES_CONFIG_OPERATION_MODE:-write}" = read ]; then
+        printf 'Use a current-user-owned, real configuration directory outside the repository, or pass --profile or --modules.\n' >&2
+    else
+        printf 'Use a current-user-owned, real, writable configuration directory outside the repository.\n' >&2
+    fi
 }
 
 dotfiles_config_state_error() {
     printf 'error: local selection at %s/dotfiles/active-selection.toml is unsafe or invalid\n' "$DOTFILES_CONFIG_ROOT_LABEL" >&2
-    printf 'Preserve or move it aside, or repair its path and permissions, then rerun dotfiles config set.\n' >&2
+    if [ "${DOTFILES_CONFIG_OPERATION_MODE:-write}" = read ]; then
+        printf 'Preserve or move it aside, repair it with dotfiles config set, or pass --profile or --modules.\n' >&2
+    else
+        printf 'Preserve or move it aside, or repair its path and permissions, then rerun dotfiles config set.\n' >&2
+    fi
+}
+
+dotfiles_config_missing_state_error() {
+    printf 'error: no local selection is configured under %s/dotfiles\n' "$DOTFILES_CONFIG_ROOT_LABEL" >&2
+    printf 'Run dotfiles config set or pass --profile or --modules.\n' >&2
+}
+
+dotfiles_config_read_drift_error() {
+    printf 'error: local selection changed or was replaced while being read\n' >&2
+    printf 'Rerun the command or pass --profile or --modules.\n' >&2
 }
 
 dotfiles_config_lock_error() {
@@ -326,6 +368,17 @@ dotfiles_config_require_tools() {
     for tool in chmod cmp cp grep id mkdir mktemp mv rm rmdir stat sync uname wc; do
         command -v "$tool" >/dev/null 2>&1 || {
             printf 'error: local selection state requirements are unavailable\n' >&2
+            return 4
+        }
+    done
+}
+
+dotfiles_config_require_read_tools() {
+    local tool
+
+    for tool in cat grep id stat wc; do
+        command -v "$tool" >/dev/null 2>&1 || {
+            printf 'error: local selection read requirements are unavailable\n' >&2
             return 4
         }
     done
@@ -455,6 +508,16 @@ dotfiles_config_validate_state_path() {
     mode=$(dotfiles_config_stat_mode "$DOTFILES_CONFIG_STATE_PATH") || return 1
     [ "$owner" = "$(id -u)" ] || return 1
     [ "$mode" = 600 ] || return 1
+    [ "$(dotfiles_config_stat_links "$DOTFILES_CONFIG_STATE_PATH")" = 1 ] || return 1
+}
+
+dotfiles_config_validate_read_directories() {
+    dotfiles_config_real_directory_is_safe "$DOTFILES_CONFIG_ROOT" || return 1
+    dotfiles_config_path_is_outside_project "$DOTFILES_CONFIG_ROOT" || return 1
+    [ -r "$DOTFILES_CONFIG_ROOT" ] && [ -x "$DOTFILES_CONFIG_ROOT" ] || return 1
+    dotfiles_config_real_directory_is_safe "$DOTFILES_CONFIG_DIRECTORY" || return 1
+    [ "$(dotfiles_config_stat_mode "$DOTFILES_CONFIG_DIRECTORY")" = 700 ] || return 1
+    [ -r "$DOTFILES_CONFIG_DIRECTORY" ] && [ -x "$DOTFILES_CONFIG_DIRECTORY" ] || return 1
 }
 
 dotfiles_config_revalidate_directories() {
@@ -484,6 +547,91 @@ dotfiles_config_hook() {
     esac
     declare -F "$function_name" >/dev/null 2>&1 || return 4
     "$function_name"
+}
+
+dotfiles_config_open_read_handle() {
+    local fd
+
+    for fd in 9 8 7 6 5 4 3; do
+        if (: <&"$fd") 2>/dev/null; then
+            continue
+        fi
+        if eval "exec ${fd}<\"\${DOTFILES_CONFIG_STATE_PATH}\"" 2>/dev/null; then
+            DOTFILES_CONFIG_READ_FD=$fd
+            DOTFILES_CONFIG_READ_FD_OPEN=1
+            return 0
+        fi
+    done
+    return 1
+}
+
+dotfiles_config_close_read_handle() {
+    if [ "${DOTFILES_CONFIG_READ_FD_OPEN:-0}" -eq 1 ]; then
+        eval "exec ${DOTFILES_CONFIG_READ_FD}<&-" 2>/dev/null || true
+        DOTFILES_CONFIG_READ_FD_OPEN=0
+        DOTFILES_CONFIG_READ_FD=
+    fi
+}
+
+dotfiles_config_read_handle_identity() {
+    local inode
+
+    [ "${DOTFILES_CONFIG_READ_FD_OPEN:-0}" -eq 1 ] || return 1
+    [ -n "${DOTFILES_CONFIG_READ_DEVICE:-}" ] || return 1
+    inode=$(dotfiles_config_stat_followed_inode "/dev/fd/${DOTFILES_CONFIG_READ_FD}") || return 1
+    printf '%s:%s\n' "$DOTFILES_CONFIG_READ_DEVICE" "$inode"
+}
+
+dotfiles_config_read_verified_once() {
+    local expected_identity=$1
+    local handle_identity
+    local size_before
+    local size_after
+    local body
+    local expected_size
+    local LC_ALL=C
+
+    dotfiles_config_open_read_handle || return 1
+    handle_identity=$(dotfiles_config_read_handle_identity) || {
+        dotfiles_config_close_read_handle
+        return 1
+    }
+    if [ "$handle_identity" != "$expected_identity" ] ||
+       ! dotfiles_config_validate_read_directories ||
+       ! dotfiles_config_validate_state_path ||
+       [ "$(dotfiles_config_stat_identity "$DOTFILES_CONFIG_STATE_PATH")" != "$expected_identity" ]; then
+        dotfiles_config_close_read_handle
+        return 1
+    fi
+
+    size_before=$(dotfiles_config_stat_followed_size "/dev/fd/${DOTFILES_CONFIG_READ_FD}") || {
+        dotfiles_config_close_read_handle
+        return 1
+    }
+    body=$(cat <&$DOTFILES_CONFIG_READ_FD) || {
+        dotfiles_config_close_read_handle
+        return 1
+    }
+    size_after=$(dotfiles_config_stat_followed_size "/dev/fd/${DOTFILES_CONFIG_READ_FD}") || {
+        dotfiles_config_close_read_handle
+        return 1
+    }
+    handle_identity=$(dotfiles_config_read_handle_identity) || {
+        dotfiles_config_close_read_handle
+        return 1
+    }
+    dotfiles_config_close_read_handle
+
+    expected_size=$((${#body} + 1))
+    [ "$handle_identity" = "$expected_identity" ] || return 1
+    [ "$size_before" = "$size_after" ] || return 1
+    [ "$size_before" -eq "$expected_size" ] 2>/dev/null || return 1
+    dotfiles_config_validate_read_directories || return 1
+    dotfiles_config_validate_state_path || return 1
+    [ "$(dotfiles_config_stat_identity "$DOTFILES_CONFIG_STATE_PATH")" = "$expected_identity" ] || return 1
+
+    DOTFILES_CONFIG_READ_BODY=$body
+    DOTFILES_CONFIG_READ_SIZE=$size_before
 }
 
 dotfiles_config_flush() {
@@ -749,6 +897,139 @@ dotfiles_config_validate_saved_selection() {
     [ -n "$result" ] || return 3
 }
 
+dotfiles_config_state_load_core() {
+    local private_root=$1
+    local platform=$2
+    local identity
+    local first_body
+    local first_size
+    local second_body
+    local second_size
+    local validation_status
+    local result
+
+    DOTFILES_CONFIG_OPERATION_MODE=read
+    DOTFILES_CONFIG_PRIVATE_ROOT_ACTIVE=$private_root
+    DOTFILES_CONFIG_ROOT=
+    DOTFILES_CONFIG_ROOT_LABEL=
+    DOTFILES_CONFIG_DIRECTORY=
+    DOTFILES_CONFIG_STATE_PATH=
+    DOTFILES_CONFIG_READ_FD=
+    DOTFILES_CONFIG_READ_FD_OPEN=0
+    DOTFILES_CONFIG_READ_DEVICE=
+    DOTFILES_CONFIG_READ_BODY=
+    DOTFILES_CONFIG_READ_SIZE=
+    DOTFILES_CONFIG_LOADED_PROFILE=
+    DOTFILES_CONFIG_LOADED_MODULES=
+    DOTFILES_CONFIG_LOADED_ADDITIONAL=
+    DOTFILES_CONFIG_LOADED_SNAPSHOT=
+
+    dotfiles_config_require_read_tools || return $?
+    dotfiles_config_derive_root "$private_root" || return $?
+    dotfiles_config_set_paths
+
+    if [ ! -e "$DOTFILES_CONFIG_ROOT" ] && [ ! -L "$DOTFILES_CONFIG_ROOT" ]; then
+        dotfiles_config_missing_state_error
+        return 3
+    fi
+    if [ ! -e "$DOTFILES_CONFIG_DIRECTORY" ] && [ ! -L "$DOTFILES_CONFIG_DIRECTORY" ]; then
+        dotfiles_config_real_directory_is_safe "$DOTFILES_CONFIG_ROOT" &&
+            dotfiles_config_path_is_outside_project "$DOTFILES_CONFIG_ROOT" &&
+            [ -r "$DOTFILES_CONFIG_ROOT" ] && [ -x "$DOTFILES_CONFIG_ROOT" ] || {
+            dotfiles_config_storage_error
+            return 3
+        }
+        dotfiles_config_missing_state_error
+        return 3
+    fi
+    dotfiles_config_validate_read_directories || {
+        dotfiles_config_storage_error
+        return 3
+    }
+    if [ ! -e "$DOTFILES_CONFIG_STATE_PATH" ] && [ ! -L "$DOTFILES_CONFIG_STATE_PATH" ]; then
+        dotfiles_config_missing_state_error
+        return 3
+    fi
+    dotfiles_config_validate_state_path || {
+        dotfiles_config_state_error
+        return 3
+    }
+
+    identity=$(dotfiles_config_stat_identity "$DOTFILES_CONFIG_STATE_PATH") || {
+        dotfiles_config_read_drift_error
+        return 3
+    }
+    DOTFILES_CONFIG_READ_DEVICE=$(dotfiles_config_stat_device "$DOTFILES_CONFIG_STATE_PATH") || {
+        dotfiles_config_read_drift_error
+        return 3
+    }
+    dotfiles_config_hook BEFORE_READ_OPEN || return 4
+    dotfiles_config_read_verified_once "$identity" || {
+        dotfiles_config_read_drift_error
+        return 3
+    }
+    first_body=$DOTFILES_CONFIG_READ_BODY
+    first_size=$DOTFILES_CONFIG_READ_SIZE
+
+    dotfiles_config_hook AFTER_FIRST_READ || return 4
+    dotfiles_config_read_verified_once "$identity" || {
+        dotfiles_config_read_drift_error
+        return 3
+    }
+    second_body=$DOTFILES_CONFIG_READ_BODY
+    second_size=$DOTFILES_CONFIG_READ_SIZE
+    [ "$first_size" = "$second_size" ] && [ "$first_body" = "$second_body" ] || {
+        dotfiles_config_read_drift_error
+        return 3
+    }
+    dotfiles_config_hook AFTER_SECOND_READ || return 4
+    dotfiles_config_validate_read_directories &&
+        dotfiles_config_validate_state_path &&
+        [ "$(dotfiles_config_stat_identity "$DOTFILES_CONFIG_STATE_PATH")" = "$identity" ] || {
+        dotfiles_config_read_drift_error
+        return 3
+    }
+
+    dotfiles_config_parse_body "$second_body" "$second_size" || {
+        dotfiles_config_state_error
+        return 3
+    }
+    result=$(run_catalog resolve "$platform" 0 "" \
+        "$DOTFILES_CONFIG_PARSED_PROFILE" \
+        "$DOTFILES_CONFIG_PARSED_MODULES" \
+        "$DOTFILES_CONFIG_PARSED_ADDITIONAL" 2>/dev/null)
+    validation_status=$?
+    if [ "$validation_status" -ne 0 ] || [ -z "$result" ]; then
+        dotfiles_config_state_error
+        [ "$validation_status" -eq 4 ] && return 4
+        return 3
+    fi
+
+    dotfiles_config_hook AFTER_READ_VALIDATION || return 4
+    dotfiles_config_validate_read_directories &&
+        dotfiles_config_validate_state_path &&
+        [ "$(dotfiles_config_stat_identity "$DOTFILES_CONFIG_STATE_PATH")" = "$identity" ] || {
+        dotfiles_config_read_drift_error
+        return 3
+    }
+    dotfiles_config_read_verified_once "$identity" || {
+        dotfiles_config_read_drift_error
+        return 3
+    }
+    [ "$DOTFILES_CONFIG_READ_SIZE" = "$second_size" ] &&
+        [ "$DOTFILES_CONFIG_READ_BODY" = "$second_body" ] || {
+        dotfiles_config_read_drift_error
+        return 3
+    }
+
+    DOTFILES_CONFIG_LOADED_PROFILE=$DOTFILES_CONFIG_PARSED_PROFILE
+    DOTFILES_CONFIG_LOADED_MODULES=$DOTFILES_CONFIG_PARSED_MODULES
+    DOTFILES_CONFIG_LOADED_ADDITIONAL=$DOTFILES_CONFIG_PARSED_ADDITIONAL
+    DOTFILES_CONFIG_LOADED_SNAPSHOT="identity=${identity}
+bytes=${second_size}
+${second_body}"
+}
+
 dotfiles_config_capture_current_state() {
     local platform=$1
     local current_status
@@ -812,6 +1093,7 @@ dotfiles_config_print_result() {
 dotfiles_config_initialize_operation() {
     local private_root=$1
 
+    DOTFILES_CONFIG_OPERATION_MODE=write
     DOTFILES_CONFIG_PRIVATE_ROOT_ACTIVE=$private_root
     DOTFILES_CONFIG_ROOT=
     DOTFILES_CONFIG_ROOT_LABEL=
@@ -1068,6 +1350,16 @@ dotfiles_config_state_set_internal() (
 dotfiles_config_state_compare_internal() (
     dotfiles_config_state_compare_core "$@"
 )
+
+dotfiles_config_state_load_internal() {
+    [ "$#" -eq 2 ] || return 4
+    dotfiles_config_state_load_core "$1" "$2"
+}
+
+dotfiles_config_state_load() {
+    [ "$#" -eq 1 ] || return 4
+    dotfiles_config_state_load_core "" "$1"
+}
 
 dotfiles_config_state_compare() (
     dotfiles_config_state_compare_core "" "$@"
