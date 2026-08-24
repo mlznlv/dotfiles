@@ -92,7 +92,7 @@ record_output() {
 run_command() {
     local stdout_file="${TEST_ROOT}/stdout"
     local stderr_file="${TEST_ROOT}/stderr"
-    "$@" > "$stdout_file" 2> "$stderr_file"
+    "$@" </dev/null > "$stdout_file" 2> "$stderr_file"
     STATUS=$?
     STDOUT=$(< "$stdout_file")
     STDERR=$(< "$stderr_file")
