@@ -9,8 +9,9 @@ and Debian-family Linux.
 > available. Safe selected configuration apply and both flag-based and
 > terminal-only interactive local selection are also available. Resolution,
 > prerequisite checks, planning, and apply consume that saved intent when an
-> explicit base is omitted. No public render command or software installation
-> behavior exists.
+> explicit base is omitted. Read-only effective-selection inspection and
+> narrow local-selection diagnosis are available. No public render command or
+> software installation behavior exists.
 
 ## Start here
 
@@ -60,6 +61,8 @@ With chezmoi available, users and contributors can inspect and resolve the shell
 ./bin/dotfiles resolve --profile shell.minimal --platform debian
 ./bin/dotfiles config set --profile shell.minimal --platform debian
 ./bin/dotfiles config interactive --platform debian
+./bin/dotfiles config inspect --platform debian
+./bin/dotfiles config doctor --platform debian
 ./bin/dotfiles prerequisite check --platform debian
 ./bin/dotfiles plan --platform debian
 ./bin/dotfiles apply --platform debian
@@ -68,7 +71,9 @@ With chezmoi available, users and contributors can inspect and resolve the shell
 Discovery, resolution, prerequisite checking, and planning are read-only.
 Planning compares only selected targets and does not print their contents.
 `config set` and `config interactive` change only the CLI-owned local
-active-selection file. `resolve`, `prerequisite check`, `plan`, and `apply`
+active-selection file. `config inspect` presents effective intent and fresh
+resolution; `config doctor` validates only the standard selection file and
+composition. `resolve`, `prerequisite check`, `plan`, and `apply`
 strictly load it only when `--profile` and `--modules` are omitted; either
 explicit base bypasses local state. Interactive saving requires terminal stdin
 and exact `yes` confirmation when the proposed state differs.
@@ -94,10 +99,10 @@ Chezmoi. No command installs packages or calls software providers.
 The architecture foundation and minimal schema-1 shell vertical slice are
 complete: explicit composition, prerequisites, isolated rendering,
 deterministic planning, safe idempotent selected apply, and flag-based and
-terminal-only interactive local selection and saved-selection consumption are
-established. Application checks, local inspection and diagnosis, broader
-modules, and stable promotion remain later [roadmap](docs/roadmap.md)
-increments.
+terminal-only interactive local selection, saved-selection consumption,
+inspection, and diagnosis are established. Phase 4 is complete. Application
+checks, portable saved/shared profiles, broader modules, and stable promotion
+remain later [roadmap](docs/roadmap.md) increments.
 
 Development integrates through `next`; `master` remains the stable branch until
 an explicitly reviewed promotion. See [Contributing](CONTRIBUTING.md) for the

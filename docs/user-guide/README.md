@@ -8,8 +8,9 @@ and applying an explicit dotfiles composition. For exact syntax, use the
 > The current release can inspect, validate, and resolve catalog data, check
 > selected command/artifact prerequisites, plan selected target changes, and
 > explicitly apply those selected home files through Chezmoi. It can also save
-> local profile or module intent without applying it. It cannot install
-> packages.
+> local profile or module intent, present the exact effective selection, and
+> diagnose narrow local-selection health without applying it. It cannot
+> install packages.
 >
 > The production catalog exposes the minimal shell composition. Prerequisite
 > identifiers use schema 1. Command and artifact presence checks are available;
@@ -261,18 +262,31 @@ Use the saved intent without repeating its base:
 
 ~~~console
 ./bin/dotfiles resolve --platform debian
+./bin/dotfiles config inspect --platform debian
+./bin/dotfiles config doctor --platform debian
 ./bin/dotfiles prerequisite check --platform debian
 ./bin/dotfiles plan --platform debian
 ./bin/dotfiles apply --platform debian
 ~~~
 
-These commands strictly reload and freshly validate the state when no explicit
-base is present. Passing `--profile` or `--modules` bypasses local state. An
-`--add` with no explicit base follows the saved additions for that invocation
-only. Saving is never apply approval: apply still prints the complete plan,
-requires exact confirmation, reloads state, and recomputes before mutation.
-Inspect and doctor remain later
-[Phase 4](../roadmap.md#phase-4-configuration-workflow) increments.
+Resolve, inspect, prerequisite check, plan, and apply strictly reload and
+freshly validate state when no explicit base is present. Passing `--profile`
+or `--modules` bypasses local state for those commands. An `--add` with no
+explicit base follows saved additions for that invocation only. Doctor always
+validates saved state. Saving is never apply approval: apply still prints the
+complete plan, requires exact confirmation, reloads state, and recomputes
+before mutation.
+
+`config inspect` prints only the effective source, requested base and
+additions, and fresh deterministic module order. An explicit base bypasses
+local state; an omitted base loads it; an invocation `--add` remains
+transient. See [config inspect](../cli/config/inspect.md) for the exact output.
+
+`config doctor` always checks the standard saved selection. It validates only
+safe storage, canonical schema 1, a stable read, and current-platform
+composition, then prints three healthy lines. It does not repair state or
+check software, artifacts, render, plan, Chezmoi, cache, or managed HOME. See
+[config doctor](../cli/config/doctor.md) for recovery and exact scope.
 
 ## Understand failures
 
@@ -292,8 +306,8 @@ causes include:
 Invalid syntax points back to help:
 
 ~~~console
-$ ./bin/dotfiles resolve
-error: resolve requires --profile or --modules
+$ ./bin/dotfiles config doctor --yes
+error: unknown config doctor option
 Run dotfiles help for usage.
 ~~~
 
@@ -331,9 +345,12 @@ Only `apply` writes managed home configuration, and only after printing and
 recomputing the selected plan with exact intent. `config set` and
 `config interactive` write only the CLI-owned active-selection file and
 necessary owned configuration directories. Selection consumers read that file
-strictly and never rewrite it. Inspection, diagnosis, generalized recovery,
-sharing, and repair commands remain planned. Software installation is outside
-the product boundary. Follow delivery in the [roadmap](../roadmap.md).
+strictly and never rewrite it. `config inspect` and `config doctor` are also
+strictly read-only; doctor is not a generalized system-health or repair
+command. Sharing and repair commands remain planned. Software installation is
+outside the product boundary. Generated-cache reset remains deferred because
+no persistent cache consumer exists. Follow delivery in the
+[roadmap](../roadmap.md).
 
 ## Command reference
 
@@ -348,6 +365,8 @@ the product boundary. Follow delivery in the [roadmap](../roadmap.md).
 - [Resolve a composition](../cli/resolve.md)
 - [Save local selection](../cli/config/set.md)
 - [Choose local selection interactively](../cli/config/interactive.md)
+- [Inspect effective local selection](../cli/config/inspect.md)
+- [Diagnose local selection health](../cli/config/doctor.md)
 - [Check prerequisites](../cli/prerequisite/check.md)
 - [Build a configuration plan](../cli/plan.md)
 - [Apply selected configuration](../cli/apply.md)

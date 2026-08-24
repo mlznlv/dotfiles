@@ -93,9 +93,9 @@ lock; first confirm no writer is active before removing that lock manually.
 Writes use a private same-directory temporary file, data and directory flushes,
 and one atomic rename. Pre-rename drift that is observed preserves the external
 file. A failure after rename returns an uncertain result and tells you not to
-rely on the selection. `config doctor` is planned and is not yet an available
-command, so preserve the file and investigate its path and exact canonical
-bytes before retrying.
+rely on the selection. Run [config doctor](doctor.md) for a read-only check of
+the resulting standard file and composition; it does not repair uncertain or
+invalid state.
 
 The lock cannot serialize an editor or another non-cooperating process. A
 portable rename is not compare-and-swap, so a non-cooperating write in the
@@ -125,8 +125,10 @@ saved intent without rewriting it. Apply still requires its own exact `yes` or
 `--yes`, independently reloads state after confirmation, and recomputes the
 complete plan. [Interactive saving](interactive.md) is also available.
 
-Inspect and doctor remain later
-[Phase 4](../../roadmap.md#phase-4-configuration-workflow) increments.
+Use [config inspect](inspect.md) to present the effective intent and
+[config doctor](doctor.md) to validate narrow local-selection health. Both are
+strictly read-only; saving remains separate from inspection, diagnosis, plan,
+and apply.
 
 Next: [resolve the saved composition](../resolve.md) or return to the [command
 guide](../README.md).

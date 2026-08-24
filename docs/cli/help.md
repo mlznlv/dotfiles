@@ -21,8 +21,9 @@ Run it from the repository root:
 ~~~
 
 All three forms print the same human-readable output, including `config set`,
-`config interactive`, `prerequisite check`, `plan`, and `apply`. The command
-does not read the catalog, local selection state, or machine facts.
+`config interactive`, `config inspect`, `config doctor`, `prerequisite check`,
+`plan`, and `apply`. The command does not read the catalog, local selection
+state, or machine facts.
 
 ## Exit codes
 

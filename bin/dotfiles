@@ -28,12 +28,15 @@ Usage:
   dotfiles resolve [--profile <profile-id> | --modules <id,id>] [--add <id,id>] [--platform macos|debian]
   dotfiles config set (--profile <profile-id> | --modules <id,id>) [--add <id,id>] [--platform macos|debian]
   dotfiles config interactive [--platform macos|debian]
+  dotfiles config inspect [--profile <profile-id> | --modules <id,id>] [--add <id,id>] [--platform macos|debian]
+  dotfiles config doctor [--platform macos|debian]
   dotfiles prerequisite check [--profile <profile-id> | --modules <id,id>] [--add <id,id>] [--platform macos|debian]
   dotfiles plan [--profile <profile-id> | --modules <id,id>] [--add <id,id>] [--platform macos|debian]
   dotfiles apply [--profile <profile-id> | --modules <id,id>] [--add <id,id>] [--platform macos|debian] [--yes]
 
 Config set changes only private local selection state. Apply changes only confirmed selected configuration.
 Config interactive requires terminal stdin and changes only confirmed private local selection state.
+Config inspect and doctor are read-only and diagnose only selection intent and its catalog composition.
 Resolve, prerequisite check, plan, and apply load saved selection only when an explicit base is omitted.
 EOF
 }
@@ -431,15 +434,18 @@ dotfiles_effective_selection() {
     DOTFILES_EFFECTIVE_MODULES=$modules
     DOTFILES_EFFECTIVE_ADDITIONAL=$invocation_additional
     DOTFILES_EFFECTIVE_SNAPSHOT=
+    DOTFILES_EFFECTIVE_SOURCE=invocation
 
     if [ "$explicit_base" -eq 0 ]; then
         selection_source=local
+        DOTFILES_EFFECTIVE_SOURCE=local
         config_require_state_program || return $?
         dotfiles_config_state_load "$platform" || return $?
         DOTFILES_EFFECTIVE_PROFILE=$DOTFILES_CONFIG_LOADED_PROFILE
         DOTFILES_EFFECTIVE_MODULES=$DOTFILES_CONFIG_LOADED_MODULES
         DOTFILES_EFFECTIVE_ADDITIONAL=$DOTFILES_CONFIG_LOADED_ADDITIONAL
         if [ -n "$invocation_additional" ]; then
+            DOTFILES_EFFECTIVE_SOURCE='local plus invocation additions'
             if [ -n "$DOTFILES_EFFECTIVE_ADDITIONAL" ]; then
                 DOTFILES_EFFECTIVE_ADDITIONAL="${DOTFILES_EFFECTIVE_ADDITIONAL},${invocation_additional}"
             else
@@ -456,6 +462,98 @@ profile=${DOTFILES_EFFECTIVE_PROFILE}
 modules=${DOTFILES_EFFECTIVE_MODULES}
 additional=${DOTFILES_EFFECTIVE_ADDITIONAL}
 ${state_snapshot}"
+}
+
+config_print_inspection() {
+    local source=$1
+    local profile=$2
+    local modules=$3
+    local additional=$4
+    local platform=$5
+    local resolved_modules=$6
+    local resolved_module
+
+    printf 'Selection source: %s\n' "$source"
+    if [ -n "$profile" ]; then
+        printf 'Base: %s\n' "$profile"
+    else
+        printf 'Base: %s\n' "$modules"
+    fi
+    if [ -n "$additional" ]; then
+        printf 'Additional modules: %s\n' "$additional"
+    else
+        printf 'Additional modules: none\n'
+    fi
+    printf 'Resolved modules for %s:\n' "$platform"
+    while IFS= read -r resolved_module; do
+        [ -n "$resolved_module" ] || continue
+        printf '  %s\n' "$resolved_module"
+    done <<< "$resolved_modules"
+}
+
+config_inspect_command() {
+    local resolved_modules
+    local summary
+
+    parse_consuming_selection_options "config inspect" 0 "$@"
+    [ "$DOTFILES_SELECTION_HELP" -eq 0 ] || return 0
+    if [ -z "$DOTFILES_SELECTION_PLATFORM" ]; then
+        DOTFILES_SELECTION_PLATFORM=$(detect_platform) || return $?
+    fi
+    validate_platform "$DOTFILES_SELECTION_PLATFORM" || return $?
+    dotfiles_effective_selection "$DOTFILES_SELECTION_EXPLICIT_BASE" \
+        "$DOTFILES_SELECTION_PROFILE" "$DOTFILES_SELECTION_MODULES" \
+        "$DOTFILES_SELECTION_ADDITIONAL" "$DOTFILES_SELECTION_PLATFORM" || return $?
+    resolved_modules=$(run_catalog resolve "$DOTFILES_SELECTION_PLATFORM" 0 "" \
+        "$DOTFILES_EFFECTIVE_PROFILE" "$DOTFILES_EFFECTIVE_MODULES" \
+        "$DOTFILES_EFFECTIVE_ADDITIONAL") || return $?
+    [ -n "$resolved_modules" ] || {
+        printf 'error: inspected selection resolved to no modules\n' >&2
+        return 3
+    }
+
+    summary=$(config_print_inspection "$DOTFILES_EFFECTIVE_SOURCE" \
+        "$DOTFILES_EFFECTIVE_PROFILE" "$DOTFILES_EFFECTIVE_MODULES" \
+        "$DOTFILES_EFFECTIVE_ADDITIONAL" "$DOTFILES_SELECTION_PLATFORM" \
+        "$resolved_modules") || return 4
+    printf '%s\n' "$summary"
+}
+
+config_doctor_command() {
+    local platform=
+    local platform_seen=0
+    local option
+
+    while [ "$#" -gt 0 ]; do
+        option=$1
+        case "$option" in
+            --platform)
+                shift
+                [ "$#" -gt 0 ] || usage_error "--platform requires a value"
+                case "$1" in ""|--*) usage_error "--platform requires a value" ;; esac
+                [ "$platform_seen" -eq 0 ] || usage_error "--platform may be specified only once"
+                platform_seen=1
+                platform=$1
+                ;;
+            -h|--help)
+                usage
+                return 0
+                ;;
+            *) usage_error "unknown config doctor option" ;;
+        esac
+        shift
+    done
+
+    if [ -z "$platform" ]; then
+        platform=$(detect_platform) || return $?
+    fi
+    validate_platform "$platform" || return $?
+    config_require_state_program || return $?
+    DOTFILES_CONFIG_DIAGNOSTIC_CONTEXT=doctor dotfiles_config_state_load "$platform" || return $?
+
+    printf 'Local selection file: healthy\n'
+    printf 'Schema: 1\n'
+    printf 'Composition for %s: valid\n' "$platform"
 }
 
 resolve_command() {
@@ -802,6 +900,7 @@ apply_command() {
 }
 
 main() {
+    DOTFILES_CONFIG_DIAGNOSTIC_CONTEXT=
     [ "$#" -gt 0 ] || {
         usage
         return 0
@@ -859,6 +958,8 @@ main() {
             case "$subcommand" in
                 set) config_set_command "$@" ;;
                 interactive) config_interactive_command "$@" ;;
+                inspect) config_inspect_command "$@" ;;
+                doctor) config_doctor_command "$@" ;;
                 *) usage_error "unknown config subcommand $subcommand" ;;
             esac
             ;;

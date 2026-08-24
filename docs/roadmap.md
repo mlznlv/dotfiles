@@ -140,8 +140,7 @@ applications, remote access, or broad configuration sets.
 
 ## Phase 4: Configuration workflow
 
-**Status:** In progress; architecture, flag-based and terminal-only selection,
-and saved-selection consumption complete; inspect and doctor next.
+**Status:** Complete.
 
 **Objective:** make normal setup possible without editing TOML.
 
@@ -172,9 +171,12 @@ and saved-selection consumption complete; inspect and doctor next.
    explicit base. Explicit-selector precedence, invocation-only additions,
    strict read-only state safety, and all fresh Phase 3 checks remain intact.
    Depends on increment 2 and follows increment 3.
-5. **Inspect and doctor (next):** add read-only selection inspection and narrow local
-   state diagnosis. Depends on increment 2 and the consuming-command contract
-   in increment 4.
+5. **Inspect and doctor (complete):** implemented read-only effective-selection
+   inspection and narrow standard local-state diagnosis through the shared
+   precedence adapter, strict reader, and resolver. Exact output, privacy,
+   path safety, drift, descriptor, lock-preservation, macOS/Debian, and zero-
+   mutation coverage is included. Depends on increment 2 and the consuming-
+   command contract in increment 4.
 6. **Generated-cache reset (conditional):** implement only after a named cache
    consumer and exact entry allowlist are accepted and implemented. Otherwise
    defer this increment indefinitely.
@@ -186,11 +188,16 @@ and saved-selection consumption complete; inspect and doctor next.
 - Local settings contain no secrets or repository-visible machine identity.
 - Invalid combinations are rejected before apply.
 - Explicit selectors remain independent of saved local state.
+- Effective intent is inspectable without checking software or managed HOME.
+- Local-selection health is diagnosable without repair or broader system
+  health checks.
 
 **Depends on:** phase 3.
 
-Portable saved/shared profiles remain Phase 5 work. Broader workstation
-modules and profiles remain Phase 6 work.
+Portable saved/shared profiles are the next planned Phase 5 work. Broader
+workstation modules and profiles remain Phase 6 work. Generated-cache reset
+remains deferred indefinitely unless a named persistent consumer and bounded
+allowlist are accepted and implemented.
 
 ## Phase 5: Saved and shared profiles
 
