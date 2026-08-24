@@ -155,13 +155,16 @@ write_state() {
 state_snapshot() {
     local root=$1
     local state="$root/dotfiles/active-selection.toml"
+    local mtime
     if [ ! -e "$state" ] && [ ! -L "$state" ]; then
         printf 'missing\n'
         return
     fi
     printf 'identity=%s\n' "$(dotfiles_config_stat_identity "$state" 2>/dev/null || printf unavailable)"
     printf 'mode=%s\n' "$(dotfiles_config_stat_mode "$state" 2>/dev/null || printf unavailable)"
-    printf 'mtime=%s\n' "$(stat -f '%m' "$state" 2>/dev/null || stat -c '%Y' "$state" 2>/dev/null || printf unavailable)"
+    mtime=$(stat -c '%Y' "$state" 2>/dev/null) ||
+        mtime=$(stat -f '%m' "$state" 2>/dev/null) || mtime=unavailable
+    printf 'mtime=%s\n' "$mtime"
     if [ -f "$state" ] && [ ! -L "$state" ]; then cksum "$state"; fi
     find "$root/dotfiles" -maxdepth 1 -print | LC_ALL=C sort
 }
