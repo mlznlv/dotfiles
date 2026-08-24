@@ -578,7 +578,11 @@ dotfiles_config_open_read_handle() {
     # numeric range instead, preserving every descriptor inherited by callers.
     # Descriptor 255 is reserved internally by Bash 3.2 while reading scripts.
     for ((fd = 254; fd >= 3; fd--)); do
-        if (: <&"$fd") 2>/dev/null; then
+        # Probe both directions without performing I/O. Bash 3.2 rejects an
+        # input duplication for a write-only descriptor and an output
+        # duplication for a read-only descriptor; either success means the
+        # caller already owns the descriptor and it must not be replaced.
+        if (: <&"$fd") 2>/dev/null || (: >&"$fd") 2>/dev/null; then
             continue
         fi
         if eval "exec ${fd}<\"\${DOTFILES_CONFIG_STATE_PATH}\"" 2>/dev/null; then

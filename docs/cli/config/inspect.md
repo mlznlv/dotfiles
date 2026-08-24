@@ -57,7 +57,8 @@ Inspect does not save or normalize intent, create state, inspect the writer
 lock, check prerequisites or artifacts, discover applications, render, plan,
 compare or apply home targets, create cache, invoke providers or installers,
 use the network, or request privilege. It leaves selection bytes, identity,
-mode, ownership, timestamps, and unrelated files unchanged.
+mode, ownership, modification time, and unrelated files unchanged. Reading may
+update access time according to the host filesystem's mount policy.
 
 Diagnostics use catalog identifiers and, when necessary, only the stable
 `$XDG_CONFIG_HOME` or `$HOME/.config` origin token. They never print state

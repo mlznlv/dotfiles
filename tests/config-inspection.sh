@@ -140,6 +140,30 @@ run_cli_with_low_descriptors_occupied() {
     OUTPUT="${STDOUT}${STDOUT:+$'\n'}${STDERR}"
 }
 
+run_cli_with_write_only_high_descriptor() {
+    local root=$1
+    local home=$2
+    shift 2
+    local stdout_file="${TEST_ROOT}/stdout"
+    local stderr_file="${TEST_ROOT}/stderr"
+    local descriptor_file="${TEST_ROOT}/write-only-descriptor"
+    local command_status
+
+    : > "$descriptor_file"
+    exec 254>>"$descriptor_file"
+    XDG_CONFIG_HOME="$root" HOME="$home" main "$@" > "$stdout_file" 2> "$stderr_file"
+    command_status=$?
+    printf 'descriptor-preserved\n' >&254 2>> "$stderr_file"
+    DESCRIPTOR_STATUS=$?
+    exec 254>&-
+
+    STATUS=$command_status
+    STDOUT=$(< "$stdout_file")
+    STDERR=$(< "$stderr_file")
+    OUTPUT="${STDOUT}${STDOUT:+$'\n'}${STDERR}"
+    DESCRIPTOR_OUTPUT=$(< "$descriptor_file")
+}
+
 new_root() {
     local root="${TEST_ROOT}/roots/$1"
     mkdir "$root"
@@ -340,7 +364,7 @@ run_cli "$PROFILE_ROOT" "$PROFILE_HOME" config doctor --platform macos
 check_equal 'healthy profile doctor output is exact on macOS' "$STDOUT" 'Local selection file: healthy
 Schema: 1
 Composition for macos: valid'
-check_equal 'profile inspect and doctor preserve bytes, identity, mode, timestamps, and tree' "$(state_snapshot "$PROFILE_ROOT")" "$PROFILE_BEFORE"
+check_equal 'profile inspect and doctor preserve bytes, identity, mode, modification time, and tree' "$(state_snapshot "$PROFILE_ROOT")" "$PROFILE_BEFORE"
 check_equal 'profile inspect and doctor leave managed HOME unchanged' "$(tree_snapshot "$PROFILE_HOME")" "$HOME_BEFORE"
 
 MODULE_ROOT=$(new_root modules)
@@ -670,6 +694,12 @@ check_status 'inspect succeeds with inherited descriptors 3 through 9 occupied' 
 check_equal 'occupied descriptors preserve exact inspect output' "$STDOUT" "$PROFILE_DEBIAN_OUTPUT"
 run_cli_with_low_descriptors_occupied "$PROFILE_ROOT" "$PROFILE_HOME" config doctor --platform debian
 check_status 'doctor succeeds with inherited descriptors 3 through 9 occupied' 0
+run_cli_with_write_only_high_descriptor "$PROFILE_ROOT" "$PROFILE_HOME" config inspect --platform debian
+check_status 'inspect succeeds with inherited write-only descriptor 254 occupied' 0
+check_equal 'inspect preserves inherited write-only descriptor 254' "$DESCRIPTOR_STATUS:$DESCRIPTOR_OUTPUT" '0:descriptor-preserved'
+run_cli_with_write_only_high_descriptor "$PROFILE_ROOT" "$PROFILE_HOME" config doctor --platform debian
+check_status 'doctor succeeds with inherited write-only descriptor 254 occupied' 0
+check_equal 'doctor preserves inherited write-only descriptor 254' "$DESCRIPTOR_STATUS:$DESCRIPTOR_OUTPUT" '0:descriptor-preserved'
 
 fail_read_handle_open() {
     return 4

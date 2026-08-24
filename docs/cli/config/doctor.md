@@ -57,8 +57,9 @@ readiness, repository health, network health, or cache performance.
 Doctor does not create, repair, normalize, chmod, chown, migrate, reset,
 delete, lock, unlock, wait, render, compare, plan, apply, download, install, or
 invoke a declared tool. It leaves state bytes, identity, mode, ownership,
-timestamps, the root tree, the writer lock, unrelated entries, caches, and
-managed home data unchanged.
+modification time, the root tree, the writer lock, unrelated entries, caches,
+and managed home data unchanged. Reading may update access time according to
+the host filesystem's mount policy.
 
 Diagnostics use catalog identifiers and only the stable `$XDG_CONFIG_HOME` or
 `$HOME/.config` origin token when a location is necessary. They never print
