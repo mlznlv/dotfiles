@@ -319,8 +319,8 @@ Available modules for macos:
 run_command "$CLI" help
 check_status "help succeeds" 0
 check_contains "help lists exact interactive syntax" 'dotfiles config interactive [--platform macos|debian]'
-check_not_contains "help still omits inspect" 'config inspect'
-check_not_contains "help still omits doctor" 'config doctor'
+check_contains "help lists released inspect" 'dotfiles config inspect [--profile <profile-id> | --modules <id,id>]'
+check_contains "help lists released doctor" 'dotfiles config doctor [--platform macos|debian]'
 check_not_contains "help still omits cache reset" 'cache reset'
 
 for arguments in \

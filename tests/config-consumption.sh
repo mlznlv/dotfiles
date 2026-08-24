@@ -520,6 +520,9 @@ replace_reader_bytes() {
     printf '%s\n' "$PROFILE_BODY" > "$DRIFT_STATE"
     chmod 600 "$DRIFT_STATE"
 }
+append_reader_bytes() {
+    printf '\n' >> "$DRIFT_STATE"
+}
 replace_reader_identity() {
     local replacement="${DRIFT_STATE}.replacement"
     cp -- "$DRIFT_STATE" "$replacement"
@@ -536,6 +539,16 @@ STATUS=$?
 unset DOTFILES_CONFIG_TEST_AFTER_FIRST_READ
 check_status 'observable byte drift during read fails closed' 3
 check_contains 'byte drift diagnostic is actionable' 'changed or was replaced while being read'
+
+reader_size_root=$(new_root reader-drift-size)
+write_state "$reader_size_root" "$STARSHIP_BODY"
+DRIFT_STATE="$reader_size_root/dotfiles/active-selection.toml"
+DOTFILES_CONFIG_TEST_AFTER_FIRST_READ=append_reader_bytes
+OUTPUT=$(dotfiles_config_state_load_internal "$reader_size_root" debian 2>&1)
+STATUS=$?
+unset DOTFILES_CONFIG_TEST_AFTER_FIRST_READ
+check_status 'observable same-identity size drift during read fails closed' 3
+check_contains 'same-identity size drift is not capability exhaustion' 'changed or was replaced while being read'
 
 reader_identity_root=$(new_root reader-drift-identity)
 write_state "$reader_identity_root" "$STARSHIP_BODY"

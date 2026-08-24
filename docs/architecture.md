@@ -6,10 +6,10 @@ This document defines the target architecture. The read-only catalog,
 discovery commands, resolver, command/artifact prerequisite checks, and
 isolated selected-source renderer and planner are released. Safe selected
 configuration apply, flag-based and terminal-only interactive local selection,
-and saved-selection consumption are also released. Application checks,
-inspect, and doctor remain planned.
-[ADR 0011](adr/0011-define-local-configuration-workflow.md) defines the
-accepted local-selection architecture implemented first by `config set`.
+saved-selection consumption, effective-selection inspection, and narrow
+local-selection diagnosis are also released. Application checks remain
+planned. [ADR 0011](adr/0011-define-local-configuration-workflow.md) defines
+the accepted and fully implemented Phase 4 local-selection architecture.
 
 [ADR 0007](adr/0007-define-configuration-only-modules.md) defines the
 configuration-only direction. [ADR 0009](adr/0009-define-pre-release-schema-versioning.md)
@@ -63,8 +63,8 @@ unset or empty. The file records an exact profile or ordered module base plus
 ordered additional modules. It stores user intent, not resolved dependencies,
 platform facts, render data, plans, machine identity, or apply authorization.
 
-Released `resolve`, `prerequisite check`, `plan`, and `apply` use one shared
-precedence adapter. Syntax is parsed before state access. An explicit
+Released `resolve`, `config inspect`, `prerequisite check`, `plan`, and `apply`
+use one shared precedence adapter. Syntax is parsed before state access. An explicit
 `--profile` or `--modules` base and its invocation `--add` remain fully
 authoritative and do not derive, open, validate, or merge local state. Only an
 omitted base strictly loads saved intent; an invocation `--add` then follows
@@ -95,18 +95,26 @@ same resolver, proposal formatter, private state comparison, and hardened state
 writer as `config set`. It requires terminal stdin, presents compatible catalog
 identifiers in catalog order, reads exact literal intent, and requires exact
 `yes` only for a differing proposal. Cancellation does not create state, while
-byte-identical valid state returns unchanged without confirmation. Planned
-`config inspect` and `config doctor` are read-only and narrowly scoped to
-selection state. Chezmoi continues to own all managed-home rendering,
-comparison, and application.
+byte-identical valid state returns unchanged without confirmation.
+
+Released `config inspect` is a buffered presentation over the same precedence
+adapter and resolver. It prints only the effective source, requested base and
+additions, and fresh deterministic module order. Explicit inspection bypasses
+state; local inspection uses the strict shared reader. Released
+`config doctor` always uses that reader to validate only standard storage,
+canonical schema 1, stable bytes and identity, and fresh current-platform
+composition. It ignores the writer lock and checks no software, artifacts,
+render, plan, cache, Chezmoi state, or managed HOME. Both commands are
+byte-for-byte non-mutating and privacy-safe. Chezmoi continues to own all
+managed-home rendering, comparison, and application.
 
 No persistent generated-cache consumer exists, so the contract creates no
 cache and releases no reset command. A reset remains conditional on a later,
 named consumer and a bounded entry allowlist. See
 [ADR 0011](adr/0011-define-local-configuration-workflow.md) and the
 [Phase 4 roadmap](roadmap.md#phase-4-configuration-workflow). Flag-based and
-interactive saving plus saved-selection consumption are complete; inspect and
-doctor are next.
+interactive saving, saved-selection consumption, inspection, and diagnosis
+complete Phase 4. Phase 5 portable profiles remain planned.
 
 ## Neutral core
 
@@ -288,9 +296,10 @@ state, generic prerequisite presence, and current selected destination state.
 The planner disables local chezmoi configuration and custom diff behavior. It
 has no custom state database. The schema-1 active-selection file is a narrow
 CLI-owned intent document, not managed-home or plan state. `config set` and
-`config interactive` are its only writers. The four selection-consuming
-commands are strict read-only consumers only when an explicit base is omitted.
-Disposable generated caches must not become authority.
+`config interactive` are its only writers. The five selection-consuming
+commands are strict read-only consumers only when an explicit base is omitted;
+doctor is an always-local narrow diagnostic. Disposable generated caches must
+not become authority.
 
 - Catalog and imported profile data are static and never evaluated as code.
 - Render data is closed, ephemeral, sanitized, and never authority.

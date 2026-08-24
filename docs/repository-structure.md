@@ -7,8 +7,9 @@ checker, isolated selected-source renderer, deterministic configuration
 planner, and safe selected-target apply path with three production modules and
 one profile. It also contains flag-based and terminal-only interactive local
 selection plus strict saved-selection consumption over one shared state
-library. It contains no software-provider adapters; the saved state itself
-lives outside the repository and managed home sources.
+library, effective-selection inspection, and narrow local-selection diagnosis.
+It contains no software-provider adapters; the saved state itself lives
+outside the repository and managed home sources.
 
 ~~~text
 .
@@ -29,7 +30,7 @@ lives outside the repository and managed home sources.
 ├── docs/
 │   ├── adr/
 │   ├── cli/
-│   │   └── config/{interactive,set}.md
+│   │   └── config/{doctor,inspect,interactive,set}.md
 │   ├── modules/{shell/zsh,prompt}/
 │   ├── profiles/
 │   ├── user-guide/
@@ -63,6 +64,7 @@ lives outside the repository and managed home sources.
 │   │   └── pty-interactive.py
 │   ├── apply.sh
 │   ├── config-consumption.sh
+│   ├── config-inspection.sh
 │   ├── config-interactive.sh
 │   ├── config-state.sh
 │   ├── plan.sh
@@ -220,14 +222,18 @@ that the writer freshly validates after confirmation and remains unreachable
 from the public CLI.
 
 `bin/dotfiles` owns one effective-selection adapter for `resolve`, `prerequisite
-check`, `plan`, and `apply`. Explicit bases bypass the state component. Omitted
-bases use the library reader, which creates no state-side object and verifies
-the regular-file identity, repeated bytes, canonical schema, and current
-catalog meaning. `tests/config-consumption.sh` covers syntax, precedence,
-macOS and Debian inputs, XDG/HOME roots, state safety and drift, explicit
-bypass with the state component absent, output equivalence, invocation-only
-additions, and apply confirmation-time reloading. Inspect and doctor remain
-later Phase 4 increments.
+check`, `plan`, `apply`, and `config inspect`. Explicit bases bypass the state
+component. Omitted bases use the library reader, which creates no state-side
+object and verifies the regular-file identity, repeated bytes, canonical
+schema, and current catalog meaning. `config doctor` always uses that reader
+for narrow standard-state health. `tests/config-consumption.sh` covers syntax,
+precedence, macOS and Debian inputs, XDG/HOME roots, state safety and drift,
+explicit bypass with the state component absent, output equivalence,
+invocation-only additions, and apply confirmation-time reloading.
+`tests/config-inspection.sh` covers exact inspect and doctor output, strict
+scope, path/type/link/mode safety, catalog invalidity, descriptor and drift
+behavior, privacy, lock preservation, and zero mutation. These commands
+complete Phase 4.
 
 The accepted decision reserves `$XDG_CACHE_HOME/dotfiles/generated/`, with a
 validated `$HOME/.cache/dotfiles/generated/` fallback, only if a future

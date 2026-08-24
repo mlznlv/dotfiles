@@ -97,5 +97,6 @@ The command stops without printing a partial result.
 - `3` — local state, platform, catalog, identifier, dependency, or conflict validation failed.
 - `4` — chezmoi is unavailable.
 
-See the [user guide](../user-guide/README.md) for the complete composition
+See [config inspect](config/inspect.md) for the effective intent around a fresh
+resolution, the [user guide](../user-guide/README.md) for the complete
 workflow, or return to the [command guide](README.md).

@@ -108,8 +108,10 @@ privilege, mutate managed home files, or remove omitted configuration.
 `resolve`, `prerequisite check`, `plan`, and `apply` consume the saved intent
 only when an explicit base is omitted. Explicit bases bypass state, and a
 consumer's `--add` is invocation-only. Apply still requires separate approval
-and independently reloads the selection during recomputation. Inspect, doctor,
-and conditional cache reset are not available.
+and independently reloads the selection during recomputation. Use
+[config inspect](inspect.md) or [config doctor](doctor.md) afterward without
+changing the save-only semantics. Conditional cache reset remains unavailable
+because no generated-cache consumer exists.
 
 ## Exit codes
 
@@ -126,5 +128,5 @@ Errors go to standard error. Inventory, prompts, proposal, cancellation, and
 successful results go to standard output. Output never includes local-state
 contents, private roots, source or target paths, or machine identity.
 
-Next: [use flag-based saving](set.md) or return to the
-[command guide](../README.md).
+Next: [inspect effective intent](inspect.md), [use flag-based saving](set.md),
+or return to the [command guide](../README.md).

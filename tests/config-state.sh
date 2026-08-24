@@ -290,8 +290,8 @@ run_command "$CLI" help
 check_status "help succeeds" 0
 check_contains "help lists config set" 'dotfiles config set (--profile <profile-id> | --modules <id,id>)'
 check_contains "help lists interactive config" 'dotfiles config interactive [--platform macos|debian]'
-check_not_contains "help omits inspect" 'config inspect'
-check_not_contains "help omits doctor" 'config doctor'
+check_contains "help lists inspect" 'dotfiles config inspect [--profile <profile-id> | --modules <id,id>]'
+check_contains "help lists doctor" 'dotfiles config doctor [--platform macos|debian]'
 check_not_contains "help omits cache reset" 'cache reset'
 
 run_command "$CLI" config

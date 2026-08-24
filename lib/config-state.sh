@@ -326,7 +326,9 @@ dotfiles_config_path_is_outside_project() {
 
 dotfiles_config_storage_error() {
     printf 'error: unsafe local selection storage under %s\n' "$DOTFILES_CONFIG_ROOT_LABEL" >&2
-    if [ "${DOTFILES_CONFIG_OPERATION_MODE:-write}" = read ]; then
+    if [ "${DOTFILES_CONFIG_DIAGNOSTIC_CONTEXT:-}" = doctor ]; then
+        printf 'Preserve or move unsafe entries aside, repair the configuration path, then rerun dotfiles config doctor.\n' >&2
+    elif [ "${DOTFILES_CONFIG_OPERATION_MODE:-write}" = read ]; then
         printf 'Use a current-user-owned, real configuration directory outside the repository, or pass --profile or --modules.\n' >&2
     else
         printf 'Use a current-user-owned, real, writable configuration directory outside the repository.\n' >&2
@@ -335,7 +337,9 @@ dotfiles_config_storage_error() {
 
 dotfiles_config_state_error() {
     printf 'error: local selection at %s/dotfiles/active-selection.toml is unsafe or invalid\n' "$DOTFILES_CONFIG_ROOT_LABEL" >&2
-    if [ "${DOTFILES_CONFIG_OPERATION_MODE:-write}" = read ]; then
+    if [ "${DOTFILES_CONFIG_DIAGNOSTIC_CONTEXT:-}" = doctor ]; then
+        printf 'Preserve or move it aside, repair its path and permissions, then run dotfiles config set or dotfiles config interactive.\n' >&2
+    elif [ "${DOTFILES_CONFIG_OPERATION_MODE:-write}" = read ]; then
         printf 'Preserve or move it aside, repair it with dotfiles config set, or pass --profile or --modules.\n' >&2
     else
         printf 'Preserve or move it aside, or repair its path and permissions, then rerun dotfiles config set.\n' >&2
@@ -344,17 +348,29 @@ dotfiles_config_state_error() {
 
 dotfiles_config_missing_state_error() {
     printf 'error: no local selection is configured under %s/dotfiles\n' "$DOTFILES_CONFIG_ROOT_LABEL" >&2
-    printf 'Run dotfiles config set or pass --profile or --modules.\n' >&2
+    if [ "${DOTFILES_CONFIG_DIAGNOSTIC_CONTEXT:-}" = doctor ]; then
+        printf 'Run dotfiles config set or dotfiles config interactive.\n' >&2
+    else
+        printf 'Run dotfiles config set or pass --profile or --modules.\n' >&2
+    fi
 }
 
 dotfiles_config_read_drift_error() {
     printf 'error: local selection changed or was replaced while being read\n' >&2
-    printf 'Rerun the command or pass --profile or --modules.\n' >&2
+    if [ "${DOTFILES_CONFIG_DIAGNOSTIC_CONTEXT:-}" = doctor ]; then
+        printf 'Rerun dotfiles config doctor.\n' >&2
+    else
+        printf 'Rerun the command or pass --profile or --modules.\n' >&2
+    fi
 }
 
 dotfiles_config_read_handle_error() {
     printf 'error: local selection read handle is unavailable\n' >&2
-    printf 'Close inherited file descriptors or pass --profile or --modules.\n' >&2
+    if [ "${DOTFILES_CONFIG_DIAGNOSTIC_CONTEXT:-}" = doctor ]; then
+        printf 'Close inherited file descriptors and rerun dotfiles config doctor.\n' >&2
+    else
+        printf 'Close inherited file descriptors or pass --profile or --modules.\n' >&2
+    fi
 }
 
 dotfiles_config_lock_error() {
@@ -657,12 +673,16 @@ dotfiles_config_read_verified_or_report() {
     status=$?
     case "$status" in
         0) return 0 ;;
-        3)
+        1|3)
             dotfiles_config_read_drift_error
             return 3
             ;;
-        *)
+        4)
             dotfiles_config_read_handle_error
+            return 4
+            ;;
+        *)
+            printf 'error: local selection read validation failed\n' >&2
             return 4
             ;;
     esac

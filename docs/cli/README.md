@@ -1,9 +1,10 @@
 # Command guide
 
 Use the CLI to inspect and validate the catalog, preview a module composition,
-save local selection intent, or explicitly apply selected home configuration.
-Only `apply` mutates managed home targets; `config set` and `config interactive`
-change only the CLI-owned local selection file. No command installs software.
+save or inspect local selection intent, diagnose its narrow health, or
+explicitly apply selected home configuration. Only `apply` mutates managed
+home targets; `config set` and `config interactive` change only the CLI-owned
+local selection file. No command installs software.
 
 Run commands from the repository root with `./bin/dotfiles`.
 
@@ -12,8 +13,9 @@ Run commands from the repository root with `./bin/dotfiles`.
 > profile. Command and artifact prerequisite checks are available; application
 > checks remain deferred. Configuration planning and selected apply are
 > available. Flag-based and terminal-only interactive local selection are
-> available, and the four selection-consuming commands use saved intent only
-> when an explicit base is omitted. Inspect and doctor remain deferred.
+> available, and the four Phase 3 consumers use saved intent only when an
+> explicit base is omitted. Effective-selection inspection and narrow
+> local-selection diagnosis are available.
 
 ## Quick start
 
@@ -42,6 +44,8 @@ Catalog-backed commands, including planning, require
 | Preview a composition | `dotfiles resolve ...` | [resolve](resolve.md) |
 | Save local selection intent | `dotfiles config set ...` | [config set](config/set.md) |
 | Choose and save local selection interactively | `dotfiles config interactive ...` | [config interactive](config/interactive.md) |
+| Show effective selection and resolved order | `dotfiles config inspect ...` | [config inspect](config/inspect.md) |
+| Diagnose standard local selection health | `dotfiles config doctor ...` | [config doctor](config/doctor.md) |
 | Check selected prerequisites | `dotfiles prerequisite check ...` | [prerequisite check](prerequisite/check.md) |
 | Build a read-only configuration plan | `dotfiles plan ...` | [plan](plan.md) |
 | Recompute, confirm, and apply selected configuration | `dotfiles apply ...` | [apply](apply.md) |
@@ -53,9 +57,11 @@ Catalog-backed commands, including planning, require
 3. Preview the final dependency-expanded composition with an explicit base.
 4. Save that intent with `config set`, or choose it in a terminal with
    `config interactive`.
-5. Run `resolve`, prerequisite checking, planning, and apply without repeating
-   the base; each command strictly reloads and freshly validates saved intent.
-6. Review apply's freshly recomputed plan and confirm it independently.
+5. Inspect the effective intent, and use doctor when local selection health
+   needs an independent check.
+6. Run prerequisite checking, planning, and apply without repeating the base;
+   each command strictly reloads and freshly validates saved intent.
+7. Review apply's freshly recomputed plan and confirm it independently.
 
 ~~~console
 ./bin/dotfiles profile list
@@ -63,6 +69,8 @@ Catalog-backed commands, including planning, require
 ./bin/dotfiles resolve --profile shell.minimal
 ./bin/dotfiles config set --profile shell.minimal
 # Or: ./bin/dotfiles config interactive
+./bin/dotfiles config inspect
+./bin/dotfiles config doctor
 ./bin/dotfiles prerequisite check
 ./bin/dotfiles plan
 ./bin/dotfiles apply
@@ -99,8 +107,32 @@ its invocation `--add` bypass local state completely. With no explicit base,
 an invocation `--add` is appended after saved additions in memory and is never
 persisted. Saved selection is convenience input, not apply approval; apply
 still prints, confirms, reloads the state, and recomputes every Phase 3 fact.
-Inspect and doctor remain later focused increments in the
-[Phase 4 roadmap](../roadmap.md#phase-4-configuration-workflow).
+
+## Inspect and diagnose local selection
+
+`config inspect` shows the invocation-effective base, additions, source, and
+fresh deterministic module order:
+
+~~~console
+./bin/dotfiles config inspect --platform debian
+~~~
+
+An explicit base is labeled `invocation` and bypasses state. An omitted base
+loads saved state and is labeled `local`; invocation additions are transient
+and use `local plus invocation additions`. Inspect checks no prerequisites,
+artifacts, render, plan, cache, or managed HOME state. See
+[config inspect](config/inspect.md) for exact output and precedence.
+
+`config doctor` validates only the standard root, dedicated directory and
+file, canonical schema-1 intent, stable read, and fresh composition:
+
+~~~console
+./bin/dotfiles config doctor --platform debian
+~~~
+
+It never repairs or rewrites the selection and does not diagnose software,
+Chezmoi, plans, managed targets, cache, or the adjacent writer lock. See
+[config doctor](config/doctor.md) for exact healthy output and recovery.
 
 ## Choose a platform
 
@@ -156,9 +188,11 @@ The shell identifiers documented in this guide are released.
 
 Preserve or move the abbreviated active-selection file aside, or repair its
 path and permissions, before rerunning a consuming command. A missing file can
-be created with `config set`; an explicit `--profile` or `--modules` invocation
-bypasses local state. No consumer repairs, normalizes, locks, or deletes it.
-See [config set](config/set.md) for writer lock and uncertain-write recovery.
+be created with `config set` or `config interactive`; an explicit `--profile`
+or `--modules` invocation bypasses local state where accepted. Run
+`config doctor` for a narrow independent diagnosis. No read-only consumer
+repairs, normalizes, locks, or deletes the file. See
+[config set](config/set.md) for writer lock and uncertain-write recovery.
 
 ### Interactive selection refuses input
 
@@ -188,9 +222,10 @@ targets that already converged.
 
 The CLI reads catalog data, basic operating-system facts, PATH and artifact
 metadata, selected destination targets, and the standard local selection path
-only for a config command or a consumer with no explicit base. State reads are
-strict, non-mutating, and never print file contents. The CLI does not open or
-invoke prerequisites, use the network, request elevated privileges, call
+only for a config command or a consumer with no explicit base. Inspect and
+doctor are strict, non-mutating, and never print state contents or raw private
+roots. Doctor diagnoses no broader system or home health. The CLI does not open
+or invoke prerequisites, use the network, request elevated privileges, call
 software providers, or display destination or state contents. Apply delegates
 only confirmed, freshly verified selected files to Chezmoi and performs no
 rollback or removal.
