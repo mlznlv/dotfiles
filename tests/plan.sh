@@ -337,7 +337,6 @@ for arguments in \
     '--modules shell.zsh --platform debian --platform debian' \
     '--modules shell.zsh --unknown value' \
     '--modules' \
-    '--platform debian' \
     '--modules shell.zsh --destination /tmp'; do
     home=$(new_home "usage-${checks}")
     # Intentional word splitting supplies the static invalid-argument fixtures.
@@ -435,7 +434,7 @@ check_no_partial_plan 'relative HOME produces no partial plan'
 
 help_output=$("${PROJECT_ROOT}/bin/dotfiles" help)
 case "$help_output" in
-    *'dotfiles plan (--profile <profile-id> | --modules <id,id>) [--add <id,id>] [--platform macos|debian]'*)
+    *'dotfiles plan [--profile <profile-id> | --modules <id,id>] [--add <id,id>] [--platform macos|debian]'*)
         pass 'built-in help lists the exact plan syntax'
         ;;
     *) STATUS=1; OUTPUT=$help_output; fail 'built-in help lists the exact plan syntax' ;;

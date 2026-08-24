@@ -5,8 +5,8 @@
 This document defines the target architecture. The read-only catalog,
 discovery commands, resolver, command/artifact prerequisite checks, and
 isolated selected-source renderer and planner are released. Safe selected
-configuration apply and flag-based and terminal-only interactive local
-selection are also released. Application checks, saved-selection consumption,
+configuration apply, flag-based and terminal-only interactive local selection,
+and saved-selection consumption are also released. Application checks,
 inspect, and doctor remain planned.
 [ADR 0011](adr/0011-define-local-configuration-workflow.md) defines the
 accepted local-selection architecture implemented first by `config set`.
@@ -54,8 +54,7 @@ flowchart LR
 
 ## Local-selection input
 
-Current selection-consuming commands require an explicit `--profile` or
-`--modules` base. Released `config set` and `config interactive` write one
+Released `config set` and `config interactive` write one
 CLI-owned schema-1 active-selection file at
 `$XDG_CONFIG_HOME/dotfiles/active-selection.toml`,
 falling back to
@@ -64,21 +63,32 @@ unset or empty. The file records an exact profile or ordered module base plus
 ordered additional modules. It stores user intent, not resolved dependencies,
 platform facts, render data, plans, machine identity, or apply authorization.
 
-The current release writes but does not consume this file. Every invocation of
-`resolve`, `prerequisite check`, `plan`, and `apply` still requires an explicit
-base and remains independent of local state. A later focused increment will
-implement the accepted precedence contract: an explicit invocation base stays
-fully authoritative, while only omission of that base loads the saved choice.
+Released `resolve`, `prerequisite check`, `plan`, and `apply` use one shared
+precedence adapter. Syntax is parsed before state access. An explicit
+`--profile` or `--modules` base and its invocation `--add` remain fully
+authoritative and do not derive, open, validate, or merge local state. Only an
+omitted base strictly loads saved intent; an invocation `--add` then follows
+saved additions in memory without persistence. The current invocation supplies
+platform, which is never loaded from or written to the file.
 
 Released config commands change only the active-selection file and necessary
-owned configuration directories; users still run `plan` and `apply` separately
-with an explicit base. They validate canonical schema-1 state, path containment,
+owned configuration directories; users still run `plan` and `apply`
+separately. They validate canonical schema-1 state, path containment,
 types, ownership, modes, current catalog meaning, and byte identity. An
 adjacent directory lock serializes cooperating writers, and same-directory
 temporary publication, pre/post checks, and file/directory flushes provide the
 accepted atomic and durability boundary. Invalid current state is never
 repaired or overwritten. The lock cannot serialize non-cooperating processes,
 and the portable final check-to-rename window remains irreducible.
+
+The shared consumer reader uses the same standard-root, containment,
+ownership, type, mode, canonical schema-1, identifier, and catalog contracts.
+It holds and verifies the exact regular-file identity while reading, compares
+repeated byte observations, and rejects observable identity or content drift.
+It acquires no writer lock and creates no root, directory, file, snapshot,
+temporary object, cache, or managed-home data. Missing or invalid state fails
+closed with abbreviated guidance; no default, hostname choice, partial intent,
+or generated data can supply selection.
 
 Released `config interactive` is a thin input and presentation layer over the
 same resolver, proposal formatter, private state comparison, and hardened state
@@ -95,8 +105,8 @@ cache and releases no reset command. A reset remains conditional on a later,
 named consumer and a bounded entry allowlist. See
 [ADR 0011](adr/0011-define-local-configuration-workflow.md) and the
 [Phase 4 roadmap](roadmap.md#phase-4-configuration-workflow). Flag-based and
-interactive local selection are complete; saved-selection consumption is the
-next increment.
+interactive saving plus saved-selection consumption are complete; inspect and
+doctor are next.
 
 ## Neutral core
 
@@ -225,7 +235,8 @@ authority, and is never applied to a home directory.
 Steps 1–5 below are implemented by the internal renderer, steps 6–7 by the
 planner, and step 8 by the released apply path.
 
-1. Resolve the explicit composition for the detected or requested platform.
+1. Resolve the effective explicit or strictly loaded saved composition for the
+   detected or requested platform.
 2. Validate static catalog data, platform compatibility, and dependencies.
 3. Normalize rendered targets and reject ownership collisions.
 4. Check only prerequisites declared by selected modules, without executing
@@ -257,6 +268,8 @@ every catalog, prerequisite, artifact, context, render, and comparison fact
 after confirmation. Canonical records, selected-source mappings, context,
 artifact identity, rendered bytes, and private snapshots of changed destination
 base bytes must match the privately retained first pass before mutation begins.
+Saved-intent apply also independently reloads the state and compares its exact
+identity, bytes, and effective selection with the first-pass private authority.
 
 Chezmoi applies one changed selected target at a time in plan order with user
 configuration, custom tools, prompts, externals, scripts, recursion, and
@@ -275,9 +288,9 @@ state, generic prerequisite presence, and current selected destination state.
 The planner disables local chezmoi configuration and custom diff behavior. It
 has no custom state database. The schema-1 active-selection file is a narrow
 CLI-owned intent document, not managed-home or plan state. `config set` and
-`config interactive` are its only current readers and writers;
-selection-consuming commands do not load it yet. Disposable generated caches
-must not become authority.
+`config interactive` are its only writers. The four selection-consuming
+commands are strict read-only consumers only when an explicit base is omitted.
+Disposable generated caches must not become authority.
 
 - Catalog and imported profile data are static and never evaluated as code.
 - Render data is closed, ephemeral, sanitized, and never authority.

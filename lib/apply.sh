@@ -368,21 +368,39 @@ dotfiles_apply_recompute_and_apply() {
 }
 
 dotfiles_apply_selection() {
-    if [ "$#" -ne 5 ]; then
-        printf 'error: internal apply requires profile, modules, additions, platform, and confirmation mode\n' >&2
+    if [ "$#" -ne 6 ]; then
+        printf 'error: internal apply requires selection source, intent, platform, and confirmation mode\n' >&2
         return 2
     fi
 
-    local local_profile=$1
-    local local_modules=$2
-    local local_additional=$3
-    local local_platform=$4
-    local local_yes=$5
+    local local_explicit_base=$1
+    local local_invocation_profile=$2
+    local local_invocation_modules=$3
+    local local_invocation_additional=$4
+    local local_platform=$5
+    local local_yes=$6
+    local local_profile
+    local local_modules
+    local local_additional
+    local local_intent_snapshot
+    local local_fresh_intent
     local local_temp_parent=${TMPDIR:-/tmp}
     local local_status
     local local_answer=
 
+    case "$local_explicit_base" in 0|1) ;; *) return 2 ;; esac
     case "$local_yes" in 0|1) ;; *) return 2 ;; esac
+    if ! declare -F dotfiles_effective_selection >/dev/null 2>&1; then
+        printf 'error: effective selection adapter is unavailable\n' >&2
+        return 4
+    fi
+    dotfiles_effective_selection "$local_explicit_base" "$local_invocation_profile" \
+        "$local_invocation_modules" "$local_invocation_additional" "$local_platform" || return $?
+    local_profile=$DOTFILES_EFFECTIVE_PROFILE
+    local_modules=$DOTFILES_EFFECTIVE_MODULES
+    local_additional=$DOTFILES_EFFECTIVE_ADDITIONAL
+    local_intent_snapshot=$DOTFILES_EFFECTIVE_SNAPSHOT
+
     case "$local_temp_parent" in /*) ;; *) local_temp_parent=/tmp ;; esac
     umask 077
     if ! DOTFILES_APPLY_PRIVATE=$(mktemp -d "${local_temp_parent%/}/dotfiles-apply.XXXXXX"); then
@@ -401,6 +419,8 @@ dotfiles_apply_selection() {
     trap 'dotfiles_apply_handle_signal 143; exit 143' TERM
     chmod 700 "$DOTFILES_APPLY_PRIVATE" || return 4
     mkdir "$DOTFILES_APPLY_DISPLAYED" || return 4
+    printf '%s\n' "$local_intent_snapshot" > "${DOTFILES_APPLY_DISPLAYED}/intent.snapshot" || return 4
+    chmod 600 "${DOTFILES_APPLY_DISPLAYED}/intent.snapshot" || return 4
 
     if dotfiles_plan_selection_then dotfiles_apply_capture_displayed \
         "$local_profile" "$local_modules" "$local_additional" "$local_platform"; then
@@ -432,6 +452,23 @@ dotfiles_apply_selection() {
             printf 'Cancelled. No changes were applied.\n'
             return 0
         fi
+    fi
+
+    dotfiles_effective_selection "$local_explicit_base" "$local_invocation_profile" \
+        "$local_invocation_modules" "$local_invocation_additional" "$local_platform" || {
+        local_status=$?
+        [ "$local_status" -ne 3 ] || printf 'error: configuration changed or became unsafe after confirmation; rerun dotfiles apply\n' >&2
+        return "$local_status"
+    }
+    local_profile=$DOTFILES_EFFECTIVE_PROFILE
+    local_modules=$DOTFILES_EFFECTIVE_MODULES
+    local_additional=$DOTFILES_EFFECTIVE_ADDITIONAL
+    local_fresh_intent="${DOTFILES_APPLY_PRIVATE}/fresh-intent.snapshot"
+    printf '%s\n' "$DOTFILES_EFFECTIVE_SNAPSHOT" > "$local_fresh_intent" || return 4
+    chmod 600 "$local_fresh_intent" || return 4
+    if ! cmp -s "${DOTFILES_APPLY_DISPLAYED}/intent.snapshot" "$local_fresh_intent"; then
+        printf 'error: configuration changed or became unsafe after confirmation; rerun dotfiles apply\n' >&2
+        return 3
     fi
 
     if dotfiles_plan_selection_then dotfiles_apply_recompute_and_apply \

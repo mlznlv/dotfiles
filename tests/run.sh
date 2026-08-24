@@ -244,7 +244,7 @@ chmod +x "$CHECK_BIN/alpha-tool" "$CHECK_BIN/beta-tool"
 printf 'metadata only\n' > "$EXPLICIT_ROOT/fixture/item"
 
 expect_contains "prerequisite help is built in" 0 "dotfiles prerequisite check" "$CLI" prerequisite check --help
-expect_contains "prerequisite selection requires one source" 2 "requires --profile or --modules" "$CLI" prerequisite check --platform debian
+expect_contains "missing local prerequisite selection fails closed" 3 "Run dotfiles config set or pass --profile or --modules." "$CLI" prerequisite check --platform debian
 expect_contains "prerequisite selections are mutually exclusive" 2 "mutually exclusive" "$CLI" prerequisite check --profile shell.check --modules shell.beta --platform debian
 expect_exact "composition without prerequisites is explicit" 0 "No prerequisites declared." env DOTFILES_SOURCE_DIR="$CHECK_FIXTURE" DOTFILES_CHEZMOI_BIN="$CHEZMOI_REAL" "$CLI" prerequisite check --modules shell.empty --platform debian
 expect_contains "missing commands use exit 5" 5 "missing: shell.alpha command missing-tool — provide it outside this project" env DOTFILES_SOURCE_DIR="$CHECK_FIXTURE" DOTFILES_CHEZMOI_BIN="$CHEZMOI_REAL" DOTFILES_SHARE_ROOTS="$EXPLICIT_ROOT" HOME="$CHECK_HOME" PATH="$CHECK_BIN:/usr/bin:/bin" "$CLI" prerequisite check --modules shell.alpha --platform debian

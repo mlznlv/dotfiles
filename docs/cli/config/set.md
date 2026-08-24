@@ -116,13 +116,17 @@ Errors go to standard error. Successful proposal and result output goes to
 standard output and never includes raw configuration, home, source, or target
 paths.
 
-## Current limitation
+## Consume the saved selection
 
-Saved selection is not consumed by `resolve`, `prerequisite check`, `plan`, or
-`apply` yet. Continue passing an explicit `--profile` or `--modules` base to
-those commands. Terminal-only [interactive saving](interactive.md) is
-available. Saved-state consumption, inspect, and doctor remain later
+`resolve`, `prerequisite check`, `plan`, and `apply` now strictly load this
+state when an invocation omits `--profile` and `--modules`. Either explicit
+base bypasses the file completely. An invocation-only `--add` can augment the
+saved intent without rewriting it. Apply still requires its own exact `yes` or
+`--yes`, independently reloads state after confirmation, and recomputes the
+complete plan. [Interactive saving](interactive.md) is also available.
+
+Inspect and doctor remain later
 [Phase 4](../../roadmap.md#phase-4-configuration-workflow) increments.
 
-Next: [resolve the same explicit composition](../resolve.md) or return to the
-[command guide](../README.md).
+Next: [resolve the saved composition](../resolve.md) or return to the [command
+guide](../README.md).

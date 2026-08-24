@@ -1008,14 +1008,6 @@ check_file_exact "cooperating writers neither merge nor overwrite selections" "$
 assert_no_owned_debris "cooperating writer success cleans its lock" "$CONCURRENT_ROOT/dotfiles"
 reset_hooks
 
-run_command env XDG_CONFIG_HOME="$PROFILE_ROOT" HOME="$PROFILE_HOME" "$CLI" resolve
-check_status "resolve still requires an explicit base after state is saved" 2
-run_command env XDG_CONFIG_HOME="$PROFILE_ROOT" HOME="$PROFILE_HOME" "$CLI" prerequisite check
-check_status "prerequisite check still requires an explicit base after state is saved" 2
-run_command env XDG_CONFIG_HOME="$PROFILE_ROOT" HOME="$PROFILE_HOME" "$CLI" plan
-check_status "plan still requires an explicit base after state is saved" 2
-run_command env XDG_CONFIG_HOME="$PROFILE_ROOT" HOME="$PROFILE_HOME" "$CLI" apply
-check_status "apply still requires an explicit base after state is saved" 2
 run_command env XDG_CONFIG_HOME="$PROFILE_ROOT" HOME="$PROFILE_HOME" DOTFILES_CHEZMOI_BIN="$CHEZMOI_PROBE" "$CLI" resolve --modules prompt.starship --platform debian
 check_equal "explicit resolve ignores saved selection" "$STDOUT" 'prompt.starship'
 

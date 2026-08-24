@@ -105,10 +105,11 @@ to [config set](set.md). Interactive selection does not check prerequisites,
 render, plan, apply, invoke providers or installers, use the network or
 privilege, mutate managed home files, or remove omitted configuration.
 
-Saved selection is still not consumed by `resolve`, `prerequisite check`,
-`plan`, or `apply`. Continue providing those commands an explicit `--profile`
-or `--modules` base. Inspect, doctor, saved-state consumption, and conditional
-cache reset are not available.
+`resolve`, `prerequisite check`, `plan`, and `apply` consume the saved intent
+only when an explicit base is omitted. Explicit bases bypass state, and a
+consumer's `--add` is invocation-only. Apply still requires separate approval
+and independently reloads the selection during recomputation. Inspect, doctor,
+and conditional cache reset are not available.
 
 ## Exit codes
 
