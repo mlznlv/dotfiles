@@ -260,10 +260,10 @@ rules, recovery, and concurrency limits.
 Use the saved intent without repeating its base:
 
 ~~~console
-$ ./bin/dotfiles resolve --platform debian
-$ ./bin/dotfiles prerequisite check --platform debian
-$ ./bin/dotfiles plan --platform debian
-$ ./bin/dotfiles apply --platform debian
+./bin/dotfiles resolve --platform debian
+./bin/dotfiles prerequisite check --platform debian
+./bin/dotfiles plan --platform debian
+./bin/dotfiles apply --platform debian
 ~~~
 
 These commands strictly reload and freshly validate the state when no explicit
