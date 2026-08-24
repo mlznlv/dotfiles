@@ -683,9 +683,10 @@ check_contains 'doctor read-handle exhaustion is actionable' 'Close inherited fi
 check_not_contains 'read-handle exhaustion is not state drift' 'changed or was replaced while being read'
 
 replace_after_first_read() {
-    rm -f "$DOTFILES_CONFIG_STATE_PATH"
-    printf '%s\n' "$PROFILE_BODY" > "$DOTFILES_CONFIG_STATE_PATH"
-    chmod 600 "$DOTFILES_CONFIG_STATE_PATH"
+    local replacement="${DOTFILES_CONFIG_STATE_PATH}.replacement"
+    cp "$DOTFILES_CONFIG_STATE_PATH" "$replacement"
+    chmod 600 "$replacement"
+    mv -f "$replacement" "$DOTFILES_CONFIG_STATE_PATH"
 }
 DOTFILES_CONFIG_TEST_AFTER_FIRST_READ=replace_after_first_read
 OUTPUT=$(DOTFILES_CONFIG_DIAGNOSTIC_CONTEXT=doctor dotfiles_config_state_load_internal "$PROFILE_ROOT" debian 2>&1)
