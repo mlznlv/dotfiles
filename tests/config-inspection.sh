@@ -425,6 +425,8 @@ check_equal 'explicit bypass leaves invalid state untouched' "$(state_snapshot "
 ISOLATED="${TEST_ROOT}/isolated-project"
 mkdir -p "$ISOLATED/bin" "$ISOLATED/lib"
 cp "$CLI" "$ISOLATED/bin/dotfiles"
+cp "${PROJECT_ROOT}/lib/cli.sh" "$ISOLATED/lib/cli.sh"
+cp -R "${PROJECT_ROOT}/lib/cli" "$ISOLATED/lib/cli"
 cp "${PROJECT_ROOT}/lib/catalog-records.tmpl" "${PROJECT_ROOT}/lib/catalog.awk" "$ISOLATED/lib/"
 run_command env DOTFILES_SOURCE_DIR="$PROJECT_ROOT" DOTFILES_CHEZMOI_BIN="$REAL_CHEZMOI" XDG_CONFIG_HOME="$MISSING_ROOT" HOME="$MISSING_HOME" \
     "$ISOLATED/bin/dotfiles" config inspect --modules prompt.starship --platform debian
@@ -442,6 +444,7 @@ run_command env DOTFILES_SOURCE_DIR="$PROJECT_ROOT" DOTFILES_CHEZMOI_BIN="$REAL_
 check_status 'doctor requires the config-state component' 4
 
 cp "${PROJECT_ROOT}/lib/config-state.sh" "$ISOLATED/lib/config-state.sh"
+cp -R "${PROJECT_ROOT}/lib/config-state" "$ISOLATED/lib/config-state"
 rm -f "$ISOLATED/lib/catalog.awk"
 run_command env DOTFILES_SOURCE_DIR="$PROJECT_ROOT" DOTFILES_CHEZMOI_BIN="$REAL_CHEZMOI" XDG_CONFIG_HOME="$PROFILE_ROOT" HOME="$PROFILE_HOME" \
     "$ISOLATED/bin/dotfiles" config doctor --platform debian
