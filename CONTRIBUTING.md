@@ -86,6 +86,29 @@ Every command must ship with:
 
 Read the [CLI contract](docs/cli/README.md).
 
+## Production shell structure
+
+Keep production Bash cohesive and reviewable. `bin/dotfiles` is limited to
+250 physical lines; every `*.sh` file below `lib/` is limited to 500 physical
+lines, including comments and blank lines. Split a responsibility into a
+narrow source-only module before it exceeds the limit. Never meet the budget
+by minifying commands, combining unrelated statements, deleting useful
+comments, weakening error handling, or generating production shell code.
+
+CLI and config-state facades use documented, explicit, fixed source lists in
+one-way dependency order. Do not add globs, directory scans, PATH or
+current-working-directory lookup, environment-selected modules, dynamic
+evaluation, autoloading, or circular source edges. Each production function
+has one owner, source-only libraries are non-executable and silent when
+sourced, and `bin/dotfiles` remains executable with a direct-execution guard.
+
+Run both the focused architecture guard and the complete regression suite:
+
+~~~text
+bash scripts/check-maintainability.sh
+bash scripts/check.sh
+~~~
+
 ## Security and privacy
 
 Never commit credentials, private keys, certificates, real hostnames, IP addresses, Tailscale identity, private registry configuration, or machine-specific identity.

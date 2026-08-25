@@ -52,6 +52,23 @@ flowchart LR
     F -->|"missing"| J["Actionable error; no mutation"]
 ~~~
 
+## Internal shell layering
+
+The portable Bash implementation uses explicit one-way source modules without
+changing the public system model. `bin/dotfiles` is a thin bootstrap and
+dispatcher over the fixed `lib/cli.sh` facade; CLI leaves separate common,
+catalog, selection, configuration-command, and execution-command ownership.
+The stable `lib/config-state.sh` facade loads fixed schema, storage, reader,
+lock, and writer leaves. Leaves never discover or source siblings, and facade
+paths are resolved from the physical repository rather than the caller's
+working directory.
+
+Every production function has one owner. A repository check limits the
+entrypoint to 250 physical lines and every production shell file to 500 lines,
+while preserving the established command, state, Chezmoi, privacy, and effect
+boundaries. This is an internal maintainability boundary, not a new command,
+state format, provider layer, or accepted-ADR change.
+
 ## Local-selection input
 
 Released `config set` and `config interactive` write one

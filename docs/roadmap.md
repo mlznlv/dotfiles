@@ -199,6 +199,25 @@ workstation modules and profiles remain Phase 6 work. Generated-cache reset
 remains deferred indefinitely unless a named persistent consumer and bounded
 allowlist are accepted and implemented.
 
+## Cross-phase maintenance gate: Production shell decomposition
+
+**Status:** Complete; required before Phase 5 implementation.
+
+The production CLI and local-selection state monoliths are decomposed into
+fixed, source-only modules with one-way loader order and one owner per
+function. `bin/dotfiles` remains the thin executable entrypoint, while
+`lib/config-state.sh` remains the stable state-library facade. Automated
+guards enforce a 250-line entrypoint limit, a 500-line limit for every
+production shell file, Bash syntax, modes, fixed loader membership, duplicate
+function absence, source-time effects, arbitrary-CWD loading, and paths with
+spaces or shell metacharacters.
+
+This maintenance gate changes no public behavior, accepted ADR, schema,
+catalog, state path, effect boundary, or provider ownership. Phase 5 remained
+unstarted while the gate was implemented and must not begin until this gate is
+merged into `next`. Decomposing the large behavioral test suites is the next
+maintenance follow-up and is intentionally outside this runtime refactor.
+
 ## Phase 5: Saved and shared profiles
 
 **Status:** Planned.
@@ -219,7 +238,7 @@ allowlist are accepted and implemented.
 - Import never applies changes.
 - Missing or incompatible modules produce actionable errors.
 
-**Depends on:** phase 4.
+**Depends on:** phase 4 and the merged production-shell maintenance gate.
 
 ## Phase 6: Personal and developer workstations
 
