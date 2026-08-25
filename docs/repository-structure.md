@@ -47,11 +47,25 @@ outside the repository and managed home sources.
 │   ├── catalog-records.tmpl
 │   ├── catalog.awk
 │   ├── apply.sh
+│   ├── cli.sh
+│   ├── cli/
+│   │   ├── common.sh
+│   │   ├── catalog.sh
+│   │   ├── selection.sh
+│   │   ├── config-commands.sh
+│   │   └── execution-commands.sh
 │   ├── config-state.sh
+│   ├── config-state/
+│   │   ├── schema.sh
+│   │   ├── storage.sh
+│   │   ├── reader.sh
+│   │   ├── lock.sh
+│   │   └── writer.sh
 │   ├── plan.sh
 │   ├── prerequisite-check.sh
 │   └── render.sh
 ├── scripts/
+│   ├── check-maintainability.sh
 │   └── check.sh
 ├── tests/
 │   ├── fixtures/
@@ -67,6 +81,7 @@ outside the repository and managed home sources.
 │   ├── config-inspection.sh
 │   ├── config-interactive.sh
 │   ├── config-state.sh
+│   ├── maintainability.sh
 │   ├── plan.sh
 │   ├── render.sh
 │   └── run.sh
@@ -76,6 +91,54 @@ outside the repository and managed home sources.
 Fixture modules and profiles exist only below `tests/fixtures/<case>/catalog`.
 The test runner stages them in isolated temporary chezmoi sources, so fixtures
 cannot merge into production catalog data. They are not production entries.
+
+## Production shell layering
+
+`bin/dotfiles` is a thin compatibility entrypoint. It resolves the physical
+repository location, defines the fixed component paths, loads `lib/cli.sh`,
+and owns only `main` and its direct-execution guard. `lib/cli.sh` sources one
+fixed list in this dependency order, with no glob or runtime discovery:
+
+1. `lib/cli/common.sh` — help, usage errors, platform handling, and required
+   internal-component loading.
+2. `lib/cli/catalog.sh` — catalog layout validation, record extraction,
+   resolver invocation, listing, and showing.
+3. `lib/cli/selection.sh` — consuming-option parsing, saved-versus-explicit
+   precedence, and inspection presentation.
+4. `lib/cli/config-commands.sh` — set, interactive, inspect, doctor, proposal,
+   inventory, and local-state command adapters.
+5. `lib/cli/execution-commands.sh` — resolve, prerequisite, plan, and apply
+   command adapters.
+
+`lib/config-state.sh` remains the stable cross-library import path. It is a
+compatibility facade that sources one fixed list in this dependency order:
+
+1. `lib/config-state/schema.sh` — schema-1 identifiers, intent validation,
+   canonical serialization, and parsing.
+2. `lib/config-state/storage.sh` — portable stat operations, path and root
+   safety, diagnostics, required tools, and private hook dispatch.
+3. `lib/config-state/reader.sh` — descriptor-preserving repeated reads,
+   canonical saved-state validation, and strict loading.
+4. `lib/config-state/lock.sh` — durability flushes, exact lock identity,
+   signals, release, and owned cleanup.
+5. `lib/config-state/writer.sh` — private files and snapshots, comparison,
+   atomic publication, result reporting, and public writer wrappers.
+
+Leaves never source their facade or siblings. Both facades resolve their own
+physical location, quote every fixed source path, and work independently of
+the caller's current directory. Existing callers continue to source
+`bin/dotfiles` or `lib/config-state.sh`; the decomposition changes no public
+command, output, state, or cross-library function name.
+
+`scripts/check-maintainability.sh` enforces a 250-line entrypoint budget and a
+500-physical-line maximum for every production shell file below `lib/`. It
+also enforces fixed loader membership and order, one definition per production
+function, Bash syntax, and executable modes. `tests/maintainability.sh` covers
+silent source-only loading, unchanged caller shell state, missing-component
+failure, direct execution, arbitrary working directories, and copied
+repository paths containing spaces and shell metacharacters. Large behavioral
+test suites remain intact as the independent regression oracle; their later
+decomposition is a separate maintenance task.
 
 ## Branch responsibilities
 
@@ -184,10 +247,11 @@ and cleanup on macOS and Debian inputs.
 ## Implemented Phase 4 local selection
 
 [ADR 0011](adr/0011-define-local-configuration-workflow.md) is Accepted, and
-`lib/config-state.sh` plus `dotfiles config set` and `dotfiles config interactive`
-implement the saving lifecycle. The same library now provides the strict
-read-only consumer path. One CLI-owned active-selection file lives outside both
-the repository and managed HOME sources:
+the `lib/config-state.sh` compatibility facade plus its fixed state modules,
+`dotfiles config set`, and `dotfiles config interactive` implement the saving
+lifecycle. The same facade provides the strict read-only consumer API. One
+CLI-owned active-selection file lives outside both the repository and managed
+HOME sources:
 
 ~~~text
 $XDG_CONFIG_HOME/
@@ -221,12 +285,12 @@ non-invocation, and zero managed-home mutation. The focused state hook proves
 that the writer freshly validates after confirmation and remains unreachable
 from the public CLI.
 
-`bin/dotfiles` owns one effective-selection adapter for `resolve`, `prerequisite
-check`, `plan`, `apply`, and `config inspect`. Explicit bases bypass the state
-component. Omitted bases use the library reader, which creates no state-side
-object and verifies the regular-file identity, repeated bytes, canonical
-schema, and current catalog meaning. `config doctor` always uses that reader
-for narrow standard-state health. `tests/config-consumption.sh` covers syntax,
+`lib/cli/selection.sh` owns one effective-selection adapter for `resolve`,
+`prerequisite check`, `plan`, `apply`, and `config inspect`. Explicit bases
+bypass the state component. Omitted bases use the state reader, which creates
+no state-side object and verifies the regular-file identity, repeated bytes,
+canonical schema, and current catalog meaning. `config doctor` always uses
+that reader for narrow standard-state health. `tests/config-consumption.sh` covers syntax,
 precedence, macOS and Debian inputs, XDG/HOME roots, state safety and drift,
 explicit bypass with the state component absent, output equivalence,
 invocation-only additions, and apply confirmation-time reloading.
