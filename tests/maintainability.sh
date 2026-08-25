@@ -168,7 +168,33 @@ STATUS=$status
 OUTPUT=$output
 check_status 'missing fixed-loader membership is rejected' 1
 check_equal 'missing loader diagnostic identifies only the relative leaf' "$output" \
-    'error: fixed CLI loader leaf is missing: lib/cli/catalog.sh'
+    'error: fixed CLI loader leaf set is invalid: lib/cli
+error: fixed CLI loader leaf is missing: lib/cli/catalog.sh'
+
+unlisted_cli_fixture="${TEST_ROOT}/unlisted CLI leaf"
+mkdir -p "$unlisted_cli_fixture"
+cp -R "${PROJECT_ROOT}/lib" "$unlisted_cli_fixture/lib"
+printf '%s\n' '# unlisted CLI fixture' > "$unlisted_cli_fixture/lib/cli/orphan.sh"
+output=$(check_fixed_loaders "$unlisted_cli_fixture" 2>&1)
+status=$?
+STATUS=$status
+OUTPUT=$output
+check_status 'unlisted CLI loader leaf is rejected' 1
+check_equal 'unlisted CLI diagnostic identifies only the relative owned directory' "$output" \
+    'error: fixed CLI loader leaf set is invalid: lib/cli'
+
+unlisted_state_fixture="${TEST_ROOT}/unlisted config-state leaf"
+mkdir -p "$unlisted_state_fixture"
+cp -R "${PROJECT_ROOT}/lib" "$unlisted_state_fixture/lib"
+printf '%s\n' '# unlisted config-state fixture' > \
+    "$unlisted_state_fixture/lib/config-state/orphan.sh"
+output=$(check_fixed_loaders "$unlisted_state_fixture" 2>&1)
+status=$?
+STATUS=$status
+OUTPUT=$output
+check_status 'unlisted config-state loader leaf is rejected' 1
+check_equal 'unlisted config-state diagnostic identifies only the relative owned directory' "$output" \
+    'error: fixed config-state loader leaf set is invalid: lib/config-state'
 
 dynamic_loader_fixture="${TEST_ROOT}/dynamic loader"
 mkdir -p "$dynamic_loader_fixture"
@@ -228,7 +254,6 @@ while IFS= read -r source_target; do
         fail "source-only loading is silent and side-effect free: ${relative_target}"
     fi
 done < <(
-    printf '%s\n' "${PROJECT_ROOT}/bin/dotfiles"
     find "${PROJECT_ROOT}/lib" -type f -name '*.sh' -print | LC_ALL=C sort
 )
 

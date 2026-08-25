@@ -81,7 +81,9 @@ check_fixed_loaders() {
     local cli_loader="${repository_root%/}/lib/cli.sh"
     local state_loader="${repository_root%/}/lib/config-state.sh"
     local actual
+    local actual_leaf_set
     local expected
+    local expected_leaf_set
     local source_count
     local relative
     local leaf
@@ -100,6 +102,22 @@ cli/execution-commands.sh'
     fi
     if grep -Eq '^[[:space:]]*(eval|\.)[[:space:]]' "$cli_loader"; then
         printf 'error: dynamic CLI loader syntax is prohibited: lib/cli.sh\n' >&2
+        failed=1
+    fi
+    expected_leaf_set='cli/catalog.sh
+cli/common.sh
+cli/config-commands.sh
+cli/execution-commands.sh
+cli/selection.sh'
+    actual_leaf_set=$(
+        if [ -d "${repository_root%/}/lib/cli" ]; then
+            while IFS= read -r leaf; do
+                printf '%s\n' "${leaf#"${repository_root%/}/lib/"}"
+            done < <(find "${repository_root%/}/lib/cli" -type f -name '*.sh' -print | LC_ALL=C sort)
+        fi
+    )
+    if [ "$actual_leaf_set" != "$expected_leaf_set" ]; then
+        printf 'error: fixed CLI loader leaf set is invalid: lib/cli\n' >&2
         failed=1
     fi
     while IFS= read -r relative; do
@@ -130,6 +148,22 @@ config-state/writer.sh'
     fi
     if grep -Eq '^[[:space:]]*(eval|\.)[[:space:]]' "$state_loader"; then
         printf 'error: dynamic config-state loader syntax is prohibited: lib/config-state.sh\n' >&2
+        failed=1
+    fi
+    expected_leaf_set='config-state/lock.sh
+config-state/reader.sh
+config-state/schema.sh
+config-state/storage.sh
+config-state/writer.sh'
+    actual_leaf_set=$(
+        if [ -d "${repository_root%/}/lib/config-state" ]; then
+            while IFS= read -r leaf; do
+                printf '%s\n' "${leaf#"${repository_root%/}/lib/"}"
+            done < <(find "${repository_root%/}/lib/config-state" -type f -name '*.sh' -print | LC_ALL=C sort)
+        fi
+    )
+    if [ "$actual_leaf_set" != "$expected_leaf_set" ]; then
+        printf 'error: fixed config-state loader leaf set is invalid: lib/config-state\n' >&2
         failed=1
     fi
     while IFS= read -r relative; do
