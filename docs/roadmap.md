@@ -214,9 +214,25 @@ spaces or shell metacharacters.
 
 This maintenance gate changes no public behavior, accepted ADR, schema,
 catalog, state path, effect boundary, or provider ownership. Phase 5 remained
-unstarted while the gate was implemented and must not begin until this gate is
-merged into `next`. Decomposing the large behavioral test suites is the next
-maintenance follow-up and is intentionally outside this runtime refactor.
+unstarted while the gate was implemented and did not begin before it merged
+into `next`.
+
+## Cross-phase maintenance gate: Behavioral test-suite decomposition
+
+**Status:** Implementation complete; the gate is complete only after its
+focused pull request merges into `next`. Required before Phase 5 implementation.
+
+The five behavioral suites that exceeded 500 lines retain their stable
+top-level entrypoints and exact assertion behavior while using explicit,
+ordered support-and-case layouts. Automated guards enforce a 500-line limit on
+every recursive test shell, a 150-line decomposed-runner limit, complete fixed
+manifests, recursive syntax, internal modes, one function owner, source-safe
+support, stable-runner-only execution, and arbitrary-CWD/copied-path behavior.
+
+This second maintenance gate changes no product behavior, command, output,
+status, schema, catalog, state, production ownership, or accepted ADR. Phase 5
+remains planned and unstarted and must not begin until this gate is merged into
+`next`.
 
 ## Phase 5: Saved and shared profiles
 
@@ -238,7 +254,7 @@ maintenance follow-up and is intentionally outside this runtime refactor.
 - Import never applies changes.
 - Missing or incompatible modules produce actionable errors.
 
-**Depends on:** phase 4 and the merged production-shell maintenance gate.
+**Depends on:** phase 4 and both merged cross-phase maintenance gates.
 
 ## Phase 6: Personal and developer workstations
 

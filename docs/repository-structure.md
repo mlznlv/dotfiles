@@ -73,14 +73,45 @@ outside the repository and managed home sources.
 │   ├── helpers/
 │   │   ├── chezmoi-{apply,plan,render}-probe.sh
 │   │   ├── apply-confirmation-hook.sh
+│   │   ├── initialization-cleanup.sh
 │   │   ├── interactive-state-hook.sh
 │   │   ├── pty-confirm.py
 │   │   └── pty-interactive.py
 │   ├── apply.sh
+│   ├── apply/
+│   │   ├── support.sh
+│   │   ├── syntax-and-confirmation.sh
+│   │   ├── convergence-and-scope.sh
+│   │   ├── recomputation-and-failures.sh
+│   │   └── signals-privacy-and-cleanup.sh
 │   ├── config-consumption.sh
+│   ├── config-consumption/
+│   │   ├── support.sh
+│   │   ├── syntax-and-precedence.sh
+│   │   ├── equivalence-and-apply.sh
+│   │   ├── state-safety.sh
+│   │   └── reader-drift-and-privacy.sh
 │   ├── config-inspection.sh
+│   ├── config-inspection/
+│   │   ├── support.sh
+│   │   ├── syntax-and-output.sh
+│   │   ├── composition-and-precedence.sh
+│   │   ├── path-and-state-safety.sh
+│   │   └── descriptors-drift-and-privacy.sh
 │   ├── config-interactive.sh
+│   ├── config-interactive/
+│   │   ├── support.sh
+│   │   ├── syntax-and-terminal.sh
+│   │   ├── input-validation.sh
+│   │   ├── confirmation-and-state.sh
+│   │   └── signals-and-privacy.sh
 │   ├── config-state.sh
+│   ├── config-state/
+│   │   ├── support.sh
+│   │   ├── cli-and-persistence.sh
+│   │   ├── path-and-state-validation.sh
+│   │   ├── writer-failures-and-drift.sh
+│   │   └── concurrency-signals-and-privacy.sh
 │   ├── maintainability.sh
 │   ├── plan.sh
 │   ├── render.sh
@@ -136,9 +167,45 @@ also enforces fixed loader membership and order, one definition per production
 function, Bash syntax, and executable modes. `tests/maintainability.sh` covers
 silent source-only loading, unchanged caller shell state, missing-component
 failure, direct execution, arbitrary working directories, and copied
-repository paths containing spaces and shell metacharacters. Large behavioral
-test suites remain intact as the independent regression oracle; their later
-decomposition is a separate maintenance task.
+repository paths containing spaces and shell metacharacters.
+
+## Behavioral test layering
+
+The stable behavioral entrypoints remain `tests/config-state.sh`,
+`tests/config-interactive.sh`, `tests/config-consumption.sh`,
+`tests/config-inspection.sh`, and `tests/apply.sh`. Each is a small runner that
+resolves its physical path, declares its complete ordered suite manifest,
+loads suite-local support, allocates its private root, immediately installs
+cleanup, explicitly initializes the remaining fixtures, owns the final summary,
+and sources four cohesive cases in the documented order.
+
+- `config-state/` covers CLI persistence, state/path safety, writer drift, and
+  concurrency, signals, and privacy.
+- `config-interactive/` covers terminal syntax, literal input, confirmed state,
+  and signals and privacy.
+- `config-consumption/` covers syntax/precedence, explicit/saved equivalence,
+  state safety, and verified-reader drift and privacy.
+- `config-inspection/` covers exact output, composition, state safety, and
+  descriptor/read drift and privacy.
+- `apply/` covers syntax/confirmation, convergence/scope, recomputation and
+  partial failure, and signals, privacy, and cleanup.
+
+Within each matching directory, `support.sh` owns only that suite's assertion,
+fixture, command, snapshot, root-allocation, and failure-hook helpers. It is
+silent and side-effect free until explicitly called. The other four leaves
+retain the runner's original assertion order in one shared shell: their
+filenames state their single case responsibility. Leaves are internal and
+non-executable; cases define no functions, do not source siblings or runners,
+and are never executed directly.
+
+Every test shell below `tests/` has a 500-physical-line limit, and decomposed
+runners have a 150-line limit. The maintainability guard compares each runner
+manifest and source order with the complete recursive leaf set, rejects unsafe
+or dynamic edges, case-owned or duplicate functions, modes, syntax, late
+cleanup protection, and support-time effects, and proves interruption cleanup
+plus copied-path/arbitrary-working-directory output equivalence.
+`scripts/check.sh` syntax-checks all test shells recursively but runs only the
+stable top-level entrypoints.
 
 ## Branch responsibilities
 

@@ -109,6 +109,27 @@ bash scripts/check-maintainability.sh
 bash scripts/check.sh
 ~~~
 
+## Test shell structure
+
+Every `*.sh` file below `tests/`, recursively, is limited to 500 physical
+lines, including comments and blank lines. A decomposed stable top-level suite
+runner is additionally limited to 150 physical lines. Split an oversized suite
+into one non-executable, source-safe `support.sh` and cohesive non-executable
+case files; keep the existing top-level runner path as the only public entrypoint.
+
+Each runner records one fixed ordered manifest and uses explicit, quoted
+sources resolved from its physical path. Support loads first, performs no work
+when merely sourced, and exposes explicit root allocation and initialization.
+The runner allocates its private root, immediately installs its cleanup trap,
+initializes the remaining fixtures, and then sources cases in manifest order in
+one shell. It also owns the final summary. Cases execute assertions in that
+order; they do not source files, install traps, define helpers, finalize, or exit.
+
+When adding a case, add its path once to the runner manifest and fixed source
+list. Do not use globs, scans, dynamic or environment-selected loading, sibling
+sources, or direct fragment execution. `scripts/check.sh` syntax-checks every
+test shell recursively but executes only stable top-level runners.
+
 ## Security and privacy
 
 Never commit credentials, private keys, certificates, real hostnames, IP addresses, Tailscale identity, private registry configuration, or machine-specific identity.
