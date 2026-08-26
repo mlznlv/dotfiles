@@ -8,8 +8,9 @@ DOTFILES_TEST_SUITE_DIR="${SCRIPT_DIR}/config-state"
 # test-suite-manifest: support.sh cli-and-persistence.sh path-and-state-validation.sh writer-failures-and-drift.sh concurrency-signals-and-privacy.sh
 
 source "$DOTFILES_TEST_SUITE_DIR/support.sh"
-config_state_initialize
+config_state_allocate_root
 trap cleanup EXIT
+config_state_initialize
 
 source "$DOTFILES_TEST_SUITE_DIR/cli-and-persistence.sh"
 source "$DOTFILES_TEST_SUITE_DIR/path-and-state-validation.sh"

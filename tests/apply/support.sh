@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 
-apply_initialize() {
+apply_allocate_root() {
     TEST_PARENT=${TMPDIR:-/tmp}
     TEST_PARENT=$(CDPATH= cd -- "$TEST_PARENT" && pwd -P)
     TEST_ROOT=$(mktemp -d "${TEST_PARENT%/}/dotfiles-apply-tests.XXXXXX")
+}
+
+apply_initialize() {
     # shellcheck source=../bin/dotfiles
     source "${PROJECT_ROOT}/bin/dotfiles"
     # shellcheck source=../lib/render.sh

@@ -102,11 +102,13 @@ check_test_suite_layouts() {
     local source_count
     local leaf
     local relative
+    local leaf_definitions
     local definitions
     local duplicate
     local expected_mode
     local mode_entry
     local safety_root
+    local suite_function
     local failed=0
 
     safety_root=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-test-support-safety.XXXXXX") || return 1
@@ -158,7 +160,21 @@ check_test_suite_layouts() {
                 printf 'error: test leaf contains a sibling or dynamic source edge: tests/%s/%s\n' "$suite" "$relative" >&2
                 failed=1
             fi
-            definitions="${definitions}${definitions:+$'\n'}$(awk '/^[a-zA-Z_][a-zA-Z0-9_]*\(\)/ { name=$0; sub(/\(\).*/, "", name); print name }' "$leaf")"
+            leaf_definitions=$(awk '
+                /^[[:space:]]*function[[:space:]]+[a-zA-Z_][a-zA-Z0-9_]*/ {
+                    name=$0; sub(/^[[:space:]]*function[[:space:]]+/, "", name)
+                    sub(/[[:space:]({].*$/, "", name); print name; next
+                }
+                /^[[:space:]]*[a-zA-Z_][a-zA-Z0-9_]*[[:space:]]*\(\)/ {
+                    name=$0; sub(/^[[:space:]]*/, "", name)
+                    sub(/[[:space:]]*\(\).*/, "", name); print name
+                }
+            ' "$leaf")
+            if [ "$relative" != support.sh ] && [ -n "$leaf_definitions" ]; then
+                printf 'error: test case defines a suite-local function: tests/%s/%s\n' "$suite" "$relative" >&2
+                failed=1
+            fi
+            definitions="${definitions}${definitions:+$'\n'}${leaf_definitions}"
         done <<< "$manifest_lines"
         duplicate=$(printf '%s\n' "$definitions" | sed '/^$/d' | LC_ALL=C sort | uniq -d)
         if [ -n "$duplicate" ]; then
@@ -178,6 +194,16 @@ check_test_suite_layouts() {
         fi
         if ! grep -Fqx 'SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)' "$runner"; then
             printf 'error: test runner physical-path bootstrap is invalid: tests/%s.sh\n' "$suite" >&2
+            failed=1
+        fi
+        suite_function=${suite//-/_}
+        if ! awk -v allocate="${suite_function}_allocate_root" -v initialize="${suite_function}_initialize" '
+            $0 == allocate { allocate_line=NR }
+            $0 == "trap cleanup EXIT" { trap_line=NR }
+            $0 == initialize { initialize_line=NR }
+            END { exit !(allocate_line && trap_line == allocate_line + 1 && initialize_line == trap_line + 1) }
+        ' "$runner"; then
+            printf 'error: test runner cleanup must immediately protect initialization: tests/%s.sh\n' "$suite" >&2
             failed=1
         fi
     done < <(decomposed_test_suites)

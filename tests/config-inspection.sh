@@ -8,8 +8,9 @@ DOTFILES_TEST_SUITE_DIR="${SCRIPT_DIR}/config-inspection"
 # test-suite-manifest: support.sh syntax-and-output.sh composition-and-precedence.sh path-and-state-safety.sh descriptors-drift-and-privacy.sh
 
 source "$DOTFILES_TEST_SUITE_DIR/support.sh"
-config_inspection_initialize
+config_inspection_allocate_root
 trap cleanup EXIT
+config_inspection_initialize
 
 source "$DOTFILES_TEST_SUITE_DIR/syntax-and-output.sh"
 source "$DOTFILES_TEST_SUITE_DIR/composition-and-precedence.sh"

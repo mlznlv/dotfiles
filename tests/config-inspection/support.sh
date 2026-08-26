@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 
-config_inspection_initialize() {
-    CLI="${PROJECT_ROOT}/bin/dotfiles"
+config_inspection_allocate_root() {
     TEST_PARENT=${TMPDIR:-/tmp}
     TEST_PARENT=$(CDPATH= cd -- "$TEST_PARENT" && pwd -P)
     TEST_ROOT=$(mktemp -d "${TEST_PARENT%/}/dotfiles-config-inspection-tests.XXXXXX")
+}
+
+config_inspection_initialize() {
+    CLI="${PROJECT_ROOT}/bin/dotfiles"
     REAL_CHEZMOI=$(command -v chezmoi)
     PROBE_BIN="${TEST_ROOT}/probe-bin"
     PROBE_LOG="${TEST_ROOT}/external-invocations.log"

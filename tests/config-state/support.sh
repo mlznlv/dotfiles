@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 
-config_state_initialize() {
-    CLI="${PROJECT_ROOT}/bin/dotfiles"
+config_state_allocate_root() {
     TEST_PARENT=${TMPDIR:-/tmp}
     TEST_PARENT=$(CDPATH= cd -- "$TEST_PARENT" && pwd -P)
     TEST_ROOT=$(mktemp -d "${TEST_PARENT%/}/dotfiles-config-state-tests.XXXXXX")
+}
+
+config_state_initialize() {
+    CLI="${PROJECT_ROOT}/bin/dotfiles"
     # shellcheck source=../bin/dotfiles
     source "$CLI"
     # shellcheck source=../lib/config-state.sh

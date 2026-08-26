@@ -8,8 +8,9 @@ DOTFILES_TEST_SUITE_DIR="${SCRIPT_DIR}/apply"
 # test-suite-manifest: support.sh syntax-and-confirmation.sh convergence-and-scope.sh recomputation-and-failures.sh signals-privacy-and-cleanup.sh
 
 source "$DOTFILES_TEST_SUITE_DIR/support.sh"
-apply_initialize
+apply_allocate_root
 trap cleanup EXIT
+apply_initialize
 
 source "$DOTFILES_TEST_SUITE_DIR/syntax-and-confirmation.sh"
 source "$DOTFILES_TEST_SUITE_DIR/convergence-and-scope.sh"

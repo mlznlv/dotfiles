@@ -15,6 +15,8 @@ trap cleanup EXIT
 
 # shellcheck source=../scripts/check-maintainability.sh
 source "${PROJECT_ROOT}/scripts/check-maintainability.sh"
+# shellcheck source=helpers/initialization-cleanup.sh
+source "${PROJECT_ROOT}/tests/helpers/initialization-cleanup.sh"
 
 failures=0
 checks=0
@@ -35,13 +37,11 @@ fail() {
     printf '  status: %s\n' "$STATUS"
     printf '  output: %s\n' "$OUTPUT"
 }
-
 check_status() {
     local name=$1
     local expected=$2
     if [ "$STATUS" -eq "$expected" ]; then pass "$name"; else fail "$name"; fi
 }
-
 check_equal() {
     local name=$1
     local actual=$2
@@ -54,19 +54,16 @@ check_equal() {
         fail "$name"
     fi
 }
-
 check_contains() {
     local name=$1
     local expected=$2
     case "$OUTPUT" in *"$expected"*) pass "$name" ;; *) STATUS=1; fail "$name" ;; esac
 }
-
 check_not_contains() {
     local name=$1
     local rejected=$2
     case "$OUTPUT" in *"$rejected"*) STATUS=1; fail "$name" ;; *) pass "$name" ;; esac
 }
-
 run_command() {
     local stdout_file="${TEST_ROOT}/stdout"
     local stderr_file="${TEST_ROOT}/stderr"
@@ -77,7 +74,6 @@ run_command() {
     STDERR=$(< "$stderr_file")
     OUTPUT="${STDOUT}${STDOUT:+$'\n'}${STDERR}"
 }
-
 run_from_directory() {
     local directory=$1
     shift
@@ -93,7 +89,6 @@ run_from_directory() {
     STDERR=$(< "$stderr_file")
     OUTPUT="${STDOUT}${STDOUT:+$'\n'}${STDERR}"
 }
-
 source_is_side_effect_free() (
     local target=$1
     local working_directory=$2
@@ -132,7 +127,6 @@ source_is_side_effect_free() (
         [ "$(set +o)" = "$before_option_state" ] && [ "$(trap -p)" = "$before_traps" ] &&
         [ "$after_tree" = "$before_tree" ]
 )
-
 make_test_layout_fixture() {
     local root=$1
     local suite
@@ -242,7 +236,9 @@ check_layout_rejection 'circular test source edge is rejected' "$test_layout_fix
 
 test_layout_fixture="${TEST_ROOT}/duplicate test function fixture"
 make_test_layout_fixture "$test_layout_fixture"
-printf '%s\n' 'pass() { :; }' >> "$test_layout_fixture/tests/config-state/cli-and-persistence.sh"
+printf '%s\n' 'function case_helper { :; }' 'pass() { :; }' >> "$test_layout_fixture/tests/config-state/cli-and-persistence.sh"
+check_layout_rejection 'case-owned suite-local test function is rejected' "$test_layout_fixture" \
+    'error: test case defines a suite-local function: tests/config-state/cli-and-persistence.sh'
 check_layout_rejection 'duplicate suite-local test function is rejected' "$test_layout_fixture" \
     'error: duplicate test function pass: tests/config-state'
 
@@ -378,6 +374,10 @@ check_equal 'duplicate function diagnostic identifies both relative owners' "$ou
 run_command bash "${PROJECT_ROOT}/scripts/check-maintainability.sh"
 check_status 'final production tree passes the complete maintainability guard' 0
 check_equal 'successful maintainability guard is silent' "$OUTPUT" ''
+output=$(test_initialization_interruptions_cleanup "$PROJECT_ROOT" "${TEST_ROOT}/initialization interruption" 2>&1)
+STATUS=$?
+OUTPUT=$output
+check_status 'interrupted suite initialization cleans every allocated test root' 0
 
 source_work="${TEST_ROOT}/source work"
 mkdir -p "$source_work"

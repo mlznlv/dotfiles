@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 
+config_interactive_allocate_root() {
+    TEST_PARENT=${TMPDIR:-/tmp}
+    TEST_PARENT=$(CDPATH= cd -- "$TEST_PARENT" && pwd -P)
+    TEST_ROOT=$(mktemp -d "${TEST_PARENT%/}/dotfiles-config-interactive-tests.XXXXXX")
+}
+
 config_interactive_initialize() {
     CLI="${PROJECT_ROOT}/bin/dotfiles"
     PTY_HELPER="${PROJECT_ROOT}/tests/helpers/pty-interactive.py"
     STATE_HOOK="${PROJECT_ROOT}/tests/helpers/interactive-state-hook.sh"
-    TEST_PARENT=${TMPDIR:-/tmp}
-    TEST_PARENT=$(CDPATH= cd -- "$TEST_PARENT" && pwd -P)
-    TEST_ROOT=$(mktemp -d "${TEST_PARENT%/}/dotfiles-config-interactive-tests.XXXXXX")
     REAL_CHEZMOI=$(command -v chezmoi)
     PYTHON_BIN=$(command -v python3)
     PROBE_BIN="${TEST_ROOT}/probe-bin"

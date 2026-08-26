@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 
+config_consumption_allocate_root() {
+    TEST_PARENT=${TMPDIR:-/tmp}
+    TEST_PARENT=$(CDPATH= cd -- "$TEST_PARENT" && pwd -P)
+    TEST_ROOT=$(mktemp -d "${TEST_PARENT%/}/dotfiles-config-consumption-tests.XXXXXX")
+}
+
 config_consumption_initialize() {
     CLI="${PROJECT_ROOT}/bin/dotfiles"
     PTY_CONFIRM="${PROJECT_ROOT}/tests/helpers/pty-confirm.py"
     CONFIRM_HOOK="${PROJECT_ROOT}/tests/helpers/apply-confirmation-hook.sh"
-    TEST_PARENT=${TMPDIR:-/tmp}
-    TEST_PARENT=$(CDPATH= cd -- "$TEST_PARENT" && pwd -P)
-    TEST_ROOT=$(mktemp -d "${TEST_PARENT%/}/dotfiles-config-consumption-tests.XXXXXX")
     REAL_CHEZMOI=$(command -v chezmoi)
     PROBE_BIN="${TEST_ROOT}/probe-bin"
     PROBE_LOG="${TEST_ROOT}/external-invocations.log"
