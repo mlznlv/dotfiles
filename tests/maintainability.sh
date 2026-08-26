@@ -257,6 +257,11 @@ check_layout_rejection 'executable internal test fragment is rejected' "$test_la
     'error: internal test fragment must not be executable: tests/config-state/cli-and-persistence.sh'
 check_contains 'stable test runner mode changes are rejected' \
     'error: stable test runner mode is invalid: tests/config-state.sh'
+sed -i.bak 's/^trap cleanup EXIT$/# delayed cleanup trap/' \
+    "$test_layout_fixture/tests/config-state.sh"
+rm -f "$test_layout_fixture/tests/config-state.sh.bak"
+check_layout_rejection 'delayed initialization cleanup is rejected' "$test_layout_fixture" \
+    'error: test runner cleanup must immediately protect initialization: tests/config-state.sh'
 test_syntax_fixture="${TEST_ROOT}/invalid test syntax"
 mkdir -p "$test_syntax_fixture/tests"
 printf '%s\n' 'if true; then' > "$test_syntax_fixture/tests/invalid.sh"
@@ -266,7 +271,6 @@ OUTPUT=$output
 check_status 'recursive test syntax failure is rejected' 1
 check_equal 'test syntax diagnostic is repository-relative' "$output" \
     'error: test shell syntax is invalid: tests/invalid.sh'
-
 test_execution_fixture="${TEST_ROOT}/direct fragment execution"
 mkdir -p "$test_execution_fixture/scripts"
 cp "${PROJECT_ROOT}/scripts/check.sh" "$test_execution_fixture/scripts/check.sh"
@@ -278,11 +282,9 @@ OUTPUT=$output
 check_status 'direct execution of an internal test fragment is rejected' 1
 check_equal 'test execution diagnostic names only the stable check runner' "$output" \
     'error: stable test execution manifest is invalid: scripts/check.sh'
-
 output=$(check_test_line_budgets "$PROJECT_ROOT" 2>&1); STATUS=$?; OUTPUT=$output
 check_status 'final recursive test tree passes all line budgets' 0
 check_equal 'successful recursive test line guard is silent' "$output" ''
-
 loader_fixture="${TEST_ROOT}/duplicate loader"
 mkdir -p "$loader_fixture"
 cp -R "${PROJECT_ROOT}/lib" "$loader_fixture/lib"
@@ -294,7 +296,6 @@ OUTPUT=$output
 check_status 'duplicate fixed-loader membership is rejected' 1
 check_equal 'duplicate loader diagnostic names only the relative facade' "$output" \
     'error: fixed CLI loader order or membership is invalid: lib/cli.sh'
-
 missing_loader_fixture="${TEST_ROOT}/missing loader leaf"
 mkdir -p "$missing_loader_fixture"
 cp -R "${PROJECT_ROOT}/lib" "$missing_loader_fixture/lib"
@@ -307,7 +308,6 @@ check_status 'missing fixed-loader membership is rejected' 1
 check_equal 'missing loader diagnostic identifies only the relative leaf' "$output" \
     'error: fixed CLI loader leaf set is invalid: lib/cli
 error: fixed CLI loader leaf is missing: lib/cli/catalog.sh'
-
 unlisted_cli_fixture="${TEST_ROOT}/unlisted CLI leaf"
 mkdir -p "$unlisted_cli_fixture"
 cp -R "${PROJECT_ROOT}/lib" "$unlisted_cli_fixture/lib"
