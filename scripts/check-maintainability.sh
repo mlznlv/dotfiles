@@ -105,6 +105,7 @@ check_test_suite_layouts() {
     local definitions
     local duplicate
     local expected_mode
+    local mode_entry
     local safety_root
     local failed=0
 
@@ -180,6 +181,15 @@ check_test_suite_layouts() {
             failed=1
         fi
     done < <(decomposed_test_suites)
+    for mode_entry in run.sh:755 render.sh:644 plan.sh:755 maintainability.sh:644; do
+        relative=${mode_entry%%:*}
+        expected_mode=${mode_entry#*:}
+        [ ! -e "${repository_root%/}/tests/$relative" ] ||
+            [ "$(test_file_mode "${repository_root%/}/tests/$relative")" = "$expected_mode" ] || {
+                printf 'error: stable test runner mode is invalid: tests/%s\n' "$relative" >&2
+                failed=1
+            }
+    done
     rm -rf -- "$safety_root"
     [ "$failed" -eq 0 ]
 }

@@ -171,7 +171,6 @@ expected_suite_hash() {
         apply) printf '%s\n' b57c9fb81fc2b06fef2c42fe734dbddeaa275e9478f7a2b3a7d9a6b8ab2d9254 ;;
     esac
 }
-
 fixture="${TEST_ROOT}/oversized fixture"
 mkdir -p "$fixture/bin" "$fixture/lib"
 awk 'BEGIN { for (line = 1; line <= 251; line++) print "# fixture" }' > "$fixture/bin/dotfiles"
@@ -184,7 +183,6 @@ STATUS=$status
 OUTPUT=$output
 check_status 'synthetic oversized production files fail the line guard' 1
 check_equal 'line-budget diagnostics are relative and measured' "$output" "$expected"
-
 test_budget_fixture="${TEST_ROOT}/oversized test fixture"
 mkdir -p "$test_budget_fixture/tests/example"
 awk 'BEGIN { for (line = 1; line <= 151; line++) print "# fixture" }' > \
@@ -258,9 +256,11 @@ check_layout_rejection 'support source-time side effects are rejected' "$test_la
 test_layout_fixture="${TEST_ROOT}/executable fragment fixture"
 make_test_layout_fixture "$test_layout_fixture"
 chmod +x "$test_layout_fixture/tests/config-state/cli-and-persistence.sh"
+chmod 755 "$test_layout_fixture/tests/config-state.sh"
 check_layout_rejection 'executable internal test fragment is rejected' "$test_layout_fixture" \
     'error: internal test fragment must not be executable: tests/config-state/cli-and-persistence.sh'
-
+check_contains 'stable test runner mode changes are rejected' \
+    'error: stable test runner mode is invalid: tests/config-state.sh'
 test_syntax_fixture="${TEST_ROOT}/invalid test syntax"
 mkdir -p "$test_syntax_fixture/tests"
 printf '%s\n' 'if true; then' > "$test_syntax_fixture/tests/invalid.sh"
