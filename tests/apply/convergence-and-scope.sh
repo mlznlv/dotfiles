@@ -83,4 +83,3 @@ check_equal 'narrower Zsh invokes only .zshrc' "$(tail -n 1 "$APPLY_INVOCATION_L
 check_equal 'narrower Zsh preserves omitted files' "$(cksum "$home/.config/starship.toml" "$home/.config/zsh/autosuggestions.zsh")" "$optional_before"
 check_not_contains 'narrower Zsh output omits Starship target' 'chezmoi:target:.config/starship.toml'
 check_not_contains 'narrower Zsh output omits autosuggestions target' 'chezmoi:target:.config/zsh/autosuggestions.zsh'
-

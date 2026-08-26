@@ -265,4 +265,3 @@ ln -s "${TEST_ROOT}/lock-link-target" "$LOCK_LINK_ROOT/dotfiles/active-selection
 run_state "$LOCK_LINK_ROOT" shell.minimal "" "" debian
 check_status "symlink writer lock is refused" 3
 if [ -L "$LOCK_LINK_ROOT/dotfiles/active-selection.lock" ]; then STATUS=0; OUTPUT=; pass "writer never follows or removes a symlink lock"; else STATUS=1; OUTPUT='lock link changed'; fail "writer never follows or removes a symlink lock"; fi
-

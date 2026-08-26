@@ -45,4 +45,3 @@ run_cli "$missing_root" "$missing_home" plan unexpected --platform debian
 check_status 'unexpected positional input is status 2' 2
 run_cli "$missing_root" "$missing_home" resolve --yes
 check_status '--yes remains invalid outside apply' 2
-

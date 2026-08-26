@@ -13,7 +13,7 @@ config_consumption_initialize() {
     ARTIFACT_ROOT="${TEST_ROOT}/share"
     ARTIFACT_FILE="${ARTIFACT_ROOT}/zsh-autosuggestions/zsh-autosuggestions.zsh"
     mkdir -p "$PROBE_BIN" "$(dirname -- "$ARTIFACT_FILE")" "${TEST_ROOT}/homes" "${TEST_ROOT}/roots" "${TEST_ROOT}/tmp"
-    
+
     for probe in brew mise apt apt-get dnf yum pacman apk installer zsh starship less more bat delta diff code vim vi nano open xdg-open op bw pass gopass keepassxc-cli vault sudo doas curl wget; do
         printf '%s\n' \
             '#!/bin/sh' \
@@ -22,21 +22,21 @@ config_consumption_initialize() {
         chmod +x "${PROBE_BIN}/${probe}"
     done
     printf '%s\n' 'fixture artifact content must not be opened or invoked' > "$ARTIFACT_FILE"
-    
+
     export DOTFILES_CONSUMPTION_PROBE_LOG=$PROBE_LOG
     export DOTFILES_CHEZMOI_BIN=$REAL_CHEZMOI
     export DOTFILES_SHARE_ROOTS=$ARTIFACT_ROOT
     export PATH="${PROBE_BIN}:/usr/bin:/bin"
     export TMPDIR="${TEST_ROOT}/tmp"
     export PYTHONDONTWRITEBYTECODE=1
-    
+
     # shellcheck source=../bin/dotfiles
     source "$CLI"
     # shellcheck source=../lib/config-state.sh
     source "${PROJECT_ROOT}/lib/config-state.sh"
     SOURCE_DIR=$PROJECT_ROOT
     CHEZMOI_BIN=$REAL_CHEZMOI
-    
+
     failures=0
     checks=0
     OUTPUT=

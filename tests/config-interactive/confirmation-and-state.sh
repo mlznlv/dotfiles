@@ -133,4 +133,3 @@ check_not_contains "confirmation-time convergence is not rewritten" 'Local selec
 check_equal "fresh writer preserves the converged external object" "$(identity_of "$STATE_PATH")" "$(< "$IDENTITY_FILE")"
 check_equal "confirmation-time convergence leaves exact proposal bytes" "$(< "$STATE_PATH")" "$PROFILE_BODY"
 assert_no_debris "confirmation-time convergence leaves no owned debris" "$CASE_CONFIG/dotfiles"
-

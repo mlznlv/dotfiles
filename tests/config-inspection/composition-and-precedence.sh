@@ -141,4 +141,3 @@ additional_modules = []'
 run_command env DOTFILES_SOURCE_DIR="$COLLISION_FIXTURE" DOTFILES_CHEZMOI_BIN="$REAL_CHEZMOI" XDG_CONFIG_HOME="$DOCTOR_COLLISION_ROOT" HOME="$MISSING_HOME" \
     "$CLI" config doctor --platform debian
 check_status 'doctor rejects saved rendered-target ownership collisions' 3
-

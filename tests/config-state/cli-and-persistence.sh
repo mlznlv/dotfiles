@@ -175,4 +175,3 @@ else
     OUTPUT=$(< "$CHEZMOI_LOG")
     fail "saving reaches only Chezmoi catalog template extraction"
 fi
-

@@ -109,4 +109,3 @@ check_contains "empty profile category prints none" $'Available profiles for deb
 check_contains "empty module category prints none" $'Available modules for debian:\n  none'
 check_not_contains "empty inventory leaks no catalog metadata" 'summary'
 check_path_absent "empty inventory EOF creates no state" "$CASE_CONFIG"
-

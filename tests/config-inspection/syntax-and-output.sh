@@ -86,4 +86,3 @@ Schema: 1
 Composition for macos: valid'
 check_equal 'profile inspect and doctor preserve bytes, identity, mode, modification time, and tree' "$(state_snapshot "$PROFILE_ROOT")" "$PROFILE_BEFORE"
 check_equal 'profile inspect and doctor leave managed HOME unchanged' "$(tree_snapshot "$PROFILE_HOME")" "$HOME_BEFORE"
-

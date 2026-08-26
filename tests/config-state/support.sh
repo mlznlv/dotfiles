@@ -15,7 +15,7 @@ config_state_initialize() {
     CHEZMOI_LOG="${TEST_ROOT}/chezmoi-invocations.log"
     CHEZMOI_PROBE="${TEST_ROOT}/chezmoi-probe"
     mkdir -p "$PROBE_BIN"
-    
+
     for probe in brew mise apt apt-get dnf yum pacman apk installer zsh starship less more bat delta diff code vim vi nano open xdg-open op bw pass gopass keepassxc-cli vault sudo doas curl wget git age; do
         printf '%s\n' \
             '#!/bin/sh' \
@@ -23,7 +23,7 @@ config_state_initialize() {
             'exit 97' > "${PROBE_BIN}/${probe}"
         chmod +x "${PROBE_BIN}/${probe}"
     done
-    
+
     printf '%s\n' \
         '#!/bin/sh' \
         'printf "%s\n" "$*" >> "$DOTFILES_CONFIG_CHEZMOI_LOG"' \
@@ -32,17 +32,17 @@ config_state_initialize() {
         '  *) exit 97 ;;' \
         'esac' > "$CHEZMOI_PROBE"
     chmod +x "$CHEZMOI_PROBE"
-    
+
     export DOTFILES_CONFIG_PROBE_LOG=$PROBE_LOG
     export DOTFILES_CONFIG_CHEZMOI_LOG=$CHEZMOI_LOG
     export DOTFILES_CONFIG_REAL_CHEZMOI=$REAL_CHEZMOI
     export DOTFILES_CHEZMOI_BIN=$CHEZMOI_PROBE
     export DOTFILES_CONFIG_TEST_SKIP_SYNC=1
     export PATH="${PROBE_BIN}:/usr/bin:/bin"
-    
+
     SOURCE_DIR=$PROJECT_ROOT
     CHEZMOI_BIN=$CHEZMOI_PROBE
-    
+
     failures=0
     checks=0
     OUTPUT=

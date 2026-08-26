@@ -61,4 +61,3 @@ check_equal 'interactive exact yes status' "$STATUS" 0
 check_equal 'interactive exact yes output' "$OUTPUT" "$expected"
 check_equal 'interactive exact yes invokes one apply' "$((INVOCATIONS_AFTER - INVOCATIONS_BEFORE))" 1
 check_private_output 'interactive exact yes output is private'
-

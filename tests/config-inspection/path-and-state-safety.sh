@@ -162,4 +162,3 @@ check_equal 'doctor reports healthy while a lock exists' "$STDOUT" 'Local select
 Schema: 1
 Composition for debian: valid'
 check_equal 'doctor preserves lock and unrelated entries' "$(state_snapshot "$LOCK_ROOT")" "$LOCK_BEFORE"
-

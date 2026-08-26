@@ -9,7 +9,7 @@ config_inspection_initialize() {
     PROBE_BIN="${TEST_ROOT}/probe-bin"
     PROBE_LOG="${TEST_ROOT}/external-invocations.log"
     mkdir -p "$PROBE_BIN" "${TEST_ROOT}/homes" "${TEST_ROOT}/roots" "${TEST_ROOT}/fixtures"
-    
+
     for probe in brew mise apt apt-get dnf yum pacman apk installer zsh starship less more bat delta diff code vim vi nano open xdg-open op bw pass gopass keepassxc-cli vault sudo doas curl wget; do
         printf '%s\n' \
             '#!/bin/sh' \
@@ -17,18 +17,18 @@ config_inspection_initialize() {
             'exit 97' > "${PROBE_BIN}/${probe}"
         chmod +x "${PROBE_BIN}/${probe}"
     done
-    
+
     export DOTFILES_INSPECTION_PROBE_LOG=$PROBE_LOG
     export DOTFILES_CHEZMOI_BIN=$REAL_CHEZMOI
     export PATH="${PROBE_BIN}:/usr/bin:/bin"
-    
+
     # shellcheck source=../bin/dotfiles
     source "$CLI"
     # shellcheck source=../lib/config-state.sh
     source "${PROJECT_ROOT}/lib/config-state.sh"
     SOURCE_DIR=$PROJECT_ROOT
     CHEZMOI_BIN=$REAL_CHEZMOI
-    
+
     failures=0
     checks=0
     OUTPUT=

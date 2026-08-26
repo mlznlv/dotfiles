@@ -8,7 +8,7 @@ apply_initialize() {
     source "${PROJECT_ROOT}/bin/dotfiles"
     # shellcheck source=../lib/render.sh
     source "${PROJECT_ROOT}/lib/render.sh"
-    
+
     REAL_CHEZMOI=$(command -v chezmoi)
     RENDER_PROBE="${PROJECT_ROOT}/tests/helpers/chezmoi-render-probe.sh"
     PLAN_PROBE="${PROJECT_ROOT}/tests/helpers/chezmoi-plan-probe.sh"
@@ -33,7 +33,7 @@ apply_initialize() {
     ARTIFACT_LINK="${ARTIFACT_DIRECTORY}/zsh-autosuggestions.zsh"
     ARTIFACT_TARGET="${ARTIFACT_DIRECTORY}/canonical-plugin.zsh"
     ARTIFACT_ALTERNATE="${ARTIFACT_DIRECTORY}/alternate-plugin.zsh"
-    
+
     mkdir -p "$PROBE_BIN" "${TEST_ROOT}/homes" "${TEST_ROOT}/desired" "${TEST_ROOT}/tmp"
     for probe in brew mise apt apt-get dnf yum pacman apk installer zsh starship less more bat delta diff code vim vi nano open xdg-open op bw pass gopass keepassxc-cli vault sudo doas curl wget git age; do
         printf '%s\n' \
@@ -42,7 +42,7 @@ apply_initialize() {
             'exit 97' > "${PROBE_BIN}/${probe}"
         chmod +x "${PROBE_BIN}/${probe}"
     done
-    
+
     export DOTFILES_REAL_CHEZMOI="$REAL_CHEZMOI"
     export DOTFILES_CHEZMOI_BIN="$REAL_CHEZMOI"
     export DOTFILES_RENDER_CHEZMOI_BIN="$RENDER_PROBE"
@@ -80,10 +80,10 @@ apply_initialize() {
     export GIT_PAGER="${PROBE_BIN}/less"
     export CHEZMOI_PAGER="${PROBE_BIN}/less"
     export PYTHONDONTWRITEBYTECODE=1
-    
+
     SOURCE_DIR=$PROJECT_ROOT
     CHEZMOI_BIN=$REAL_CHEZMOI
-    
+
     failures=0
     checks=0
     OUTPUT=

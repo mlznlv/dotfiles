@@ -102,4 +102,3 @@ run_cli "$precedence_xdg" "$precedence_home" resolve --platform debian
 check_equal 'non-empty XDG root takes precedence over HOME fallback' "$STDOUT" 'prompt.starship'
 run_cli_without_xdg "$precedence_home" resolve --platform debian
 check_equal 'unset XDG uses HOME fallback selection' "$STDOUT" $'shell.zsh\nshell.zsh.autosuggestions\nprompt.starship'
-

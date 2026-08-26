@@ -109,4 +109,3 @@ new_case incomplete-additions
 run_tty '[{"wait":"Base type (profile or modules):\n","send":"profile"},{"wait":"Profile ID:\n","send":"shell.minimal"},{"wait":"Additional module IDs (comma-separated, empty for none):\n","eof":true}]' "$PROJECT_ROOT" "$CASE_CONFIG" "$CASE_HOME" config interactive --platform debian
 check_status "EOF at additions is incomplete" 2
 check_path_absent "additions EOF creates no state" "$CASE_CONFIG"
-

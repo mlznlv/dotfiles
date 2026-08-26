@@ -16,7 +16,7 @@ config_interactive_initialize() {
     mkdir -p "$PROBE_BIN"
     : > "$PROBE_LOG"
     : > "$CHEZMOI_LOG"
-    
+
     for probe in brew mise apt apt-get dnf yum pacman apk installer zsh starship less more bat delta diff code vim vi nano open xdg-open op bw pass gopass keepassxc-cli vault sudo doas curl wget git age; do
         printf '%s\n' \
             '#!/bin/sh' \
@@ -24,7 +24,7 @@ config_interactive_initialize() {
             'exit 97' > "${PROBE_BIN}/${probe}"
         chmod +x "${PROBE_BIN}/${probe}"
     done
-    
+
     printf '%s\n' \
         '#!/bin/sh' \
         'printf "%s\n" "$*" >> "$DOTFILES_CONFIG_CHEZMOI_LOG"' \
@@ -33,7 +33,7 @@ config_interactive_initialize() {
         '  *) exit 97 ;;' \
         'esac' > "$CHEZMOI_PROBE"
     chmod +x "$CHEZMOI_PROBE"
-    
+
     export DOTFILES_CONFIG_PROBE_LOG=$PROBE_LOG
     export DOTFILES_CONFIG_CHEZMOI_LOG=$CHEZMOI_LOG
     export DOTFILES_CONFIG_REAL_CHEZMOI=$REAL_CHEZMOI
@@ -42,7 +42,7 @@ config_interactive_initialize() {
     for fixture in valid cycle source-collision empty-inventory; do
         stage_fixture "$fixture"
     done
-    
+
     failures=0
     checks=0
     STATUS=0
