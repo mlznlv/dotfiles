@@ -121,9 +121,10 @@ and its field lists are compared as one sorted comma-joined string, so all four 
 
 ## Tooling in this repository
 
-`.claude/` is committed. Three slash commands cover the multi-file contracts that
-are easy to half-complete: `/new-adr`, `/new-module`, and `/catalog-field`. The
-`contribution-check` agent audits a change against `CONTRIBUTING.md` before commit.
+`.claude/` is committed. Four slash commands cover the multi-file contracts that
+are easy to half-complete: `/new-adr`, `/new-module`, `/new-command`, and
+`/catalog-field`. The `contribution-check` agent audits a change against
+`CONTRIBUTING.md` before commit.
 
 A `PostToolUse` hook re-runs `scripts/check.sh` after edits below `bin`, `lib`,
 `scripts`, `tests`, and `.chezmoidata`. `brew`, `mise`, and the mutating `chezmoi`

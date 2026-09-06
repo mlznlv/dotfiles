@@ -37,7 +37,8 @@ Use conventional commit prefixes where practical, such as docs, feat, fix, test,
 The repository ships Claude Code configuration in `.claude/`. It allows the
 read-only repository commands and re-runs `scripts/check.sh` after edits below
 `bin`, `lib`, `scripts`, `tests`, and `.chezmoidata`. Contributor commands for
-adding an ADR, a catalog entry, or a manifest field live in `.claude/skills`.
+adding an ADR, a catalog entry, a CLI command, or a manifest field live in
+`.claude/skills`.
 
 The deny rules refuse `brew`, `mise`, and the mutating `chezmoi` subcommands.
 They are a guardrail against an accidental install or apply while working in a
