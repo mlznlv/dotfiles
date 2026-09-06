@@ -46,6 +46,12 @@ outside the repository and managed home sources.
 ├── lib/
 │   ├── catalog-records.tmpl
 │   ├── catalog.awk
+│   ├── catalog/
+│   │   ├── common.awk
+│   │   ├── value-validation.awk
+│   │   ├── catalog-validation.awk
+│   │   ├── resolution.awk
+│   │   └── output.awk
 │   ├── apply.sh
 │   ├── cli.sh
 │   ├── cli/
@@ -66,6 +72,11 @@ outside the repository and managed home sources.
 │   └── render.sh
 ├── scripts/
 │   ├── check-maintainability.sh
+│   ├── maintainability/
+│   │   ├── common.sh
+│   │   ├── file-sizes.sh
+│   │   ├── production-shell.sh
+│   │   └── test-shell.sh
 │   └── check.sh
 ├── tests/
 │   ├── fixtures/
@@ -73,7 +84,6 @@ outside the repository and managed home sources.
 │   ├── helpers/
 │   │   ├── chezmoi-{apply,plan,render}-probe.sh
 │   │   ├── apply-confirmation-hook.sh
-│   │   ├── initialization-cleanup.sh
 │   │   ├── interactive-state-hook.sh
 │   │   ├── pty-confirm.py
 │   │   └── pty-interactive.py
@@ -113,6 +123,12 @@ outside the repository and managed home sources.
 │   │   ├── writer-failures-and-drift.sh
 │   │   └── concurrency-signals-and-privacy.sh
 │   ├── maintainability.sh
+│   ├── maintainability/
+│   │   ├── support.sh
+│   │   ├── file-size-policy.sh
+│   │   ├── test-layout.sh
+│   │   ├── production-layout.sh
+│   │   └── execution-and-portability.sh
 │   ├── plan.sh
 │   ├── render.sh
 │   └── run.sh
@@ -161,13 +177,35 @@ the caller's current directory. Existing callers continue to source
 `bin/dotfiles` or `lib/config-state.sh`; the decomposition changes no public
 command, output, state, or cross-library function name.
 
-`scripts/check-maintainability.sh` enforces a 250-line entrypoint budget and a
-500-physical-line maximum for every production shell file below `lib/`. It
-also enforces fixed loader membership and order, one definition per production
-function, Bash syntax, and executable modes. `tests/maintainability.sh` covers
-silent source-only loading, unchanged caller shell state, missing-component
-failure, direct execution, arbitrary working directories, and copied
-repository paths containing spaces and shell metacharacters.
+The catalog engine is one fixed POSIX AWK unit loaded in dependency order:
+`common.awk`, `value-validation.awk`, `catalog-validation.awk`,
+`resolution.awk`, `output.awk`, then `catalog.awk`. The five leaves own only
+functions. The stable `lib/catalog.awk` entry owns schema constants, record
+patterns, final action dispatch, and status handling. `lib/cli/catalog.sh`
+passes each quoted path through an explicit `awk -f`; no leaf loads another.
+
+`scripts/check-maintainability.sh` is a thin sourceable facade over a fixed
+order: `common.sh`, `file-sizes.sh`, `production-shell.sh`, then
+`test-shell.sh`. Common code owns paths, physical line counts, modes, and
+diagnostics; the other leaves own source-size policy, production-shell
+architecture, and test-shell architecture respectively. Leaves contain only
+functions and never load their facade or siblings.
+
+The size guard recursively covers every regular maintained file below
+`.chezmoidata/`, `.github/workflows/`, `bin/`, `home/`, `lib/`, `scripts/`,
+and `tests/`, regardless of extension. The general maximum is 500 physical
+lines; `bin/dotfiles` remains at 250, while decomposed stable test runners and
+both maintainability entrypoints remain at 150. Narrative documentation,
+accepted ADRs, licenses, governance files, and generated lock/vendor artifacts
+are excluded by semantic category rather than an allowlist. NUL bytes and
+physical lines longer than 1,000 bytes are rejected as binary or minification
+bypasses.
+
+`tests/maintainability.sh` is a thin runner over suite-local support and four
+fixed case leaves covering the file-size policy, test layout, production
+layout, and execution/portability. It covers exact manifests, source safety,
+missing-component failure, direct execution, arbitrary working directories,
+and copied repository paths containing spaces and shell metacharacters.
 
 ## Behavioral test layering
 
@@ -198,12 +236,13 @@ filenames state their single case responsibility. Leaves are internal and
 non-executable; cases define no functions, do not source siblings or runners,
 and are never executed directly.
 
-Every test shell below `tests/` has a 500-physical-line limit, and decomposed
-runners have a 150-line limit. The maintainability guard compares each runner
-manifest and source order with the complete recursive leaf set, rejects unsafe
-or dynamic edges, case-owned or duplicate functions, modes, syntax, late
-cleanup protection, and support-time effects, and proves interruption cleanup
-plus copied-path/arbitrary-working-directory output equivalence.
+Every maintained test file below `tests/` has a 500-physical-line limit, and
+decomposed runners have a 150-line limit. The maintainability guard compares
+each runner manifest and source order with the complete recursive leaf set,
+rejects unsafe or dynamic edges, case-owned or duplicate functions, modes,
+syntax, late cleanup protection, and support-time effects, and proves
+interruption cleanup plus copied-path/arbitrary-working-directory output
+equivalence.
 `scripts/check.sh` syntax-checks all test shells recursively but runs only the
 stable top-level entrypoints.
 
