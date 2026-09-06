@@ -61,9 +61,6 @@ merge. Phase 3 will not support saved plans, replay, rollback, or removal.
 ./bin/dotfiles resolve --profile shell.minimal
 ~~~
 
-The example identifier above is planned and remains unavailable while the
-production catalog is empty.
-
 ## Choose a platform
 
 List and resolve commands detect the local platform by default. Use
@@ -74,13 +71,9 @@ List and resolve commands detect the local platform by default. Use
 ./bin/dotfiles profile list --platform macos
 ~~~
 
-Supported values are:
-
-- `macos` for macOS.
-- `debian` for Debian-family Linux, including Debian, Ubuntu, and Kali.
-
-Use `--all` with a list command to disable platform filtering. Do not combine
-`--all` and `--platform`.
+Supported values are `macos` and `debian`, where `debian` covers Debian, Ubuntu,
+and Kali. Use `--all` to disable platform filtering; it cannot be combined with
+`--platform`.
 
 ## Exit codes
 
@@ -98,8 +91,7 @@ Errors are written to standard error. Invalid syntax also suggests
 
 ### A list command prints nothing
 
-This is expected while the production catalog is empty. The command still exits
-successfully.
+Expected while the production catalog is empty. The command still exits `0`.
 
 ### `chezmoi is required for catalog commands`
 

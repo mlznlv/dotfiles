@@ -1,8 +1,8 @@
 # Profiles
 
 Profiles are transparent, named compositions of module identifiers. This page
-defines their contract. The production catalog remains empty until Phase 3.
-Catalog entries below tests/fixtures are test data, not curated profiles.
+defines their contract. The production catalog remains empty until Phase 3, and
+entries below `tests/fixtures` are test data, not curated profiles.
 
 ## Composition types
 
@@ -16,31 +16,15 @@ do not silently select another profile based on a machine name.
 
 ## Planned layout
 
-Profiles are grouped by intent.
+Profiles are grouped by intent, under `shell`, `personal`, `development`, and
+`homelab`. The [catalog contract](../catalog.md) owns the path and naming rules.
 
-~~~text
-.chezmoidata/profiles/
-├── shell/
-│   └── minimal.toml
-├── personal/
-├── development/
-└── homelab/
-~~~
-
-The first planned profile is shell.minimal, containing shell.zsh,
-shell.zsh.autosuggestions, and prompt.starship.
-
-Later curated profiles can represent:
-
-- A personal MacBook Air used for browsing, routines, and homelab access.
-- A developer Mac Pro workstation.
-- A Debian-family remote development guest.
-- A general homelab server.
-- Narrow security-lab and hypervisor-host targets.
-
-These are explicit choices, not automatic experience levels.
-
-See the [catalog contract](../catalog.md) for the strict TOML schema and path rules.
+The first planned profile is `shell.minimal`, containing `shell.zsh`,
+`shell.zsh.autosuggestions`, and `prompt.starship`. Later curated profiles can
+represent a personal MacBook Air, a developer Mac Pro workstation, a
+Debian-family remote development guest, a general homelab server, and narrow
+security-lab and hypervisor-host targets. These are explicit choices, not
+automatic experience levels.
 
 ## Resolution
 
@@ -67,15 +51,5 @@ paths, secrets, tokens, and provider credentials.
 ## Documentation requirement
 
 Every curated profile is introduced or changed with a matching page below this
-directory. The page must include:
-
-- Intent and intended audience.
-- Requested modules and why each is included.
-- Resolved dependencies.
-- Supported platforms and expected target types.
-- Optional additions and known conflicts.
-- Security, privacy, resource, and connectivity effects.
-- Example selection, plan, verification, and limitations.
-- Test coverage.
-
-Start from [the profile documentation template](template.md).
+directory, covering each applicable section of
+[the profile documentation template](template.md).

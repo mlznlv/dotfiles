@@ -1,12 +1,10 @@
 # Modules
 
 Modules are the smallest documented, selectable units of capability. This page
-defines their contract. The production catalog remains empty until Phase 3.
-Catalog entries below tests/fixtures are test data, not product modules.
+defines their contract. The production catalog remains empty until Phase 3, and
+entries below `tests/fixtures` are test data, not product modules.
 
 ## Categories
-
-Initial categories are:
 
 | Category | Purpose |
 | --- | --- |
@@ -25,38 +23,23 @@ Initial categories are:
 | security | Defensive and security-lab tooling |
 
 The category is organizational and forms the first segment of the module
-identifier. It does not select modules automatically.
+identifier. It does not select modules automatically, and a new category
+requires an architecture review.
 
 ## Catalog layout
 
-Manifests are grouped by category.
+Manifests are grouped by category, and the identifier determines the only valid
+path. The [catalog contract](../catalog.md) owns the layout and naming rules.
 
-~~~text
-.chezmoidata/modules/
-├── shell/
-│   ├── zsh.toml
-│   └── zsh-autosuggestions.toml
-└── prompt/
-    └── starship.toml
-~~~
-
-The planned initial modules are:
-
-- shell.zsh
-- shell.zsh.autosuggestions, depending on shell.zsh
-- prompt.starship
-
-These identifiers and relationships are design targets for the minimal shell
-vertical slice, not released functionality.
+The planned initial modules are `shell.zsh`, `shell.zsh.autosuggestions`
+depending on `shell.zsh`, and `prompt.starship`. They are design targets for the
+minimal shell vertical slice, not released functionality.
 
 ## Manifest contract
 
-Schema 1 declares resolution metadata:
-
-- Schema version and stable identifier.
-- Human-readable name, summary, and documentation path.
-- Supported platform families.
-- Dependencies, conflicts, and optional exclusive group.
+Schema 1 declares resolution metadata: schema version and stable identifier, a
+human-readable name, summary, and documentation path, supported platform
+families, and dependencies, conflicts, and an optional exclusive group.
 
 ~~~toml
 [dotfiles.modules."shell.zsh"]
@@ -72,12 +55,13 @@ exclusive_group = "shell.primary"
 ~~~
 
 Provider requests, chezmoi home-state selection, and module options arrive with
-the Phase 3 schema extension. See the [catalog contract](../catalog.md).
+the Phase 3 schema extension. See the [catalog contract](../catalog.md) for the
+field tables and validation rules.
 
 ## Module boundaries
 
-A module represents user-visible capability, not every file or package needed
-to provide it. Provider requests remain implementation details shown in plans.
+A module represents user-visible capability, not every file or package needed to
+provide it. Provider requests remain implementation details shown in plans.
 
 Use a profile when the only purpose is to group selectable modules. Do not
 create a grouping module with no capability of its own.
@@ -93,15 +77,6 @@ A module must not:
 
 ## Documentation requirement
 
-Every module is introduced or changed with a matching page below this
-directory. The page must include:
-
-- Purpose and user-visible result.
-- Dependencies, conflicts, and exclusive group.
-- Supported and unsupported platforms.
-- Provider requests and files managed.
-- Options, defaults, and privacy notes.
-- Plan, apply, verification, rollback, and known limitations.
-- Test coverage and examples.
-
-Start from [the module documentation template](template.md).
+Every module is introduced or changed with a matching page below this directory,
+covering each applicable section of
+[the module documentation template](template.md).
