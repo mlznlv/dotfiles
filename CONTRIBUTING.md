@@ -32,6 +32,17 @@ bash scripts/check.sh
 
 Use conventional commit prefixes where practical, such as docs, feat, fix, test, and chore.
 
+## Repository automation
+
+The repository ships Claude Code configuration in `.claude/`. It allows the
+read-only repository commands, denies the provider and apply commands this
+project must never run, and re-runs `scripts/check.sh` after edits below `bin`,
+`lib`, `scripts`, `tests`, and `.chezmoidata`. Contributor commands for adding an
+ADR, a catalog entry, or a manifest field live in `.claude/skills`.
+
+Personal overrides belong in `.claude/settings.local.json`, which is not
+committed.
+
 ## Architecture changes
 
 A durable or cross-cutting decision requires an ADR. Copy the [ADR template](docs/adr/0000-template.md), choose the next number, and explain the context, decision, consequences, and alternatives.

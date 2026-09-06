@@ -10,3 +10,6 @@
 .env
 .env.*
 !.env.example
+
+# Agent tooling
+.claude/settings.local.json
