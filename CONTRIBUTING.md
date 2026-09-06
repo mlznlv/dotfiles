@@ -35,10 +35,16 @@ Use conventional commit prefixes where practical, such as docs, feat, fix, test,
 ## Repository automation
 
 The repository ships Claude Code configuration in `.claude/`. It allows the
-read-only repository commands, denies the provider and apply commands this
-project must never run, and re-runs `scripts/check.sh` after edits below `bin`,
-`lib`, `scripts`, `tests`, and `.chezmoidata`. Contributor commands for adding an
-ADR, a catalog entry, or a manifest field live in `.claude/skills`.
+read-only repository commands and re-runs `scripts/check.sh` after edits below
+`bin`, `lib`, `scripts`, `tests`, and `.chezmoidata`. Contributor commands for
+adding an ADR, a catalog entry, or a manifest field live in `.claude/skills`.
+
+The deny rules refuse `brew`, `mise`, and the mutating `chezmoi` subcommands.
+They are a guardrail against an accidental install or apply while working in a
+repository that must never invoke a provider, not a security boundary: they match
+on command prefixes, so an unusual invocation form can pass them. Read-only
+`brew` and `mise` inspection is refused too; run those from your own shell when
+you need them.
 
 Personal overrides belong in `.claude/settings.local.json`, which is not
 committed.

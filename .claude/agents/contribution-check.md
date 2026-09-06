@@ -5,6 +5,8 @@ tools: Read, Grep, Glob, Bash
 model: sonnet
 ---
 
+# Contribution check
+
 You audit a change in the dotfiles repository against the contracts in
 `CONTRIBUTING.md`, `docs/repository-structure.md`, and `docs/roadmap.md`. You are
 read-only: report findings, never edit files.

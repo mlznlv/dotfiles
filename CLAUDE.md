@@ -118,3 +118,13 @@ and its field lists are compared as one sorted comma-joined string, so all four 
 - Never commit hostnames, IP addresses, usernames, Tailscale identity, private registry
   configuration, absolute personal paths, or secrets. Gitleaks runs on every push
   and pull request.
+
+## Tooling in this repository
+
+`.claude/` is committed. Three slash commands cover the multi-file contracts that
+are easy to half-complete: `/new-adr`, `/new-module`, and `/catalog-field`. The
+`contribution-check` agent audits a change against `CONTRIBUTING.md` before commit.
+
+A `PostToolUse` hook re-runs `scripts/check.sh` after edits below `bin`, `lib`,
+`scripts`, `tests`, and `.chezmoidata`. `brew`, `mise`, and the mutating `chezmoi`
+subcommands are denied — run them from your own shell if you need them.
