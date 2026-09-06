@@ -4,15 +4,29 @@
 # a broken record contract or manifest surfaces immediately instead of at commit
 # time. Reads the Claude Code hook payload on standard input.
 #
-# Silent on success. On failure it returns a blocking decision whose reason is
-# fed back to Claude and shown to the user.
+# The report is advisory and never blocks. A coordinated change such as the
+# four-place manifest field edit described in .claude/skills/catalog-field leaves
+# the repository briefly inconsistent by design; a blocking hook would interrupt
+# that documented workflow three times with errors that are artifacts of the
+# half-applied change rather than real defects.
+#
+# It only sees edits made with the Write and Edit tools. A file rewritten through
+# Bash, with sed -i or a heredoc, is not verified here.
 
 set -u
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 PROJECT_ROOT=$(CDPATH= cd -- "${SCRIPT_DIR}/../.." && pwd)
 
-command -v jq >/dev/null 2>&1 || exit 0
+MAX_REPORTED_LINES=40
+
+# jq may be present on PATH as a version manager's shim that cannot resolve an
+# interpreter, so presence is not enough. Say so rather than exiting silently:
+# a quiet no-op is indistinguishable from a passing check.
+if ! printf '{}' | jq . >/dev/null 2>&1; then
+    printf '%s\n' '{"systemMessage":"verify-edit hook skipped: jq is not usable, so this edit was not verified."}'
+    exit 0
+fi
 
 payload=$(cat)
 file_path=$(printf '%s' "$payload" |
@@ -31,28 +45,26 @@ case "$file_path" in
         ;;
 esac
 
-# Cap the detail fed back into the model's context. A failing catalog repeats
-# the same error for every module in every affected check, so the full output is
-# long and almost entirely redundant.
-MAX_REPORTED_LINES=40
-
-block() {
-    heading=$1
+# One line for the user, the capped detail for the model.
+report() {
+    summary=$1
     detail=$2
 
     total=$(printf '%s\n' "$detail" | wc -l | tr -d ' ')
     shown=$(printf '%s\n' "$detail" | head -n "$MAX_REPORTED_LINES")
     if [ "$total" -gt "$MAX_REPORTED_LINES" ]; then
         shown="${shown}
-... ${total} lines in total. Rerun the command to see the rest."
+... ${total} lines in total. Run the command again for the rest."
     fi
 
-    jq -n --arg reason "${heading}
+    jq -n --arg summary "$summary" --arg context "${summary}
 
 ${shown}" '{
-        decision: "block",
-        reason: $reason,
-        systemMessage: $reason
+        systemMessage: $summary,
+        hookSpecificOutput: {
+            hookEventName: "PostToolUse",
+            additionalContext: $context
+        }
     }'
     exit 0
 }
@@ -62,9 +74,7 @@ ${shown}" '{
 # it.
 case "$relative" in
     *.md)
-        # The repository lints Markdown in CI. Run the same tool locally only
-        # when it is actually resolvable; a bare shim on PATH is not enough, and
-        # neither --help nor --version exits 0, so probe with a known-clean file.
+        # Neither --help nor --version exits 0, so probe with a known-clean file.
         probe_dir=$(mktemp -d)
         printf '# Probe\n' > "${probe_dir}/probe.md"
         markdownlint_ready=1
@@ -74,18 +84,17 @@ case "$relative" in
 
         if [ "$markdownlint_ready" -eq 1 ]; then
             # --no-globs keeps the "globs" entry in .markdownlint-cli2.yaml from
-            # widening this run to every Markdown file in the repository, which
-            # would report unrelated files as problems in this one.
+            # widening this run to every Markdown file in the repository.
             if ! output=$(cd "$PROJECT_ROOT" &&
                 markdownlint-cli2 --no-globs "$relative" 2>&1); then
-                block "markdownlint-cli2 reported problems in ${relative}." \
+                report "markdownlint-cli2 reported problems in ${relative}." \
                     "$output"
             fi
         fi
         ;;
     bin/*|lib/*|scripts/*|tests/*|.chezmoidata/*)
         if ! output=$(cd "$PROJECT_ROOT" && bash scripts/check.sh 2>&1); then
-            block "scripts/check.sh failed after editing ${relative}. Fix this before continuing." \
+            report "scripts/check.sh does not pass after editing ${relative}. This is expected midway through a coordinated change." \
                 "$output"
         fi
         ;;

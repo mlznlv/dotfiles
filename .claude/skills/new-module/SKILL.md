@@ -2,7 +2,7 @@
 name: new-module
 description: Scaffold a catalog module or profile with its manifest, mirrored documentation page, and fixture coverage.
 argument-hint: "[module-id, e.g. shell.zsh]"
-allowed-tools: Read Write Edit Grep Glob Bash(bash scripts/check.sh) Bash(./bin/dotfiles *)
+allowed-tools: Read Write Edit Grep Glob Bash(./bin/dotfiles *) Bash(bash scripts/check.sh *)
 ---
 
 # Add a module or profile

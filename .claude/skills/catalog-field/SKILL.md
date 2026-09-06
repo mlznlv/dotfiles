@@ -2,7 +2,7 @@
 name: catalog-field
 description: Add, rename, or remove a catalog manifest field across all four places the record contract requires.
 argument-hint: "[field name]"
-allowed-tools: Read Edit Grep Bash(bash scripts/check.sh) Bash(bash tests/run.sh) Bash(./bin/dotfiles *)
+allowed-tools: Read Write Edit Grep Glob Bash(./bin/dotfiles *) Bash(bash scripts/check.sh *) Bash(bash tests/run.sh *)
 ---
 
 # Change a catalog manifest field

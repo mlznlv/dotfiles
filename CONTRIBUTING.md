@@ -35,17 +35,20 @@ Use conventional commit prefixes where practical, such as docs, feat, fix, test,
 ## Repository automation
 
 The repository ships Claude Code configuration in `.claude/`. It allows the
-read-only repository commands and re-runs `scripts/check.sh` after edits below
-`bin`, `lib`, `scripts`, `tests`, and `.chezmoidata`. Contributor commands for
-adding an ADR, a catalog entry, a CLI command, or a manifest field live in
-`.claude/skills`.
+read-only repository commands and re-runs `scripts/check.sh` after Write and Edit
+tool changes below `bin`, `lib`, `scripts`, `tests`, and `.chezmoidata`. The
+result is advisory: a coordinated change such as a manifest field edit is
+inconsistent partway through by design, so the hook reports rather than blocks.
+It does not see a file rewritten through Bash. Contributor commands for adding an
+ADR, a catalog entry, a CLI command, or a manifest field live in `.claude/skills`.
 
-The deny rules refuse `brew`, `mise`, and the mutating `chezmoi` subcommands.
-They are a guardrail against an accidental install or apply while working in a
-repository that must never invoke a provider, not a security boundary: they match
-on command prefixes, so an unusual invocation form can pass them. Read-only
-`brew` and `mise` inspection is refused too; run those from your own shell when
-you need them.
+The deny rules refuse `chezmoi`, `brew`, and `mise` entirely, including their
+read-only subcommands. Run those from your own shell when you need them; the CLI
+is unaffected, because `bin/dotfiles` invokes chezmoi as a subprocess and
+permission rules apply only to the command Claude itself runs. Denying chezmoi
+wholesale rather than listing subcommands is deliberate: `chezmoi
+execute-template` evaluates the `output` template function, which runs arbitrary
+commands, so allowing it would have bypassed every other rule here.
 
 Personal overrides belong in `.claude/settings.local.json`, which is not
 committed.

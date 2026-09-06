@@ -2,7 +2,7 @@
 name: new-adr
 description: Draft a new architecture decision record, numbered correctly and linked from both index sites.
 argument-hint: "[decision title]"
-allowed-tools: Read Write Edit Grep Glob Bash(ls docs/adr*) Bash(git log *)
+allowed-tools: Read Write Edit Grep Glob Bash(ls docs/adr*) Bash(git log *) Bash(bash scripts/check.sh *)
 ---
 
 # Add an architecture decision record

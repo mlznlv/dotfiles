@@ -126,6 +126,12 @@ are easy to half-complete: `/new-adr`, `/new-module`, `/new-command`, and
 `/catalog-field`. The `contribution-check` agent audits a change against
 `CONTRIBUTING.md` before commit.
 
-A `PostToolUse` hook re-runs `scripts/check.sh` after edits below `bin`, `lib`,
-`scripts`, `tests`, and `.chezmoidata`. `brew`, `mise`, and the mutating `chezmoi`
-subcommands are denied — run them from your own shell if you need them.
+A `PostToolUse` hook re-runs `scripts/check.sh` after Write and Edit tool changes
+below `bin`, `lib`, `scripts`, `tests`, and `.chezmoidata`. It reports without
+blocking, because a coordinated change is inconsistent partway through by design.
+It does not see a file rewritten through Bash with `sed -i` or a heredoc, so run
+the checks yourself after editing that way.
+
+`chezmoi`, `brew`, and `mise` are denied outright. The CLI still reaches chezmoi,
+because `bin/dotfiles` runs it as a subprocess and permission rules apply only to
+the command Claude invokes.

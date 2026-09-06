@@ -4,22 +4,13 @@
       "Bash(./bin/dotfiles *)",
       "Bash(bash scripts/check.sh *)",
       "Bash(bash tests/run.sh *)",
-      "Bash(chezmoi --version)",
-      "Bash(chezmoi execute-template *)",
       "Bash(git status *)",
       "Bash(git diff *)",
       "Bash(git log *)",
       "Bash(git show *)"
     ],
     "deny": [
-      "Bash(chezmoi apply *)",
-      "Bash(chezmoi init *)",
-      "Bash(chezmoi update *)",
-      "Bash(chezmoi add *)",
-      "Bash(chezmoi edit *)",
-      "Bash(chezmoi destroy *)",
-      "Bash(chezmoi forget *)",
-      "Bash(chezmoi state *)",
+      "Bash(chezmoi *)",
       "Bash(brew *)",
       "Bash(mise *)"
     ]
