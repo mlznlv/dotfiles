@@ -140,14 +140,5 @@ A module must not:
 ## Documentation requirement
 
 Every module is introduced or changed with a matching page below this
-directory. The page must include:
-
-- Purpose and user-visible result.
-- Dependencies, conflicts, and exclusive group.
-- Supported and unsupported platforms.
-- Static prerequisites and chezmoi-managed rendered targets.
-- Options, defaults, and privacy notes.
-- Configuration plan, apply, verification, rollback, and known limitations.
-- Test coverage and examples.
-
-Start from [the module documentation template](template.md).
+directory, covering each applicable section of
+[the module documentation template](template.md).
