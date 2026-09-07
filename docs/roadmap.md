@@ -219,8 +219,7 @@ into `next`.
 
 ## Cross-phase maintenance gate: Behavioral test-suite decomposition
 
-**Status:** Implementation complete; the gate is complete only after its
-focused pull request merges into `next`. Required before Phase 5 implementation.
+**Status:** Complete; required before Phase 5 implementation.
 
 The five behavioral suites that exceeded 500 lines retain their stable
 top-level entrypoints and exact assertion behavior while using explicit,
@@ -229,10 +228,27 @@ every recursive test shell, a 150-line decomposed-runner limit, complete fixed
 manifests, recursive syntax, internal modes, one function owner, source-safe
 support, stable-runner-only execution, and arbitrary-CWD/copied-path behavior.
 
-This second maintenance gate changes no product behavior, command, output,
+This second maintenance gate changed no product behavior, command, output,
 status, schema, catalog, state, production ownership, or accepted ADR. Phase 5
-remains planned and unstarted and must not begin until this gate is merged into
+remained planned and unstarted and did not begin before the gate merged into
 `next`.
+
+## Cross-phase maintenance gate: Catalog and source-size decomposition
+
+**Status:** Implementation complete; the gate is complete only after its
+focused pull request merges into `next`. Required before Phase 5 implementation.
+
+The POSIX AWK catalog engine and saturated maintainability checker/test are
+decomposed into fixed, one-owner leaves behind their stable entrypoints. A
+repository-wide guard enforces a 500-physical-line maximum for every regular
+maintained file below the catalog, workflow, executable, managed-home,
+library, script, and test roots, with the existing 250-line CLI entrypoint and
+150-line decomposed-runner limits retained.
+
+This final maintenance gate changes no product behavior, command, output,
+status, schema, catalog data, state, managed target, ownership boundary, or
+accepted ADR. Phase 5 remains planned and unstarted and must not begin until
+this gate merges into `next`.
 
 ## Phase 5: Saved and shared profiles
 

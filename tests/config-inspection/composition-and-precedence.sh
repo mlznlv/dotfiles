@@ -60,6 +60,7 @@ cp "$CLI" "$ISOLATED/bin/dotfiles"
 cp "${PROJECT_ROOT}/lib/cli.sh" "$ISOLATED/lib/cli.sh"
 cp -R "${PROJECT_ROOT}/lib/cli" "$ISOLATED/lib/cli"
 cp "${PROJECT_ROOT}/lib/catalog-records.tmpl" "${PROJECT_ROOT}/lib/catalog.awk" "$ISOLATED/lib/"
+cp -R "${PROJECT_ROOT}/lib/catalog" "$ISOLATED/lib/catalog"
 run_command env DOTFILES_SOURCE_DIR="$PROJECT_ROOT" DOTFILES_CHEZMOI_BIN="$REAL_CHEZMOI" XDG_CONFIG_HOME="$MISSING_ROOT" HOME="$MISSING_HOME" \
     "$ISOLATED/bin/dotfiles" config inspect --modules prompt.starship --platform debian
 check_status 'explicit inspect works without the config-state component' 0

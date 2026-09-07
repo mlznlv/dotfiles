@@ -20,6 +20,10 @@ done < <(find "${PROJECT_ROOT}/lib" -type f -name '*.sh' -print | LC_ALL=C sort)
 bash -n "${PROJECT_ROOT}/scripts/check.sh"
 bash -n "${PROJECT_ROOT}/scripts/check-branch-policy.sh"
 bash -n "${PROJECT_ROOT}/scripts/check-maintainability.sh"
+# Syntax-check every fixed maintainability leaf recursively.
+while IFS= read -r maintainability_shell; do
+    bash -n "$maintainability_shell"
+done < <(find "${PROJECT_ROOT}/scripts/maintainability" -type f -name '*.sh' -print | LC_ALL=C sort)
 # Syntax-check every runner, helper, support file, and case recursively. Only
 # the stable top-level runners below are executed.
 while IFS= read -r test_shell; do

@@ -86,14 +86,28 @@ Every command must ship with:
 
 Read the [CLI contract](docs/cli/README.md).
 
+## Maintained source structure
+
+Every regular maintained file below `.chezmoidata/`, `.github/workflows/`,
+`bin/`, `home/`, `lib/`, `scripts/`, and `tests/` is limited to 500 physical
+lines, including comments, blank lines, and an unterminated final line.
+`bin/dotfiles` is limited to 250 lines. Decomposed stable test runners plus
+`scripts/check-maintainability.sh` and `tests/maintainability.sh` are limited
+to 150 lines. The rule is independent of extension, rejects NUL bytes, and
+rejects physical lines longer than 1,000 bytes so binary or minified
+representations cannot evade reviewable module boundaries.
+
+Narrative documentation, accepted ADRs, licenses, governance files, and
+machine-generated lock or vendor artifacts are outside this automated rule by
+semantic category. This is not a per-file allowlist. Split a responsibility
+into a narrow module before it approaches its limit; never meet a budget by
+combining statements, deleting useful diagnostics or comments, weakening
+error handling, renaming an extension, or generating maintained source.
+
 ## Production shell structure
 
-Keep production Bash cohesive and reviewable. `bin/dotfiles` is limited to
-250 physical lines; every `*.sh` file below `lib/` is limited to 500 physical
-lines, including comments and blank lines. Split a responsibility into a
-narrow source-only module before it exceeds the limit. Never meet the budget
-by minifying commands, combining unrelated statements, deleting useful
-comments, weakening error handling, or generating production shell code.
+Keep production Bash cohesive and reviewable. Split by one-owner
+responsibility before growth reaches the standing maintained-source limit.
 
 CLI and config-state facades use documented, explicit, fixed source lists in
 one-way dependency order. Do not add globs, directory scans, PATH or
@@ -111,11 +125,11 @@ bash scripts/check.sh
 
 ## Test shell structure
 
-Every `*.sh` file below `tests/`, recursively, is limited to 500 physical
-lines, including comments and blank lines. A decomposed stable top-level suite
-runner is additionally limited to 150 physical lines. Split an oversized suite
-into one non-executable, source-safe `support.sh` and cohesive non-executable
-case files; keep the existing top-level runner path as the only public entrypoint.
+Every maintained test file below `tests/`, recursively, is limited to 500
+physical lines. A decomposed stable top-level suite runner is additionally
+limited to 150 physical lines. Split an oversized suite into one
+non-executable, source-safe `support.sh` and cohesive non-executable case
+files; keep the existing top-level runner path as the only public entrypoint.
 
 Each runner records one fixed ordered manifest and uses explicit, quoted
 sources resolved from its physical path. Support loads first, performs no work

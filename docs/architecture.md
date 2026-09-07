@@ -64,10 +64,16 @@ paths are resolved from the physical repository rather than the caller's
 working directory.
 
 Every production function has one owner. A repository check limits the
-entrypoint to 250 physical lines and every production shell file to 500 lines,
-while preserving the established command, state, Chezmoi, privacy, and effect
-boundaries. This is an internal maintainability boundary, not a new command,
-state format, provider layer, or accepted-ADR change.
+entrypoint to 250 physical lines and every governed maintained source or
+configuration file to 500 lines, while preserving the established command,
+state, Chezmoi, privacy, and effect boundaries. This is an internal
+maintainability boundary, not a new command, state format, provider layer, or
+accepted-ADR change.
+
+The POSIX AWK catalog engine uses an explicit one-way program order: common
+primitives, value validation, catalog validation, resolution, output, then the
+record/dispatch entry. Every leaf contains functions only, and the CLI names
+each quoted `awk -f` path without includes, discovery, or generated assembly.
 
 ## Local-selection input
 

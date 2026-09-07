@@ -175,7 +175,7 @@ catalog_records() {
         printf 'error: chezmoi is required for catalog commands\n' >&2
         return 4
     fi
-    if [ ! -f "$CATALOG_TEMPLATE" ] || [ ! -f "$CATALOG_PROGRAM" ]; then
+    if [ ! -r "$CATALOG_TEMPLATE" ]; then
         printf 'error: catalog implementation files are missing\n' >&2
         return 4
     fi
@@ -194,6 +194,20 @@ run_catalog() {
     base_selection=${6:-}
     additional=${7:-}
 
+    # catalog-program-manifest: catalog/common.awk catalog/value-validation.awk catalog/catalog-validation.awk catalog/resolution.awk catalog/output.awk catalog.awk
+    for catalog_component in \
+        common.awk value-validation.awk catalog-validation.awk resolution.awk output.awk; do
+        if [ ! -r "${CATALOG_PROGRAM_DIRECTORY}/${catalog_component}" ]; then
+            printf 'error: required catalog component %s is unavailable\n' \
+                "${catalog_component%.awk}" >&2
+            return 4
+        fi
+    done
+    if [ ! -r "$CATALOG_PROGRAM" ]; then
+        printf 'error: required catalog entry component is unavailable\n' >&2
+        return 4
+    fi
+
     validate_catalog_layout || return $?
     records=$(catalog_records) || return $?
 
@@ -205,6 +219,11 @@ run_catalog() {
         -v profile="$profile" \
         -v base_selection="$base_selection" \
         -v additional="$additional" \
+        -f "$CATALOG_PROGRAM_DIRECTORY/common.awk" \
+        -f "$CATALOG_PROGRAM_DIRECTORY/value-validation.awk" \
+        -f "$CATALOG_PROGRAM_DIRECTORY/catalog-validation.awk" \
+        -f "$CATALOG_PROGRAM_DIRECTORY/resolution.awk" \
+        -f "$CATALOG_PROGRAM_DIRECTORY/output.awk" \
         -f "$CATALOG_PROGRAM"
 }
 
