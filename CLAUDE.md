@@ -4,24 +4,32 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Branch policy comes first
 
-`next` is the active integration branch. Create every branch from its latest
-commit and target every pull request at `next`.
+`master` is the active, stable, and only integration branch. Create every branch
+from its latest commit and target every pull request at `master`.
 
-`master` is the stable, released branch. It receives changes only through a
-separate promotion pull request that the repository owner has explicitly
-approved, merged with a merge commit — never squashed or rebased. Ordinary work
-never targets `master`, and `legacy` is a read-only snapshot that is never
-modified. `CONTRIBUTING.md` is canonical, and `scripts/check-branch-policy.sh`
-enforces that its wording stays intact.
+Task branches use the `agent/<description>` form and are deleted after merge.
+`legacy` is a read-only recovery snapshot that is never modified or targeted.
+There is no separate integration branch: a change is integrated when its pull
+request merges into `master`, after the repository owner's explicit review.
 
-Do not infer the target branch from GitHub's default-branch setting, which
-reports `master`.
+`CONTRIBUTING.md` is canonical, and `scripts/check-branch-policy.sh` enforces
+that its wording stays intact and fails closed if an active `next` policy, a
+non-`master` target, or a `legacy` trigger is reintroduced.
 
 ## What this repository is
 
-A modular dotfiles system for macOS and Debian-family Linux, built on chezmoi.
-The CLI resolves a composition from a catalog, records a private local
-selection, checks prerequisites, plans, renders, and applies.
+A modular, configuration-only dotfiles system. It composes and renders
+configuration; **it does not install software**. A module may declare a static
+prerequisite, which the CLI reports as missing rather than installing.
+
+Chezmoi owns managed-home rendering, comparison, and apply. Zsh owns shell
+experience, Starship owns the prompt, and Ghostty, editors, tmux, OpenSSH, and
+Tailscale are optional configuration modules rather than installation
+requirements. One owner per capability.
+
+The catalog is **schema edition 1** and stays there until the first release.
+`home` and `prerequisites` are optional tables within that edition, not a later
+schema.
 
 The production catalog in `.chezmoidata/catalog.toml` is **empty by design**.
 `module list` printing nothing and exiting `0` is correct, not a bug.
@@ -32,10 +40,11 @@ The production catalog in `.chezmoidata/catalog.toml` is **empty by design**.
 bash scripts/check.sh                  # full gate, about 5 minutes
 bash scripts/check-maintainability.sh  # structural guard, about 1 second
 bash scripts/check-branch-policy.sh    # branch contract, instant
+bash tests/branch-policy.sh            # branch policy and Claude allowlist
 ./bin/dotfiles help                    # command surface
 ~~~
 
-The full gate runs syntax checks, both guards, a CLI smoke test, then nine
+The full gate runs syntax checks, both guards, a CLI smoke test, then ten
 suites. Run a single suite directly while iterating — `bash tests/run.sh` is
 about 8 seconds, `bash tests/maintainability.sh` about 140. Reach for
 `scripts/check.sh` before proposing a change as finished, not after every edit.

@@ -12,16 +12,16 @@ You audit a change in the dotfiles repository against the contracts in
 read-only: report findings, never edit files.
 
 Read the change with `git status --short` and `git diff HEAD`, or diff against
-`next` if the work is already committed on a branch.
+`master` if the work is already committed on a branch.
 
 Check the following and report only what fails. Say plainly when something
 passes rather than padding the report.
 
-**Branch policy.** Work belongs on a branch taken from `next` and targeted at
-`next`. `master` is the released branch and receives changes only through an
-approved promotion merged with a merge commit, never a squash or rebase.
-`legacy` is never modified. Report a branch taken from or aimed at `master`, and
-do not trust GitHub's default-branch setting, which reports `master`.
+**Branch policy.** Work belongs on a branch taken from the current `master` and
+targeted at `master`, using the `agent/<description>` form and deleted after
+merge. `legacy` is never modified or targeted. There is no integration branch:
+report any branch taken from or aimed at `next`, which is retired, or at
+`legacy`.
 
 **Maintained source limits.** Every maintained file below `.chezmoidata/`,
 `.github/workflows/`, `bin/`, `home/`, `lib/`, `scripts/`, and `tests/` is
