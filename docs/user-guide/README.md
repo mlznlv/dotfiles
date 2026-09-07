@@ -311,17 +311,8 @@ error: unknown config doctor option
 Run dotfiles help for usage.
 ~~~
 
-Exit codes are stable:
-
-| Code | Meaning |
-| --- | --- |
-| `0` | Success, including an empty list |
-| `2` | Invalid command syntax |
-| `3` | Invalid catalog, composition, platform, destination, prerequisite data, ownership, or comparison result |
-| `4` | A required component or safe local-state update is unavailable, a post-rename result is uncertain, or application checking is required |
-| `5` | A selected prerequisite is missing or a Chezmoi comparison failed |
-| `6` | Chezmoi apply or post-target verification failed after mutation began |
-| `129`, `130`, `143` | Handled HUP, INT, or TERM interruption |
+Exit codes are stable and documented in the
+[command guide](../cli/README.md#exit-codes).
 
 If apply reports a partial result, completed targets remain in place. Correct
 the failed prerequisite or target and rerun `plan` or `apply`. The retry builds
@@ -354,19 +345,5 @@ no persistent cache consumer exists. Follow delivery in the
 
 ## Command reference
 
-- [Command overview](../cli/README.md)
-- [Help](../cli/help.md)
-- [Version](../cli/version.md)
-- [Catalog validation](../cli/catalog/validate.md)
-- [List modules](../cli/module/list.md)
-- [Inspect a module](../cli/module/show.md)
-- [List profiles](../cli/profile/list.md)
-- [Inspect a profile](../cli/profile/show.md)
-- [Resolve a composition](../cli/resolve.md)
-- [Save local selection](../cli/config/set.md)
-- [Choose local selection interactively](../cli/config/interactive.md)
-- [Inspect effective local selection](../cli/config/inspect.md)
-- [Diagnose local selection health](../cli/config/doctor.md)
-- [Check prerequisites](../cli/prerequisite/check.md)
-- [Build a configuration plan](../cli/plan.md)
-- [Apply selected configuration](../cli/apply.md)
+Every released and planned command is listed in the
+[command guide](../cli/README.md).

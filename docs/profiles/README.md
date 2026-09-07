@@ -76,15 +76,5 @@ paths, secrets, tokens, prerequisite overrides, and provider credentials.
 ## Documentation requirement
 
 Every curated profile is introduced or changed with a matching page below this
-directory. The page must include:
-
-- Intent and intended audience.
-- Requested modules and why each is included.
-- Resolved dependencies.
-- Supported platforms and expected target types.
-- Optional additions and known conflicts.
-- Security, privacy, resource, and connectivity effects.
-- Example selection, plan, verification, and limitations.
-- Test coverage.
-
-Start from [the profile documentation template](template.md).
+directory, covering each applicable section of
+[the profile documentation template](template.md).
