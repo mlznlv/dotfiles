@@ -20,15 +20,22 @@ For identifier `<category>.<rest...>`:
 - Remaining segments join with `-` into one lowercase filename.
 - Identifiers match `^[a-z][a-z0-9]*(\.[a-z][a-z0-9-]*)+$`.
 
-So `shell.zsh.autosuggestions` gives exactly:
+So `terminal.ghostty` gives exactly:
 
 ```text
-.chezmoidata/modules/shell/zsh-autosuggestions.toml
-docs/modules/shell/zsh-autosuggestions.md
+.chezmoidata/modules/terminal/ghostty.toml
+docs/modules/terminal/ghostty.md
 ```
 
-Profiles follow the same rule under `profiles/`. The manifest's `docs` field must
-equal the derived path or validation fails.
+**The `shell.zsh` family is a hardcoded exception.** `expected_docs` in
+`lib/catalog/value-validation.awk` special-cases any identifier equal to
+`shell.zsh` or starting with `shell.zsh.`, placing it in a `shell/zsh/`
+directory rather than hyphenating: `shell.zsh` maps to `shell/zsh/zsh.toml` and
+`shell.zsh.autosuggestions` to `shell/zsh/autosuggestions.toml`. Read that
+function before assuming the general rule applies to a new identifier.
+
+Profiles follow the general rule under `profiles/`. The manifest's `docs` field
+must equal the derived path or validation fails.
 
 ## Write the manifest
 
