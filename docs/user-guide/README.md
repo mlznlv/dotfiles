@@ -1,14 +1,21 @@
 # User guide
 
-This guide shows the shortest path from cloning the repository to previewing a
-dotfiles composition. For exact syntax, use the [command guide](../cli/README.md).
+This guide shows the shortest path from cloning the repository to previewing
+and applying an explicit dotfiles composition. For exact syntax, use the
+[command guide](../cli/README.md).
 
 > [!IMPORTANT]
-> The current release is read-only. It can inspect, validate, and resolve catalog
-> data, but it cannot install packages, save a profile, or apply configuration.
+> The current release can inspect, validate, and resolve catalog data, check
+> selected command/artifact prerequisites, plan selected target changes, and
+> explicitly apply those selected home files through Chezmoi. It can also save
+> local profile or module intent, present the exact effective selection, and
+> diagnose narrow local-selection health without applying it. It cannot
+> install packages.
 >
-> The production catalog is empty until Phase 3. List commands currently return
-> no rows, and planned identifiers used in examples are not available yet.
+> The production catalog exposes the minimal shell composition. Prerequisite
+> identifiers use schema 1. Command and artifact presence checks are available;
+> application checks remain unavailable. Apply manages configuration only and
+> never installs software.
 
 ## Before you start
 
@@ -28,8 +35,8 @@ cd dotfiles
 ./bin/dotfiles help
 ~~~
 
-There is no installation or bootstrap command yet. Run the CLI directly from
-the repository root.
+There is no software installation or bootstrap command. Run the CLI directly
+from the repository root.
 
 ## Five-minute check
 
@@ -39,10 +46,10 @@ Confirm the version and validate the catalog:
 $ ./bin/dotfiles version
 dotfiles 0.1.0-dev
 $ ./bin/dotfiles catalog validate
-catalog valid: 0 modules, 0 profiles
+catalog valid: 3 modules, 1 profile
 ~~~
 
-The zero counts are expected in the current phase.
+The counts represent the three released shell modules and one curated profile.
 
 ## Discover what is available
 
@@ -63,8 +70,7 @@ List every entry without platform filtering:
 ./bin/dotfiles profile list --all
 ~~~
 
-Both commands currently succeed without output because the production catalogs
-are empty. Once populated, each row contains an identifier, name, and summary.
+Each row contains an identifier, name, and summary.
 
 Inspect one released identifier with `show`:
 
@@ -73,9 +79,7 @@ Inspect one released identifier with `show`:
 ./bin/dotfiles profile show shell.minimal
 ~~~
 
-These identifiers are planned examples. Today they return `unknown module` or
-`unknown profile`. Use the list commands to discover identifiers that actually
-exist in the current catalog.
+These identifiers are released and can be inspected directly.
 
 ## Preview a composition
 
@@ -116,8 +120,8 @@ $ ./bin/dotfiles resolve \
     --platform macos
 ~~~
 
-The examples in this section demonstrate the implemented resolution contract.
-They will become runnable when those catalog entries are released.
+The shell examples in this section are runnable. `terminal.ghostty` remains
+unreleased, so the optional-addition example is illustrative only.
 
 ## Preview another platform
 
@@ -132,6 +136,158 @@ when checking compatibility for another machine:
 Accepted values are `macos` and `debian`. The `debian` value covers Debian,
 Ubuntu, Kali, and other supported Debian-family distributions.
 
+## Check prerequisites
+
+Check the resolved profile without installing or configuring anything:
+
+~~~console
+./bin/dotfiles prerequisite check --profile shell.minimal --platform debian
+~~~
+
+The command reports every declared command and artifact as `present` or
+`missing`. Missing items must be provided outside this project. Artifact root
+paths below HOME are abbreviated as `$HOME`; no provider is inferred.
+
+## Plan selected configuration
+
+Preview only targets owned by the resolved composition:
+
+~~~console
+$ ./bin/dotfiles plan --modules shell.zsh --platform debian
+Prerequisites: satisfied
+Plan: 1 configuration change for debian
+
+1. create shell.zsh chezmoi:target:.zshrc
+   source: home/dot_zshrc.tmpl
+   network: no; privilege: none
+~~~
+
+Your result may say `update` or `No changes.` depending on the current selected
+target. Planning writes nothing to HOME and never prints raw destination
+contents. It requires a literal absolute HOME directory and fails closed on an
+unsafe selected path or unexpected Chezmoi result.
+
+## Apply selected configuration
+
+Use the same explicit selection to recompute, review, confirm, and apply only
+its changed targets:
+
+~~~console
+$ ./bin/dotfiles apply --modules shell.zsh --platform debian
+Prerequisites: satisfied
+Plan: 1 configuration change for debian
+
+1. create shell.zsh chezmoi:target:.zshrc
+   source: home/dot_zshrc.tmpl
+   network: no; privilege: none
+
+Software installation: none
+
+Apply this configuration? Type yes to continue:
+~~~
+
+Type exactly `yes` to continue. Any other answer or EOF cancels without CLI
+mutation. For redirected or automated input, use explicit `--yes`; the command
+still prints and independently recomputes the complete current plan before
+mutation.
+
+Apply invokes Chezmoi once for each changed selected target, verifies the
+written bytes, and stops at the first failure. A second identical apply prints
+exactly `No changes.` without prompting. Omitted module files are not inspected,
+reported, removed, or cleaned.
+
+## Save local selection
+
+For a guided workflow, start with terminal stdin and choose from the compatible
+released identifiers:
+
+~~~console
+$ ./bin/dotfiles config interactive --platform debian
+Available profiles for debian:
+  shell.minimal
+Available modules for debian:
+  prompt.starship
+  shell.zsh
+  shell.zsh.autosuggestions
+Base type (profile or modules):
+profile
+Profile ID:
+shell.minimal
+Additional module IDs (comma-separated, empty for none):
+
+Proposed local selection:
+Base: profile shell.minimal
+Additional modules: none
+Resolved modules for debian:
+  shell.zsh
+  shell.zsh.autosuggestions
+  prompt.starship
+Save this local selection? Type yes to continue:
+yes
+Local selection saved.
+Managed home configuration: unchanged.
+~~~
+
+Enter exact identifiers and exact lowercase `yes`; the command does not trim,
+guess, interpret quoting, or reprompt. Any other confirmation answer cancels
+without changing local state. Piped, redirected, or closed stdin is refused
+before inventory or state access. See
+[config interactive](../cli/config/interactive.md) for the literal input,
+terminal, cancellation, and no-change contracts.
+
+For scripts or users who already know the identifiers, save the exact profile
+or ordered module intent with flags:
+
+~~~console
+$ ./bin/dotfiles config set --profile shell.minimal --platform debian
+Proposed local selection:
+Base: profile shell.minimal
+Additional modules: none
+Resolved modules for debian:
+  shell.zsh
+  shell.zsh.autosuggestions
+  prompt.starship
+Local selection saved.
+Managed home configuration: unchanged.
+~~~
+
+The config commands save only the profile or module choice and optional
+additions in canonical schema-1 TOML. Saving never checks prerequisites, plans,
+applies, installs, repairs, or changes managed home configuration. Both forms
+use the same validator, proposal, canonical bytes, and hardened state writer.
+See [config set](../cli/config/set.md) for explicit module syntax, local path
+rules, recovery, and concurrency limits.
+
+Use the saved intent without repeating its base:
+
+~~~console
+./bin/dotfiles resolve --platform debian
+./bin/dotfiles config inspect --platform debian
+./bin/dotfiles config doctor --platform debian
+./bin/dotfiles prerequisite check --platform debian
+./bin/dotfiles plan --platform debian
+./bin/dotfiles apply --platform debian
+~~~
+
+Resolve, inspect, prerequisite check, plan, and apply strictly reload and
+freshly validate state when no explicit base is present. Passing `--profile`
+or `--modules` bypasses local state for those commands. An `--add` with no
+explicit base follows saved additions for that invocation only. Doctor always
+validates saved state. Saving is never apply approval: apply still prints the
+complete plan, requires exact confirmation, reloads state, and recomputes
+before mutation.
+
+`config inspect` prints only the effective source, requested base and
+additions, and fresh deterministic module order. An explicit base bypasses
+local state; an omitted base loads it; an invocation `--add` remains
+transient. See [config inspect](../cli/config/inspect.md) for the exact output.
+
+`config doctor` always checks the standard saved selection. It validates only
+safe storage, canonical schema 1, a stable read, and current-platform
+composition, then prints three healthy lines. It does not repair state or
+check software, artifacts, render, plan, Chezmoi, cache, or managed HOME. See
+[config doctor](../cli/config/doctor.md) for recovery and exact scope.
+
 ## Understand failures
 
 The CLI stops without partial output when a composition is invalid. Common
@@ -142,46 +298,52 @@ causes include:
 - Conflicting modules or two modules in one exclusive group.
 - Missing dependencies or a dependency cycle.
 - Invalid catalog data.
+- A missing selected prerequisite or unsafe destination target.
+- A failed or malformed selected-target comparison.
+- State or prerequisite drift after confirmation.
+- A Chezmoi apply or post-target verification failure.
 
 Invalid syntax points back to help:
 
 ~~~console
-$ ./bin/dotfiles resolve
-error: resolve requires --profile or --modules
+$ ./bin/dotfiles config doctor --yes
+error: unknown config doctor option
 Run dotfiles help for usage.
 ~~~
 
-Exit codes are stable:
+Exit codes are stable and documented in the
+[command guide](../cli/README.md#exit-codes).
 
-| Code | Meaning |
-| --- | --- |
-| `0` | Success, including an empty list |
-| `2` | Invalid command syntax |
-| `3` | Unsupported platform, invalid catalog, or failed resolution |
-| `4` | Chezmoi or an internal CLI file is unavailable |
+If apply reports a partial result, completed targets remain in place. Correct
+the failed prerequisite or target and rerun `plan` or `apply`. The retry builds
+a new plan from current state, skips already converged targets, and does not
+roll back or replay the earlier plan.
 
 ## Safety and current boundaries
 
 Available commands do not:
 
 - Install, remove, or upgrade packages.
-- Write home configuration or save a composition.
+- Save a reusable plan or apply merely because a selection was saved.
 - Invoke Homebrew, mise, or another provider.
-- Apply chezmoi state.
-- Read secrets or machine identity.
+- Open or invoke declared prerequisites.
+- Display destination contents or machine identity, or inspect unselected home
+  targets.
 - Request elevated privileges.
+- Remove, prune, clean, or roll back configuration.
 
-Installation, saved profiles, planning, apply, rollback, sharing, and repair
-commands remain planned. Follow their delivery in the [roadmap](../roadmap.md).
+Only `apply` writes managed home configuration, and only after printing and
+recomputing the selected plan with exact intent. `config set` and
+`config interactive` write only the CLI-owned active-selection file and
+necessary owned configuration directories. Selection consumers read that file
+strictly and never rewrite it. `config inspect` and `config doctor` are also
+strictly read-only; doctor is not a generalized system-health or repair
+command. Sharing and repair commands remain planned. Software installation is
+outside the product boundary. Generated-cache reset remains deferred because
+no persistent cache consumer exists. Follow delivery in the
+[roadmap](../roadmap.md).
 
 ## Command reference
 
-- [Command overview](../cli/README.md)
-- [Help](../cli/help.md)
-- [Version](../cli/version.md)
-- [Catalog validation](../cli/catalog/validate.md)
-- [List modules](../cli/module/list.md)
-- [Inspect a module](../cli/module/show.md)
-- [List profiles](../cli/profile/list.md)
-- [Inspect a profile](../cli/profile/show.md)
-- [Resolve a composition](../cli/resolve.md)
+Every released and planned command is listed in the
+[command guide](../cli/README.md).

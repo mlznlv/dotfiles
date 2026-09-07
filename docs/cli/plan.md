@@ -1,93 +1,107 @@
-# `dotfiles plan` (planned)
+# Build a configuration plan
 
-## Status
+[Command guide](README.md) / Plan
 
-This command is a Phase 3 contract. It is not available in the current CLI.
+Preview deterministic create or update effects for an explicit or saved
+composition.
 
-## Synopsis
+Available · Read-only · Chezmoi required.
+
+## Usage
 
 ~~~text
-dotfiles plan (--profile <profile-id> | --modules <id,id>)
+dotfiles plan [--profile <profile-id> | --modules <id,id>]
               [--add <id,id>] [--platform macos|debian]
 ~~~
 
+The explicit base options remain mutually exclusive. If either is present,
+that invocation bypasses local selection completely. If both are omitted, the
+planner strictly loads the standard saved selection. An invocation `--add`
+then follows saved additions in memory only. Every path uses the normal
+resolver, including dependency expansion, conflicts, exclusive groups,
+platform compatibility, and rendered-target ownership. Without `--platform`,
+the shared detector selects macOS or Debian-family Linux; platform is never
+loaded from or written to selection state.
+
 ## Behavior
 
-The command resolves the requested composition, selects static requests for the
-target platform, rejects duplicate ownership, observes provider state without
-mutation, and prints one deterministic plan. It never installs a provider,
-updates metadata, downloads packages, writes home state, or saves a plan.
-If Homebrew, mise, or chezmoi is required but unavailable, the command names the
-missing prerequisite, discloses that separate provider installation is needed,
-and fails without producing a plan eligible for apply.
+Planning validates the complete catalog and selected prerequisites before
+comparison. Command and artifact prerequisites are checked without invocation;
+application prerequisites continue to fail closed. Missing prerequisites name
+the module, kind, and identifier and must be provided outside this project.
 
-Steps are grouped Homebrew, mise, then chezmoi and sorted by canonical ownership
-key within each group. Every step shows its ordinal, declaring module, action,
-resource key, network use, possible privilege prompt, and download integrity
-owner. It also states whether the provider itself must be installed. Sensitive
-provider values are redacted.
+The command freshly rebuilds the selected-source render context and rendered
+targets. Autosuggestions revalidates its canonical contained artifact
+immediately before comparison and requires the same candidate used by that
+render. No context, rendered output, comparison result, cache, state, or plan is
+retained.
+
+Loading saved intent is strictly read-only. A missing, unsafe, malformed,
+non-canonical, drifting, or catalog-invalid selection fails with guidance to
+run `dotfiles config set` or pass an explicit base. No local-state failure
+chooses a default or produces a partial actionable plan.
+
+Chezmoi compares only exact targets owned by the resolved modules. User
+configuration, pagers, color, custom diffs, external refresh, interactivity,
+and TTY behavior are disabled. Selected sources use no secret command
+integration. The public result contains no raw diff, destination content, HOME
+path, artifact root, or temporary path.
+
+Changed steps sort by normalized target and module. An absent target is
+`create`; a differing regular file is `update`; an unchanged target is omitted.
+The planner never invents delete, remove, deactivate, install, repair, or
+provider effects. If all selected targets match, it prints exactly
+`No changes.`
+
+A narrower selection remains narrow. Starship-only planning does not inspect
+or report `.zshrc`. Selecting Zsh after a broader composition may report an
+`.zshrc` update because the fresh render omits unselected activation, while
+files owned by omitted modules remain unreported and untouched.
 
 ## Examples
 
-Planned macOS output:
+One absent selected target:
 
 ~~~console
-$ dotfiles plan --profile shell.minimal --platform macos
-Plan: 6 changes for macos
+$ ./bin/dotfiles plan --modules prompt.starship --platform macos
+Prerequisites: satisfied
+Plan: 1 configuration change for macos
 
-Homebrew
-1. install shell.zsh homebrew:package:zsh
-   network: yes; provider installation: no; privilege: possible Homebrew prompt; download: Homebrew-managed integrity
-2. install shell.zsh.autosuggestions homebrew:package:zsh-autosuggestions
-   network: yes; provider installation: no; privilege: possible Homebrew prompt; download: Homebrew-managed integrity
-3. install prompt.starship homebrew:package:starship
-   network: yes; provider installation: no; privilege: possible Homebrew prompt; download: Homebrew-managed integrity
-
-chezmoi
-4. update prompt.starship chezmoi:target:.config/starship.toml
-   network: no; provider installation: no; privilege: none; download: none
-5. update shell.zsh.autosuggestions chezmoi:target:.config/zsh/autosuggestions.zsh
-   network: no; provider installation: no; privilege: none; download: none
-6. update shell.zsh chezmoi:target:.zshrc
-   network: no; provider installation: no; privilege: none; download: none
+1. create prompt.starship chezmoi:target:.config/starship.toml
+   source: home/dot_config/starship.toml
+   network: no; privilege: none
 ~~~
 
-Planned Debian-family output uses mise as the package and tool owner:
+Missing prerequisite:
 
 ~~~console
-$ dotfiles plan --profile shell.minimal --platform debian
-Plan: 6 changes for debian
-
-mise
-1. install shell.zsh mise:package:zsh
-2. install shell.zsh.autosuggestions mise:package:zsh-autosuggestions
-3. install prompt.starship mise:tool:starship
-   network: yes; provider installation: no; privilege: possible package-manager prompt; download: mise-managed integrity
-
-chezmoi
-4. update prompt.starship chezmoi:target:.config/starship.toml
-5. update shell.zsh.autosuggestions chezmoi:target:.config/zsh/autosuggestions.zsh
-6. update shell.zsh chezmoi:target:.zshrc
+$ ./bin/dotfiles plan --modules prompt.starship --platform debian
+error: module prompt.starship requires command starship on debian
+Provide the missing prerequisites outside this project, then run dotfiles plan again.
 ~~~
 
-Repeated planning after successful convergence is explicit:
+Already converged:
 
 ~~~console
-$ dotfiles plan --profile shell.minimal
+$ ./bin/dotfiles plan --profile shell.minimal
 No changes.
 ~~~
 
-The compact Debian example omits repeated disclosure lines for readability;
-the implemented command must print them for every step.
+Planning never installs or updates software, invokes a provider or declared
+prerequisite, writes home state, or creates apply authority. Correct a missing
+prerequisite or unsafe selected target and rerun the command.
 
 ## Exit codes
 
-| Code | Planned meaning |
+| Code | Meaning |
 | --- | --- |
 | `0` | Valid plan, including `No changes.` |
-| `2` | Invalid syntax |
-| `3` | Invalid catalog, composition, platform, or ownership |
-| `4` | Required CLI component or provider observer unavailable |
-| `5` | Provider observation failed; no actionable plan produced |
+| `2` | Invalid command syntax |
+| `3` | Missing/invalid local selection, invalid catalog/composition/platform/prerequisite data/ownership/destination, or unsafe comparison result |
+| `4` | Required internal component or Chezmoi is unavailable |
+| `5` | Selected prerequisite is missing or Chezmoi comparison failed; no actionable plan was produced |
 
-Errors go to standard error. No failure path may mutate provider or home state.
+Errors go to standard error. No failure path prints a partial actionable plan
+or changes software or home state.
+
+Next: [apply selected configuration](apply.md).

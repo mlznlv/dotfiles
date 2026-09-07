@@ -1,0 +1,2 @@
+# Keep the initial prompt compact while relying on portable built-in modules.
+add_newline = false

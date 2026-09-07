@@ -16,14 +16,17 @@ dotfiles catalog validate
 
 ~~~console
 $ ./bin/dotfiles catalog validate
-catalog valid: 0 modules, 0 profiles
+catalog valid: 3 modules, 1 profile
 ~~~
 
-The zero counts are expected until Phase 3.
+These counts represent the current pre-release shell composition.
 
 Validation checks manifest paths, TOML structure, schema fields, identifiers,
-documentation paths, platforms, dependencies, conflicts, profile references,
-and dependency cycles. It never applies chezmoi state or calls a provider.
+documentation paths, platforms, static prerequisite identifiers, compatibility
+rules, forbidden provider fields, chezmoi sources, dependencies, conflicts,
+ownership, profile
+references, and dependency cycles. It never locates or invokes a prerequisite,
+applies chezmoi state, or calls a provider.
 
 ## Exit codes
 

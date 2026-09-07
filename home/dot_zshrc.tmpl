@@ -1,0 +1,9 @@
+{{- /* Zsh owns this target and every optional activation line below. */ -}}
+# Managed by dotfiles. Keep core startup deliberately minimal.
+{{ if and (has "shell.zsh" .dotfiles_render.modules) (has "shell.zsh.autosuggestions" .dotfiles_render.modules) -}}
+source -- "$HOME/.config/zsh/autosuggestions.zsh"
+source -- {{ template "zsh-quote-literal" .dotfiles_render.autosuggestions_artifact }}
+{{ end -}}
+{{ if and (has "shell.zsh" .dotfiles_render.modules) (has "prompt.starship" .dotfiles_render.modules) -}}
+eval "$(starship init zsh)"
+{{ end -}}

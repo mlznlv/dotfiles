@@ -20,8 +20,10 @@ Run it from the repository root:
 ./bin/dotfiles help
 ~~~
 
-All three forms print the same human-readable output. The command does not read
-the catalog or inspect the machine.
+All three forms print the same human-readable output, including `config set`,
+`config interactive`, `config inspect`, `config doctor`, `prerequisite check`,
+`plan`, and `apply`. The command does not read the catalog, local selection
+state, or machine facts.
 
 ## Exit codes
 

@@ -1,90 +1,157 @@
-# `dotfiles apply` (planned)
+# Apply selected configuration
 
-## Status
+[Command guide](README.md) / Apply
 
-This command is a Phase 3 contract. It is not available in the current CLI.
+Recompute, confirm, and converge an explicit or saved selected configuration.
 
-## Synopsis
+Available · Mutating · Chezmoi required · Software installation: none.
+
+## Usage
 
 ~~~text
-dotfiles apply (--profile <profile-id> | --modules <id,id>)
+dotfiles apply [--profile <profile-id> | --modules <id,id>]
                [--add <id,id>] [--platform macos|debian] [--yes]
 ~~~
 
-## Behavior
+Selection and platform rules are identical to [`dotfiles plan`](plan.md).
+`--yes` is an apply-only acknowledgement for the plan printed by the current
+invocation. It does not suppress validation, recomputation, output, or failure
+reporting. There is no `-y`, saved plan, default profile, or environment-based
+approval.
 
-Apply recomputes a fresh plan from current observations during the invocation.
-It cannot load or replay a saved plan. The complete plan, network and download
-effects, integrity owner, and possible privilege prompts are printed before any
-mutation.
+An explicit `--profile` or `--modules` base bypasses local selection
+completely. When both are omitted, apply strictly loads the standard saved
+selection. An invocation `--add` follows saved additions for this invocation
+only and is never persisted. Saved selection supplies composition intent; it
+is not approval to change managed home state.
 
-With an interactive terminal, the exact answer `yes` confirms. Any other
-answer, EOF, or interruption cancels successfully without invoking an apply
-adapter. With non-interactive input, the command refuses before mutation unless
-`--yes` is present. `--yes` is explicit acknowledgement and does not suppress
-the plan or disclosures.
+## Confirmation flow
 
-Steps run in displayed order. Apply stops at the first failure and reports each
-step as completed, failed, or unattempted. It performs no rollback, removal,
-uninstall, prune, or cleanup. Retrying recomputes state. Providers are expected
-to be idempotent, so a second successful apply produces `No changes.`
+Apply builds and prints the same complete privacy-safe plan as `dotfiles plan`.
+When every selected target is already converged, it prints exactly
+`No changes.` and exits without prompting or invoking Chezmoi apply.
+
+For a changed plan, the command prints `Software installation: none`. Without
+`--yes`, stdin must be an interactive terminal and the prompt is:
+
+~~~text
+Apply this configuration? Type yes to continue:
+~~~
+
+Only the exact line `yes` continues. Case changes, whitespace, other text, an
+empty line, or EOF print `Cancelled. No changes were applied.` and exit 0.
+Redirected or piped input requires `--yes` and otherwise exits 2 after showing
+the complete plan.
+
+After approval, apply independently rebuilds catalog resolution, ownership,
+prerequisites, the canonical artifact fact, render context, rendered files, and
+changed-target records from the original CLI input. For saved intent, this
+second pass independently re-derives the standard root and reloads state. The
+exact state identity and bytes plus the effective profile/modules/additions
+must match the first pass, even when a replacement would resolve to similar
+modules. The canonical records, context, artifact fact, rendered bytes, and
+changed destination base bytes must also match their displayed-plan private
+snapshot. Any deletion, unsafe replacement, corruption, selection change, or
+other drift fails before Chezmoi mutation and asks the user to rerun.
+
+## Mutation boundary
+
+Chezmoi is invoked once per changed target in displayed order. Each invocation
+receives one exact selected destination, the fresh closed render context, the
+repository `home/` source, isolated cache and state, required parent-directory
+scope, and directory/file entry types. User configuration, prompts, TTY
+acquisition, pagers, color, progress, custom diffs, scripts, externals,
+symlinks, secret integration, and recursion are excluded. `--force` is passed
+only after CLI confirmation.
+
+Immediately before each invocation, apply rechecks the target and existing
+parents. An update target's bytes must still match its fresh post-confirmation
+base snapshot. Autosuggestions also revalidates the same canonical contained
+artifact immediately before applying the Zsh-owned `.zshrc`. After Chezmoi
+succeeds, the target must be a regular non-symlink file whose bytes equal the
+fresh render before it counts as completed.
+
+Omitted modules are outside the command's scope. Starship-only apply never
+inspects or changes `.zshrc`. A narrower Zsh selection may converge `.zshrc`
+without optional activation, but it does not remove or rewrite configuration
+files owned by omitted modules.
 
 ## Examples
 
-Interactive confirmation:
+Non-interactive selected apply:
 
 ~~~console
-$ dotfiles apply --profile shell.minimal
-Plan: 6 changes for macos
+$ ./bin/dotfiles apply --modules prompt.starship --platform macos --yes
+Prerequisites: satisfied
+Plan: 1 configuration change for macos
+
+1. create prompt.starship chezmoi:target:.config/starship.toml
+   source: home/dot_config/starship.toml
+   network: no; privilege: none
+
+Software installation: none
+Apply complete: 1 completed, 0 failed, 0 unattempted
+~~~
+
+Already converged:
+
+~~~console
+$ ./bin/dotfiles apply --modules prompt.starship --platform macos
+No changes.
+~~~
+
+After saving local intent, omit the explicit base without weakening
+confirmation:
+
+~~~console
+$ ./bin/dotfiles apply --platform macos
 ...
-Network access: required by Homebrew
-Provider installation: not required
-Privilege prompts: possible during Homebrew operations
-Apply these changes? Type yes to continue: yes
-Apply complete: 6 completed, 0 failed, 0 unattempted
+Apply this configuration? Type yes to continue:
 ~~~
 
 Cancellation:
 
 ~~~console
-$ dotfiles apply --profile shell.minimal
-Plan: 6 changes for macos
+$ ./bin/dotfiles apply --modules prompt.starship
 ...
-Apply these changes? Type yes to continue: no
+Apply this configuration? Type yes to continue:
 Cancelled. No changes were applied.
 ~~~
 
-Non-interactive refusal:
+## Failure and recovery
 
-~~~console
-$ dotfiles apply --profile shell.minimal </dev/null
-error: non-interactive apply requires --yes
-~~~
-
-Partial failure:
+Apply stops at the first failed or unverified target. It reports every changed
+target once as completed, failed, or unattempted in original plan order:
 
 ~~~text
-Apply failed at step 2: mise:package:zsh-autosuggestions
-completed: 1 (mise:package:zsh)
-failed: 1 (mise:package:zsh-autosuggestions)
-unattempted: 4
-No rollback was attempted. Re-run apply to recompute current state.
+Apply failed: 1 completed, 1 failed, 1 unattempted
+completed: prompt.starship chezmoi:target:.config/starship.toml
+failed: shell.zsh.autosuggestions chezmoi:target:.config/zsh/autosuggestions.zsh
+unattempted: shell.zsh chezmoi:target:.zshrc
 ~~~
 
-No-change apply succeeds without prompting because there is nothing to mutate:
+Completed targets are not rolled back. Correct the prerequisite, destination,
+or external failure and run a new `dotfiles plan` or `dotfiles apply`
+invocation. The new invocation recomputes current state, omits already
+converged targets, and never replays the earlier plan. No removal, repair,
+automatic retry, backup, or broad recovery action is performed.
 
-~~~console
-$ dotfiles apply --profile shell.minimal
-No changes.
-~~~
+All Chezmoi output, raw paths, destination base snapshots, rendered files, plan
+authority, cache, state, and errors remain in mode-restricted temporary storage
+and are removed on success, no-change, cancellation, failure, and handled
+signals.
 
 ## Exit codes
 
-| Code | Planned meaning |
+| Code | Meaning |
 | --- | --- |
-| `0` | Applied, cancelled before mutation, or already converged |
-| `2` | Invalid syntax or non-interactive use without `--yes` |
-| `3` | Invalid catalog, composition, platform, or ownership |
-| `4` | Required CLI component or provider unavailable |
-| `5` | Observation failed before confirmation |
-| `6` | Apply failed; report identifies completed, failed, and unattempted steps |
+| `0` | Applied successfully, cancelled before mutation, or already converged |
+| `2` | Invalid syntax or non-interactive changes without `--yes` |
+| `3` | Invalid catalog, composition, platform, prerequisite data, ownership, destination, unsafe target, malformed state, or confirmation-time drift |
+| `4` | Required internal component or Chezmoi is unavailable |
+| `5` | Selected prerequisite, artifact recheck, render, or comparison failed before mutation |
+| `6` | Chezmoi apply or post-target verification failed after mutation began |
+| `129`, `130`, `143` | Handled HUP, INT, or TERM interruption |
+
+Errors go to standard error. Public output never includes raw destination
+contents, diffs, HOME, temporary paths, artifact roots, usernames, or hostnames.

@@ -10,3 +10,8 @@
 .env
 .env.*
 !.env.example
+
+# Agent tooling
+.claude/settings.local.json
+.claude/worktrees/
+CLAUDE.local.md

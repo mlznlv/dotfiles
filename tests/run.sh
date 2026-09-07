@@ -6,7 +6,8 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 PROJECT_ROOT=$(CDPATH= cd -- "${SCRIPT_DIR}/.." && pwd)
 CLI="${PROJECT_ROOT}/bin/dotfiles"
 FIXTURE_DEFINITIONS="${PROJECT_ROOT}/tests/fixtures"
-TEST_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/dotfiles-tests.XXXXXX")
+TEST_PARENT=${TMPDIR:-/tmp}
+TEST_ROOT=$(mktemp -d "${TEST_PARENT%/}/dotfiles-tests.XXXXXX")
 
 cleanup() {
     rm -rf -- "${TEST_ROOT}"
@@ -22,25 +23,26 @@ stage_fixture() {
     cp -R "${fixture_source}/." "${fixture_target}/"
 }
 
-for fixture_name in cycle invalid-identifier invalid-layout missing-dependency unknown-field valid; do
+for fixture_name in cycle invalid-identifier invalid-layout missing-dependency unknown-field valid prerequisites-valid prerequisite-check prerequisite-invalid-identifiers prerequisite-control-character prerequisite-unsupported-platform prerequisite-unknown-table prerequisite-unknown-field provider-field source-collision source-unsafe unsupported-schema; do
     stage_fixture "${fixture_name}"
 done
 
 FIXTURES="${TEST_ROOT}"
 VALID="${FIXTURES}/valid"
-PROVIDER_BIN="${TEST_ROOT}/provider-bin"
-PROVIDER_LOG="${TEST_ROOT}/provider.log"
+PROBE_BIN="${TEST_ROOT}/probe-bin"
+PROBE_LOG="${TEST_ROOT}/probe.log"
+CHEZMOI_REAL=$(command -v chezmoi)
 
-mkdir -p "${PROVIDER_BIN}"
-for provider in brew mise; do
+mkdir -p "${PROBE_BIN}"
+for probe in brew mise apt apt-get dnf yum pacman apk installer zsh starship; do
     printf '%s\n' \
         '#!/bin/sh' \
-        'printf "%s\n" "$0 $*" >> "${DOTFILES_PROVIDER_LOG}"' \
-        'exit 97' > "${PROVIDER_BIN}/${provider}"
-    chmod +x "${PROVIDER_BIN}/${provider}"
+        'printf "%s\n" "$0 $*" >> "${DOTFILES_PROBE_LOG}"' \
+        'exit 97' > "${PROBE_BIN}/${probe}"
+    chmod +x "${PROBE_BIN}/${probe}"
 done
-export DOTFILES_PROVIDER_LOG="${PROVIDER_LOG}"
-export PATH="${PROVIDER_BIN}:${PATH}"
+export DOTFILES_PROBE_LOG="${PROBE_LOG}"
+export PATH="${PROBE_BIN}:${PATH}"
 
 failures=0
 checks=0
@@ -130,9 +132,51 @@ expected_with_terminal=$(printf '%s\n' \
     terminal.ghostty)
 
 expect_exact "version is stable" 0 "dotfiles 0.1.0-dev" "$CLI" version
-expect_contains "help is available" 0 "All commands in this release are read-only." "$CLI" help
-expect_exact "empty production catalog validates" 0 "catalog valid: 0 modules, 0 profiles" "$CLI" catalog validate
-expect_exact "fixture catalog validates" 0 "catalog valid: 5 modules, 1 profiles" env DOTFILES_SOURCE_DIR="$VALID" "$CLI" catalog validate
+expect_contains "help is available" 0 "Config set changes only private local selection state." "$CLI" help
+expect_exact "production catalog validates" 0 "catalog valid: 3 modules, 1 profile" "$CLI" catalog validate
+expect_contains "production module list exposes Zsh" 0 "shell.zsh" "$CLI" module list --platform macos
+expect_contains "production module list exposes Starship" 0 "prompt.starship" "$CLI" module list --platform debian
+expect_contains "production profile list exposes minimal shell" 0 "shell.minimal" "$CLI" profile list --platform debian
+expect_contains "production module show exposes dependency" 0 "depends: shell.zsh" "$CLI" module show shell.zsh.autosuggestions
+expect_contains "production profile show exposes composition" 0 "modules: shell.zsh,shell.zsh.autosuggestions,prompt.starship" "$CLI" profile show shell.minimal
+expect_exact "production profile resolves on macOS" 0 "$expected_profile" "$CLI" resolve --profile shell.minimal --platform macos
+expect_exact "production profile resolves on Debian" 0 "$expected_profile" "$CLI" resolve --profile shell.minimal --platform debian
+expect_exact "production explicit modules resolve deterministically" 0 "$expected_profile" "$CLI" resolve --modules shell.zsh.autosuggestions,prompt.starship --platform debian
+expect_exact "Starship resolves independently" 0 "prompt.starship" "$CLI" resolve --modules prompt.starship --platform debian
+if [ -f "${PROJECT_ROOT}/.chezmoidata/modules/shell/zsh/zsh.toml" ] && \
+   [ -f "${PROJECT_ROOT}/.chezmoidata/modules/shell/zsh/autosuggestions.toml" ] && \
+   [ ! -e "${PROJECT_ROOT}/.chezmoidata/modules/shell/zsh.toml" ] && \
+   [ ! -e "${PROJECT_ROOT}/.chezmoidata/modules/shell/zsh-autosuggestions.toml" ]; then
+    STATUS=0
+    OUTPUT=
+    pass "production Zsh manifests use hierarchical layout only"
+else
+    STATUS=1
+    OUTPUT="production Zsh manifest layout is incorrect"
+    fail "production Zsh manifests use hierarchical layout only"
+fi
+if [ -f "${PROJECT_ROOT}/docs/modules/shell/zsh/zsh.md" ] && \
+   [ -f "${PROJECT_ROOT}/docs/modules/shell/zsh/autosuggestions.md" ] && \
+   [ ! -e "${PROJECT_ROOT}/docs/modules/shell/zsh.md" ] && \
+   [ ! -e "${PROJECT_ROOT}/docs/modules/shell/zsh-autosuggestions.md" ]; then
+    STATUS=0
+    OUTPUT=
+    pass "production Zsh documentation uses hierarchical layout only"
+else
+    STATUS=1
+    OUTPUT="production Zsh documentation layout is incorrect"
+    fail "production Zsh documentation uses hierarchical layout only"
+fi
+if ! find "${PROJECT_ROOT}/.chezmoidata/modules" -type f -name '*.toml' -exec grep -E -l 'providers|homebrew|mise' {} + | grep -q .; then
+    STATUS=0
+    OUTPUT=
+    pass "production modules contain no provider fields"
+else
+    STATUS=1
+    OUTPUT="a production provider field remains"
+    fail "production modules contain no provider fields"
+fi
+expect_exact "fixture catalog validates" 0 "catalog valid: 5 modules, 1 profile" env DOTFILES_SOURCE_DIR="$VALID" "$CLI" catalog validate
 expect_contains "module list filters for Debian" 0 "shell.zsh" env DOTFILES_SOURCE_DIR="$VALID" "$CLI" module list --platform debian
 expect_not_contains "Debian list excludes macOS terminal" "terminal.ghostty" env DOTFILES_SOURCE_DIR="$VALID" "$CLI" module list --platform debian
 expect_contains "module list all includes terminal" 0 "terminal.ghostty" env DOTFILES_SOURCE_DIR="$VALID" "$CLI" module list --all
@@ -151,17 +195,140 @@ expect_contains "invalid identifier fails validation" 3 "contains invalid identi
 expect_contains "missing dependency fails validation" 3 "depends on unknown module shell.missing" env DOTFILES_SOURCE_DIR="${FIXTURES}/missing-dependency" "$CLI" catalog validate
 expect_contains "unknown manifest field fails validation" 3 "unsupported field unexpected" env DOTFILES_SOURCE_DIR="${FIXTURES}/unknown-field" "$CLI" catalog validate
 expect_contains "category path mismatch fails validation" 3 "must be stored at .chezmoidata/modules/shell/alpha.toml" env DOTFILES_SOURCE_DIR="${FIXTURES}/invalid-layout" "$CLI" catalog validate
+expect_contains "chezmoi traversal fails" 3 "unsafe chezmoi source home/../dot_zshrc" env DOTFILES_SOURCE_DIR="${FIXTURES}/source-unsafe" "$CLI" catalog validate
+expect_contains "unknown module schema fails" 3 "schema must be 1" env DOTFILES_SOURCE_DIR="${FIXTURES}/unsupported-schema" "$CLI" catalog validate
+expect_exact "schema 1 validates every prerequisite kind and optional arrays" 0 "catalog valid: 3 modules, 0 profiles" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisites-valid" "$CLI" catalog validate
+expect_exact "schema 1 prerequisite resolution remains read-only" 0 "shell.alpha" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisites-valid" "$CLI" resolve --modules shell.alpha --platform macos
+expect_contains "unsafe command path fails" 3 "unsafe command identifier ./zsh" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "unsafe command arguments fail" 3 "unsafe command identifier zsh --version" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "unsafe command URL fails" 3 "unsafe command identifier https://example.com/zsh" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "unsafe command shell syntax fails" 3 "unsafe command identifier zsh;id" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "duplicate command fails" 3 "macos commands contains duplicate identifier duplicate" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "unsafe application identifier fails" 3 "unsafe application identifier bad app" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "unsafe application URL fails" 3 "unsafe application identifier https://example.com/app" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "unsafe application shell syntax fails" 3 "unsafe application identifier app;id" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "duplicate application fails" 3 "macos applications contains duplicate identifier duplicate.app" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact without root fails" 3 "artifact locator without root missing-root" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "unknown artifact root fails" 3 "unknown artifact root unknown" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "unsafe artifact locator fails" 3 "unsafe artifact locator share:/absolute" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact traversal fails" 3 "unsafe artifact locator share:../traversal" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact empty segment fails" 3 "unsafe artifact locator share:path//empty" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact dot segment fails" 3 "unsafe artifact locator share:." env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact dot-dot segment fails" 3 "unsafe artifact locator share:.." env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact glob fails" 3 "unsafe artifact locator share:path/*" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact variable fails" 3 'unsafe artifact locator share:$HOME/file' env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact tilde fails" 3 "unsafe artifact locator share:~/file" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact URL fails" 3 "unknown artifact root https" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact whitespace fails" 3 "unsafe artifact locator share:path with-space" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact shell syntax fails" 3 "unsafe artifact locator share:path;id" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "duplicate artifact fails" 3 "macos artifacts contains duplicate identifier share:duplicate/file" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-invalid-identifiers" "$CLI" catalog validate
+expect_contains "artifact control character fails" 3 "malformed module record" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-control-character" "$CLI" catalog validate
+expect_contains "unsupported prerequisite platform fails" 3 "declares macos prerequisites without macos support" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-unsupported-platform" "$CLI" catalog validate
+expect_contains "unknown prerequisite table fails" 3 "unsupported field prerequisites.windows.commands" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-unknown-table" "$CLI" catalog validate
+expect_contains "unknown prerequisite field fails" 3 "unsupported field prerequisites.debian.packages" env DOTFILES_SOURCE_DIR="${FIXTURES}/prerequisite-unknown-field" "$CLI" catalog validate
+expect_contains "provider fields fail" 3 "unsupported field providers.macos.homebrew.packages" env DOTFILES_SOURCE_DIR="${FIXTURES}/provider-field" "$CLI" catalog validate
+expect_contains "rendered target collision is normalized" 3 "duplicate ownership key chezmoi:target:.zshrc" env DOTFILES_SOURCE_DIR="${FIXTURES}/source-collision" "$CLI" resolve --modules shell.alpha,shell.beta --platform debian
 expect_contains "usage errors use status 2" 2 "unknown command unknown" "$CLI" unknown
 expect_contains "missing chezmoi uses status 4" 4 "chezmoi is required" env DOTFILES_CHEZMOI_BIN=does-not-exist "$CLI" catalog validate
 
-if [ ! -e "${PROVIDER_LOG}" ]; then
+CHECK_FIXTURE="${FIXTURES}/prerequisite-check"
+CHECK_BIN="${TEST_ROOT}/check-bin"
+CHECK_HOME="${TEST_ROOT}/private-user-home"
+EXPLICIT_ROOT="${TEST_ROOT}/explicit-share"
+XDG_HOME_ROOT="${TEST_ROOT}/xdg-home"
+XDG_DIR_ROOT="${TEST_ROOT}/xdg-dir"
+mkdir -p "$CHECK_BIN" "$CHECK_HOME/.local/share" "$EXPLICIT_ROOT/fixture" "$XDG_HOME_ROOT/fixture" "$XDG_DIR_ROOT/fixture"
+printf '%s\n' '#!/bin/sh' 'printf "invoked\n" >> "$DOTFILES_PROBE_LOG"' 'exit 97' > "$CHECK_BIN/alpha-tool"
+printf '%s\n' '#!/bin/sh' 'exit 97' > "$CHECK_BIN/beta-tool"
+chmod +x "$CHECK_BIN/alpha-tool" "$CHECK_BIN/beta-tool"
+printf 'metadata only\n' > "$EXPLICIT_ROOT/fixture/item"
+
+expect_contains "prerequisite help is built in" 0 "dotfiles prerequisite check" "$CLI" prerequisite check --help
+expect_contains "missing local prerequisite selection fails closed" 3 "Run dotfiles config set or pass --profile or --modules." "$CLI" prerequisite check --platform debian
+expect_contains "prerequisite selections are mutually exclusive" 2 "mutually exclusive" "$CLI" prerequisite check --profile shell.check --modules shell.beta --platform debian
+expect_exact "composition without prerequisites is explicit" 0 "No prerequisites declared." env DOTFILES_SOURCE_DIR="$CHECK_FIXTURE" DOTFILES_CHEZMOI_BIN="$CHEZMOI_REAL" "$CLI" prerequisite check --modules shell.empty --platform debian
+expect_contains "missing commands use exit 5" 5 "missing: shell.alpha command missing-tool — provide it outside this project" env DOTFILES_SOURCE_DIR="$CHECK_FIXTURE" DOTFILES_CHEZMOI_BIN="$CHEZMOI_REAL" DOTFILES_SHARE_ROOTS="$EXPLICIT_ROOT" HOME="$CHECK_HOME" PATH="$CHECK_BIN:/usr/bin:/bin" "$CLI" prerequisite check --modules shell.alpha --platform debian
+expect_contains "executable commands are found without path disclosure" 5 "present: shell.alpha command alpha-tool" env DOTFILES_SOURCE_DIR="$CHECK_FIXTURE" DOTFILES_CHEZMOI_BIN="$CHEZMOI_REAL" DOTFILES_SHARE_ROOTS="$EXPLICIT_ROOT" HOME="$CHECK_HOME" PATH="$CHECK_BIN:/usr/bin:/bin" "$CLI" prerequisite check --modules shell.alpha --platform debian
+expect_contains "trailing and redundant PATH separators are normalized" 5 "present: shell.alpha command alpha-tool" env DOTFILES_SOURCE_DIR="$CHECK_FIXTURE" DOTFILES_CHEZMOI_BIN="$CHEZMOI_REAL" DOTFILES_SHARE_ROOTS="$EXPLICIT_ROOT" HOME="$CHECK_HOME" PATH="$CHECK_BIN//:/usr/bin/:/bin" "$CLI" prerequisite check --modules shell.alpha --platform debian
+expect_contains "regular artifacts are found" 5 "present: shell.alpha artifact share:fixture/item" env DOTFILES_SOURCE_DIR="$CHECK_FIXTURE" DOTFILES_CHEZMOI_BIN="$CHEZMOI_REAL" DOTFILES_SHARE_ROOTS="$EXPLICIT_ROOT" HOME="$CHECK_HOME" PATH="$CHECK_BIN:/usr/bin:/bin" "$CLI" prerequisite check --modules shell.alpha --platform debian
+expect_contains "platform detection is shared with resolve" 5 "present: shell.alpha command alpha-tool" env DOTFILES_SOURCE_DIR="$CHECK_FIXTURE" DOTFILES_CHEZMOI_BIN="$CHEZMOI_REAL" DOTFILES_SHARE_ROOTS="$EXPLICIT_ROOT" HOME="$CHECK_HOME" PATH="$CHECK_BIN:/usr/bin:/bin" "$CLI" prerequisite check --modules shell.alpha
+expect_contains "profile resolution includes dependency before dependent" 5 "missing: shell.beta command beta-tool" env DOTFILES_SOURCE_DIR="$CHECK_FIXTURE" DOTFILES_CHEZMOI_BIN="$CHEZMOI_REAL" DOTFILES_SHARE_ROOTS="$EXPLICIT_ROOT" HOME="$CHECK_HOME" PATH="/usr/bin:/bin" "$CLI" prerequisite check --profile shell.check --platform debian
+expect_contains "add uses resolver selection" 5 "missing: shell.alpha command missing-tool" env DOTFILES_SOURCE_DIR="$CHECK_FIXTURE" DOTFILES_CHEZMOI_BIN="$CHEZMOI_REAL" DOTFILES_SHARE_ROOTS="$EXPLICIT_ROOT" HOME="$CHECK_HOME" PATH="/usr/bin:/bin" "$CLI" prerequisite check --modules shell.empty --add shell.alpha --platform macos
+expect_contains "application checks fail before results" 4 "application example.app cannot be checked" env DOTFILES_SOURCE_DIR="$CHECK_FIXTURE" DOTFILES_CHEZMOI_BIN="$CHEZMOI_REAL" "$CLI" prerequisite check --modules shell.alpha,shell.application --platform debian
+expect_exact "application failure prints no partial result" 4 "error: module shell.application application example.app cannot be checked: application prerequisite checking is not implemented" env DOTFILES_SOURCE_DIR="$CHECK_FIXTURE" DOTFILES_CHEZMOI_BIN="$CHEZMOI_REAL" "$CLI" prerequisite check --modules shell.alpha,shell.application --platform debian
+expect_contains "invalid explicit roots fail closed" 3 "explicit artifact root DOTFILES_SHARE_ROOTS[1] is empty" env DOTFILES_SOURCE_DIR="$CHECK_FIXTURE" DOTFILES_CHEZMOI_BIN="$CHEZMOI_REAL" DOTFILES_SHARE_ROOTS=":$EXPLICIT_ROOT" HOME="$CHECK_HOME" PATH="$CHECK_BIN:/usr/bin:/bin" "$CLI" prerequisite check --modules shell.alpha --platform debian
+expect_contains "unresolvable explicit roots fail closed" 3 "cannot be resolved" env DOTFILES_SOURCE_DIR="$CHECK_FIXTURE" DOTFILES_CHEZMOI_BIN="$CHEZMOI_REAL" DOTFILES_SHARE_ROOTS="${TEST_ROOT}/absent" HOME="$CHECK_HOME" PATH="$CHECK_BIN:/usr/bin:/bin" "$CLI" prerequisite check --modules shell.alpha --platform debian
+expect_contains "invalid ambient roots are disclosed" 5 "ignored invalid artifact root XDG_DATA_DIRS[1]" env DOTFILES_SOURCE_DIR="$CHECK_FIXTURE" DOTFILES_CHEZMOI_BIN="$CHEZMOI_REAL" DOTFILES_SHARE_ROOTS="$EXPLICIT_ROOT" XDG_DATA_HOME="$XDG_HOME_ROOT" XDG_DATA_DIRS="relative:$XDG_DIR_ROOT" HOME="$CHECK_HOME" PATH="$CHECK_BIN:/usr/bin:/bin" "$CLI" prerequisite check --modules shell.alpha --platform debian
+expect_contains "root disclosure puts explicit roots first" 5 "DOTFILES_SHARE_ROOTS[1]=" env DOTFILES_SOURCE_DIR="$CHECK_FIXTURE" DOTFILES_CHEZMOI_BIN="$CHEZMOI_REAL" DOTFILES_SHARE_ROOTS="$EXPLICIT_ROOT" XDG_DATA_HOME="$XDG_HOME_ROOT" XDG_DATA_DIRS="$XDG_DIR_ROOT" HOME="$CHECK_HOME" PATH="$CHECK_BIN:/usr/bin:/bin" "$CLI" prerequisite check --modules shell.alpha --platform debian
+expect_contains "root disclosure abbreviates HOME" 5 'DOTFILES_SHARE_ROOTS[1]=$HOME/.local/share' env DOTFILES_SOURCE_DIR="$CHECK_FIXTURE" DOTFILES_CHEZMOI_BIN="$CHEZMOI_REAL" DOTFILES_SHARE_ROOTS="$CHECK_HOME/.local/share" XDG_DATA_HOME="$CHECK_HOME/.local/share" HOME="$CHECK_HOME" PATH="$CHECK_BIN:/usr/bin:/bin" "$CLI" prerequisite check --modules shell.alpha --platform debian
+
+chmod -x "$CHECK_BIN/alpha-tool"
+expect_contains "non-executable command files do not satisfy checks" 5 "missing: shell.alpha command alpha-tool" env DOTFILES_SOURCE_DIR="$CHECK_FIXTURE" DOTFILES_CHEZMOI_BIN="$CHEZMOI_REAL" DOTFILES_SHARE_ROOTS="$EXPLICIT_ROOT" HOME="$CHECK_HOME" PATH="$CHECK_BIN:/usr/bin:/bin" "$CLI" prerequisite check --modules shell.alpha --platform debian
+rm -f "$CHECK_BIN/alpha-tool"
+mkdir "$CHECK_BIN/alpha-tool"
+expect_contains "directories do not satisfy command checks" 5 "missing: shell.alpha command alpha-tool" env DOTFILES_SOURCE_DIR="$CHECK_FIXTURE" DOTFILES_CHEZMOI_BIN="$CHEZMOI_REAL" DOTFILES_SHARE_ROOTS="$EXPLICIT_ROOT" HOME="$CHECK_HOME" PATH="$CHECK_BIN:/usr/bin:/bin" "$CLI" prerequisite check --modules shell.alpha --platform debian
+rmdir "$CHECK_BIN/alpha-tool"
+printf '%s\n' '#!/bin/sh' 'exit 97' > "$TEST_ROOT/alpha-tool"
+chmod +x "$TEST_ROOT/alpha-tool"
+expect_contains "empty and relative PATH entries never search CWD" 5 "missing: shell.alpha command alpha-tool" env DOTFILES_SOURCE_DIR="$CHECK_FIXTURE" DOTFILES_CHEZMOI_BIN="$CHEZMOI_REAL" DOTFILES_SHARE_ROOTS="$EXPLICIT_ROOT" HOME="$CHECK_HOME" PATH=":relative::/usr/bin:/bin" "$CLI" prerequisite check --modules shell.alpha --platform debian
+
+rm -f "$EXPLICIT_ROOT/fixture/item"
+printf 'xdg metadata\n' > "$XDG_HOME_ROOT/fixture/item"
+expect_contains "XDG data home supplies artifacts" 5 "present: shell.alpha artifact share:fixture/item" env -u DOTFILES_SHARE_ROOTS DOTFILES_SOURCE_DIR="$CHECK_FIXTURE" DOTFILES_CHEZMOI_BIN="$CHEZMOI_REAL" XDG_DATA_HOME="$XDG_HOME_ROOT" XDG_DATA_DIRS="$XDG_DIR_ROOT" HOME="$CHECK_HOME" PATH="/usr/bin:/bin" "$CLI" prerequisite check --modules shell.alpha --platform debian
+rm -f "$XDG_HOME_ROOT/fixture/item"
+printf 'home metadata\n' > "$CHECK_HOME/.local/share/fixture-item"
+mkdir -p "$CHECK_HOME/.local/share/fixture"
+mv "$CHECK_HOME/.local/share/fixture-item" "$CHECK_HOME/.local/share/fixture/item"
+expect_contains "invalid XDG data home uses HOME fallback" 5 "present: shell.alpha artifact share:fixture/item" env -u DOTFILES_SHARE_ROOTS DOTFILES_SOURCE_DIR="$CHECK_FIXTURE" DOTFILES_CHEZMOI_BIN="$CHEZMOI_REAL" XDG_DATA_HOME=relative HOME="$CHECK_HOME" PATH="/usr/bin:/bin" "$CLI" prerequisite check --modules shell.alpha --platform debian
+expect_contains "device artifacts fail" 5 "missing: shell.device artifact share:null" env DOTFILES_SOURCE_DIR="$CHECK_FIXTURE" DOTFILES_CHEZMOI_BIN="$CHEZMOI_REAL" DOTFILES_SHARE_ROOTS=/dev HOME="$CHECK_HOME" PATH="/usr/bin:/bin" "$CLI" prerequisite check --modules shell.device --platform debian
+
+rm -f "$CHECK_HOME/.local/share/fixture/item"
+rm -f "$EXPLICIT_ROOT/fixture/item"
+ln -s "../fixture/target" "$EXPLICIT_ROOT/fixture/item"
+printf 'metadata only\n' > "$EXPLICIT_ROOT/fixture/target"
+expect_contains "contained artifact symlink succeeds" 5 "present: shell.alpha artifact share:fixture/item" env DOTFILES_SOURCE_DIR="$CHECK_FIXTURE" DOTFILES_CHEZMOI_BIN="$CHEZMOI_REAL" DOTFILES_SHARE_ROOTS="$EXPLICIT_ROOT" HOME="$CHECK_HOME" PATH="$CHECK_BIN:/usr/bin:/bin" "$CLI" prerequisite check --modules shell.alpha --platform debian
+rm -f "$EXPLICIT_ROOT/fixture/item"
+ln -s /dev/null "$EXPLICIT_ROOT/fixture/item"
+expect_contains "escaping artifact symlink fails" 5 "missing: shell.alpha artifact share:fixture/item" env DOTFILES_SOURCE_DIR="$CHECK_FIXTURE" DOTFILES_CHEZMOI_BIN="$CHEZMOI_REAL" DOTFILES_SHARE_ROOTS="$EXPLICIT_ROOT" HOME="$CHECK_HOME" PATH="$CHECK_BIN:/usr/bin:/bin" "$CLI" prerequisite check --modules shell.alpha --platform debian
+rm -f "$EXPLICIT_ROOT/fixture/item"
+mkdir "$EXPLICIT_ROOT/fixture/item"
+expect_contains "artifact directories fail" 5 "missing: shell.alpha artifact share:fixture/item" env DOTFILES_SOURCE_DIR="$CHECK_FIXTURE" DOTFILES_CHEZMOI_BIN="$CHEZMOI_REAL" DOTFILES_SHARE_ROOTS="$EXPLICIT_ROOT" HOME="$CHECK_HOME" PATH="$CHECK_BIN:/usr/bin:/bin" "$CLI" prerequisite check --modules shell.alpha --platform debian
+rmdir "$EXPLICIT_ROOT/fixture/item"
+mkfifo "$EXPLICIT_ROOT/fixture/item"
+expect_contains "artifact FIFOs fail without opening" 5 "missing: shell.alpha artifact share:fixture/item" env DOTFILES_SOURCE_DIR="$CHECK_FIXTURE" DOTFILES_CHEZMOI_BIN="$CHEZMOI_REAL" DOTFILES_SHARE_ROOTS="$EXPLICIT_ROOT" HOME="$CHECK_HOME" PATH="$CHECK_BIN:/usr/bin:/bin" "$CLI" prerequisite check --modules shell.alpha --platform debian
+rm -f "$EXPLICIT_ROOT/fixture/item"
+if python3 -c 'import socket,sys; s=socket.socket(socket.AF_UNIX); s.bind(sys.argv[1]); s.close()' "$EXPLICIT_ROOT/fixture/item" 2>/dev/null; then
+    expect_contains "artifact sockets fail without opening" 5 "missing: shell.alpha artifact share:fixture/item" env DOTFILES_SOURCE_DIR="$CHECK_FIXTURE" DOTFILES_CHEZMOI_BIN="$CHEZMOI_REAL" DOTFILES_SHARE_ROOTS="$EXPLICIT_ROOT" HOME="$CHECK_HOME" PATH="/usr/bin:/bin" "$CLI" prerequisite check --modules shell.alpha --platform debian
+else
+    STATUS=0
+    OUTPUT="socket fixture creation unavailable"
+    pass "artifact socket fixture is sandbox-dependent"
+fi
+rm -f "$EXPLICIT_ROOT/fixture/item"
+ln -s missing "$EXPLICIT_ROOT/fixture/item"
+expect_contains "broken artifact links fail" 5 "missing: shell.alpha artifact share:fixture/item" env DOTFILES_SOURCE_DIR="$CHECK_FIXTURE" DOTFILES_CHEZMOI_BIN="$CHEZMOI_REAL" DOTFILES_SHARE_ROOTS="$EXPLICIT_ROOT" HOME="$CHECK_HOME" PATH="$CHECK_BIN:/usr/bin:/bin" "$CLI" prerequisite check --modules shell.alpha --platform debian
+rm -f "$EXPLICIT_ROOT/fixture/item"
+ln -s item "$EXPLICIT_ROOT/fixture/item"
+expect_contains "artifact symlink loops fail" 5 "missing: shell.alpha artifact share:fixture/item" env DOTFILES_SOURCE_DIR="$CHECK_FIXTURE" DOTFILES_CHEZMOI_BIN="$CHEZMOI_REAL" DOTFILES_SHARE_ROOTS="$EXPLICIT_ROOT" HOME="$CHECK_HOME" PATH="$CHECK_BIN:/usr/bin:/bin" "$CLI" prerequisite check --modules shell.alpha --platform debian
+
+if [ ! -s "$PROBE_LOG" ]; then
     STATUS=0
     OUTPUT=
-    pass "released commands invoke no package provider"
+    pass "prerequisite executables and artifact content are never invoked"
 else
     STATUS=97
-    OUTPUT="a package provider was invoked"
-    fail "released commands invoke no package provider"
+    OUTPUT="a prerequisite executable or artifact was invoked"
+    fail "prerequisite executables and artifact content are never invoked"
+fi
+
+if [ ! -e "${PROBE_LOG}" ]; then
+    STATUS=0
+    OUTPUT=
+    pass "validation and resolution invoke no provider, installer, or prerequisite"
+else
+    STATUS=97
+    OUTPUT="a provider, installer, or prerequisite was invoked"
+    fail "validation and resolution invoke no provider, installer, or prerequisite"
 fi
 
 if [ "$failures" -ne 0 ]; then

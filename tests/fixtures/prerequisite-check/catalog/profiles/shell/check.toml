@@ -1,0 +1,8 @@
+[dotfiles.profiles."shell.check"]
+schema = 1
+id = "shell.check"
+name = "Check"
+summary = "Prerequisite selection fixture"
+docs = "docs/profiles/shell/check.md"
+platforms = ["macos", "debian"]
+modules = ["shell.beta"]

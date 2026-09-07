@@ -1,0 +1,11 @@
+[dotfiles.modules."shell.alpha"]
+schema = 1
+id = "shell.alpha"
+name = "Alpha"
+summary = "Unknown prerequisite table fixture"
+docs = "docs/modules/shell/alpha.md"
+platforms = ["debian"]
+depends = []
+conflicts = []
+exclusive_group = ""
+prerequisites.windows.commands = ["alpha"]
