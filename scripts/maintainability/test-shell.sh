@@ -161,7 +161,8 @@ check_test_execution_manifest() {
     local repository_root=$1
     local check_script="${repository_root%/}/scripts/check.sh"
     local actual expected
-    expected='run.sh
+    expected='branch-policy.sh
+run.sh
 config-state.sh
 config-interactive.sh
 config-consumption.sh

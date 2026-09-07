@@ -19,6 +19,7 @@ while IFS= read -r production_shell; do
 done < <(find "${PROJECT_ROOT}/lib" -type f -name '*.sh' -print | LC_ALL=C sort)
 bash -n "${PROJECT_ROOT}/scripts/check.sh"
 bash -n "${PROJECT_ROOT}/scripts/check-branch-policy.sh"
+bash -n "${PROJECT_ROOT}/tests/branch-policy.sh"
 bash -n "${PROJECT_ROOT}/scripts/check-maintainability.sh"
 # Syntax-check every fixed maintainability leaf recursively.
 while IFS= read -r maintainability_shell; do
@@ -39,6 +40,7 @@ bash "${PROJECT_ROOT}/scripts/check-maintainability.sh"
 "${PROJECT_ROOT}/bin/dotfiles" version >/dev/null
 "${PROJECT_ROOT}/bin/dotfiles" catalog validate >/dev/null
 
+bash "${PROJECT_ROOT}/tests/branch-policy.sh"
 bash "${PROJECT_ROOT}/tests/run.sh"
 bash "${PROJECT_ROOT}/tests/config-state.sh"
 bash "${PROJECT_ROOT}/tests/config-interactive.sh"
