@@ -144,6 +144,27 @@ list. Do not use globs, scans, dynamic or environment-selected loading, sibling
 sources, or direct fragment execution. `scripts/check.sh` syntax-checks every
 test shell recursively but executes only stable top-level runners.
 
+## Repository automation
+
+The repository ships Claude Code configuration in `.claude/`. Its permissions
+allow only the read-only command surface; `apply`, `config set`, and `config
+interactive` are denied, as are direct `chezmoi`, `brew`, and `mise` calls. The
+CLI is unaffected, because it invokes chezmoi as a subprocess and permission
+rules apply only to the command the agent itself runs. Denying `chezmoi`
+wholesale is necessary rather than tidy: `chezmoi execute-template` evaluates the
+`output` template function and so runs arbitrary commands.
+
+To apply real home configuration deliberately, opt in through
+`.claude/settings.local.json`, which is not committed. Mutation stays a local
+choice rather than a repository default.
+
+A hook runs `scripts/check-maintainability.sh` and `scripts/check-branch-policy.sh`
+after Write and Edit tool changes below the governed roots, reporting without
+blocking. It does not run the full gate, which takes about five minutes, and it
+does not see a file rewritten through Bash. Contributor commands for adding an
+ADR, a catalog entry, a CLI command, or a manifest field live in
+`.claude/skills`.
+
 ## Security and privacy
 
 Never commit credentials, private keys, certificates, real hostnames, IP addresses, Tailscale identity, private registry configuration, or machine-specific identity.
