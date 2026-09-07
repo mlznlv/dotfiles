@@ -10,13 +10,10 @@ List the included work and explicit non-goals.
 
 ## Branch contract
 
+- [ ] The branch started from the current `master` and this pull request
+      targets `master`.
 - [ ] This pull request does not target `legacy`.
-- Select the applicable path:
-  - [ ] Implementation or maintenance: the branch started from the latest
-        relevant `next` and targets `next`.
-  - [ ] Promotion: the pull request is from `next` to `master`, contains no new
-        work, requires explicit owner approval, and will use a merge commit
-        rather than squash or rebase.
+- [ ] The task branch will be deleted after merge.
 
 ## Architecture and ownership
 

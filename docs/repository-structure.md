@@ -250,13 +250,12 @@ stable top-level entrypoints.
 
 | Branch | Responsibility | Normal changes |
 | --- | --- | --- |
-| `master` | Stable and released state | Explicit owner-reviewed promotion from `next` only |
-| `next` | Active integration state | Focused implementation and maintenance pull requests |
+| `master` | Active, stable, and only integration state | Focused, owner-reviewed implementation and maintenance pull requests |
 | `legacy` | Read-only recovery snapshot | None; never a pull-request target |
 
-Work branches start from the latest `next` and target `next`. Integrating an
-increment does not promote it to `master`; promotion is a separate release
-pull request and decision.
+Work branches start from the latest `master` and target `master`, use the
+`agent/<description>` form, and are deleted after merge. Each pull request is
+integrated by the repository owner's explicit review and approval.
 
 ## GitHub labels
 

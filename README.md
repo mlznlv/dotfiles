@@ -104,9 +104,9 @@ inspection, and diagnosis are established. Phase 4 is complete. Application
 checks, portable saved/shared profiles, broader modules, and stable promotion
 remain later [roadmap](docs/roadmap.md) increments.
 
-Development integrates through `next`; `master` remains the stable branch until
-an explicitly reviewed promotion. See [Contributing](CONTRIBUTING.md) for the
-branch workflow.
+Development integrates directly into `master`, the active, stable, and only
+integration branch. See [Contributing](CONTRIBUTING.md) for the branch
+workflow.
 
 ## License
 

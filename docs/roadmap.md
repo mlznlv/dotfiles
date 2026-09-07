@@ -117,9 +117,8 @@ selected configuration, without installing or converging software.
 
 Each increment is one focused pull request and updates its command, module, or
 profile documentation in the same change. Implementation increments branch from
-and integrate into `next`. Promotion from `next` to stable `master` is a
-separate, explicitly owner-reviewed release decision, not an implementation
-increment. The earlier provider-observation increment is superseded and must not
+and integrate into `master`, each through an explicitly owner-reviewed pull
+request. The earlier provider-observation increment is superseded and must not
 be implemented. Saved plans, rollback, software installation, and destructive
 removal remain outside every increment.
 
@@ -235,8 +234,7 @@ remained planned and unstarted and did not begin before the gate merged into
 
 ## Cross-phase maintenance gate: Catalog and source-size decomposition
 
-**Status:** Implementation complete; the gate is complete only after its
-focused pull request merges into `next`. Required before Phase 5 implementation.
+**Status:** Complete. Required before Phase 5 implementation.
 
 The POSIX AWK catalog engine and saturated maintainability checker/test are
 decomposed into fixed, one-owner leaves behind their stable entrypoints. A
@@ -248,7 +246,7 @@ library, script, and test roots, with the existing 250-line CLI entrypoint and
 This final maintenance gate changes no product behavior, command, output,
 status, schema, catalog data, state, managed target, ownership boundary, or
 accepted ADR. Phase 5 remains planned and unstarted and must not begin until
-this gate merges into `next`.
+this gate has merged.
 
 ## Phase 5: Saved and shared profiles
 
@@ -351,9 +349,9 @@ through explicit profiles.
 **Objective:** prepare the integrated implementation for explicit promotion to
 `master` and a stable public release.
 
-Development continues to integrate through `next`. Stable releases reach
-`master` only through separate promotion pull requests. The `legacy` branch
-remains only as a read-only recovery snapshot.
+Development integrates directly into `master`, which is the active, stable,
+and only integration branch. The `legacy` branch remains only as a read-only
+recovery snapshot.
 
 **Deliverables:**
 

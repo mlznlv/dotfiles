@@ -6,13 +6,12 @@ Follow the roadmap in dependency order. Do not implement work before its archite
 
 ## Branches
 
-- `master` is the stable, released branch. It receives changes only through a
-  separate promotion pull request from `next` that the repository owner has
-  explicitly reviewed and approved.
-- `next` is the active integration branch. Create implementation branches from
-  its latest commit and target their pull requests to `next`.
+- `master` is the active, stable, and only integration branch. Create every
+  branch from its latest commit and target every pull request to `master`.
 - `legacy` is a read-only recovery snapshot. Never modify it or target it with
   pull requests.
+
+Task branches use the `agent/<description>` form and are deleted after merge.
 
 The legacy branch may be removed after the new implementation has passed its
 recovery window and no rollback need remains.
@@ -21,25 +20,22 @@ recovery window and no rollback need remains.
 
 1. Read the [architecture](docs/architecture.md) and relevant [ADRs](docs/adr/README.md).
 2. Open an issue for material design changes or new module categories.
-3. Update `next`, then create a focused branch from its latest commit.
+3. Update `master`, then create a focused branch from its latest commit.
 4. Keep the pull request limited to one roadmap outcome and target it to
-   `next`.
+   `master`.
 5. Update documentation and tests in the same pull request as behavior.
 6. Use clear, English commit messages.
 7. Run the repository checks.
 8. Complete the pull request checklist.
 
-Ordinary implementation and maintenance work never targets `master`. Promotion
-from `next` to `master` is a separate release decision, remains unmerged until
-the repository owner explicitly approves it, and must not include new work that
-has not already integrated through `next`.
+Every implementation, maintenance, documentation, dependency, and release pull
+request is based on the current `master` and targets `master`. The repository
+owner reviews and explicitly approves before merge, and the task branch is
+deleted afterward.
 
-Merge an approved promotion pull request with a merge commit so `master`
-preserves the exact integrated commits from `next`. Never squash-merge or rebase
-a promotion. Afterward, verify that the promoted `next` commit is an ancestor of
-`master`; do not merge `master` back into `next` or reset `next`. Development
-continues from the existing `next` history, and its later commits form the next
-promotion.
+There is no separate integration branch. A change is integrated when its pull
+request merges into `master`, so keep each one small enough to review and green
+before requesting approval.
 
 Catalog and CLI changes require chezmoi. Validate them with:
 
