@@ -364,3 +364,4 @@ in [repository structure](repository-structure.md), and delivery order in the
 - [ADR 0009: Define pre-release schema versioning](adr/0009-define-pre-release-schema-versioning.md)
 - [ADR 0010: Define selection-aware shell rendering](adr/0010-define-selection-aware-shell-rendering.md)
 - [ADR 0011: Define the local configuration workflow](adr/0011-define-local-configuration-workflow.md)
+- [ADR 0012: Consolidate development on master](adr/0012-consolidate-development-on-master.md)

@@ -26,6 +26,7 @@ supersedes an earlier one instead of rewriting history.
 | [0009](0009-define-pre-release-schema-versioning.md) | Accepted | Define pre-release schema versioning |
 | [0010](0010-define-selection-aware-shell-rendering.md) | Accepted | Define selection-aware shell rendering |
 | [0011](0011-define-local-configuration-workflow.md) | Accepted | Define the local configuration workflow |
+| [0012](0012-consolidate-development-on-master.md) | Accepted | Consolidate development on master |
 
 ADR 0007 partially supersedes ADRs 0004 and 0006. Their unaffected safety
 decisions and immutable historical text remain accepted.
