@@ -59,61 +59,126 @@ entries.
 
 ## Phase 3: Minimal shell vertical slice
 
-**Status:** Contract accepted; implementation next.
+**Status:** Complete.
 
-**Objective:** prove end-to-end planning and safe application with a small,
-useful composition.
+**Objective:** prove end-to-end planning and safe application of explicitly
+selected configuration, without installing or converging software.
 
 **Implementation increments:**
 
-1. **Execution contract:** accept ADR 0006 and specify schema 2, ownership,
+1. **Execution contract:** accept ADR 0006 and specify an initial integration
+   schema, ownership,
    provider boundaries, plan ordering, apply safety, paths, and command
-   contracts. Documentation only. Depends on Phase 2.
-2. **Shell catalog composition:** release modules shell.zsh,
+   contracts. Historical documentation increment, partially superseded by ADR
+   0007. Depends on Phase 2.
+2. **Shell catalog composition (complete):** release modules shell.zsh,
    shell.zsh.autosuggestions, and prompt.starship plus profile shell.minimal
    under the accepted schema, with validation and resolution fixtures. Depends
    on the accepted execution contract.
-3. **Provider observation adapters:** add read-only Homebrew, mise, and chezmoi
-   observations and normalized fixture coverage for macOS and Debian. Depends
-   on the shell catalog composition.
-4. **Deterministic planning:** implement `dotfiles plan`, ownership collision
-   checks, stable plan construction, disclosures, no-change behavior, and
-   failure tests. Depends on provider observation adapters.
-5. **Chezmoi shell state:** add the selected Zsh, autosuggestions, and Starship
-   source files and rendering tests without adding apply orchestration. Depends
-   on deterministic planning.
-6. **Safe application:** implement `dotfiles apply`, interactive and
-   non-interactive intent checks, ordered provider execution, stop-on-failure
-   reporting, and idempotency tests. Depends on all earlier Phase 3 increments.
+   Before the next product increment, formalize `next` as the integration
+   branch and retain `master` as the stable branch.
+3. **Configuration-only contract (complete):** accept ADR 0007, define optional
+   tool modules, static prerequisites, rendered-target ownership, and the
+   explicit migration from provider requests. Documentation only. Blocks every
+   later increment.
+4. **Schema and catalog migration (complete):** implemented static
+   prerequisites and converted the three production modules and fixtures.
+   The later pre-release simplification collapses all active manifests to
+   schema 1 and removes compatibility for unreleased iterations. Depends on
+   ADRs 0007 and 0009.
+5. **Provider-neutral artifact discovery gate (complete):** accepted ADR 0008
+   with explicit, XDG, validated HOME-derived, and generic system data roots
+   plus deterministic safety, containment, disclosure, and non-invocation test
+   requirements. Documentation only.
+6. **Prerequisite validation (partially complete):** implemented generic,
+   read-only command and artifact checks for selected shell compositions with
+   actionable errors, deterministic ADR 0008 discovery, and no invocation.
+   Application checks remain fail-closed and deferred. Depends on the schema
+   migration and accepted ADR 0008.
+7. **Selection-aware shell rendering gate (complete):** accepted ADR 0010
+   with ephemeral render data, exact shell-target ownership, deterministic
+   optional activation, artifact-path privacy, and non-destructive deselection
+   semantics. Documentation only; blocks managed shell sources.
+8. **Read-only shell rendering (complete):** implemented the ephemeral context
+   adapter, selected Zsh, autosuggestions, and Starship sources, manifest source
+   ownership, and macOS/Debian coverage for byte-stable rendering, containment,
+   canonical quoting, privacy, cleanup, and stale state without home mutation.
+   Depends on accepted ADR 0010 and prerequisite validation.
+9. **Deterministic configuration planning (complete):** implemented
+   `dotfiles plan` with fresh prerequisite and artifact validation, exact
+   selected-target Chezmoi comparison, stable privacy-safe create/update
+   effects, no-change behavior, and macOS/Debian safety and non-mutation
+   coverage. Depends on prerequisite validation and shell configuration.
+10. **Safe configuration apply (complete):** implemented `dotfiles apply` with
+   exact interactive and non-interactive intent, post-confirmation fresh-plan
+   verification, one-target-at-a-time Chezmoi application, byte verification,
+   stop-on-failure reporting, signal cleanup, and macOS/Debian idempotency
+   coverage. Depends on all earlier Phase 3 increments.
 
 Each increment is one focused pull request and updates its command, module, or
-profile documentation in the same change. Saved plans, rollback, and removal
-remain outside every increment.
+profile documentation in the same change. Implementation increments branch from
+and integrate into `master`, each through an explicitly owner-reviewed pull
+request. The earlier provider-observation increment is superseded and must not
+be implemented. Saved plans, rollback, software installation, and destructive
+removal remain outside every increment.
 
 **Acceptance criteria:**
 
-- A clean supported target can preview and apply the profile.
-- Zsh, autosuggestions, and Starship work after a new shell starts.
+- A supported target with prerequisites already present can preview and apply
+  the explicitly selected configuration.
+- A missing prerequisite fails before a plan eligible for apply or mutation.
+- Zsh, autosuggestions, and Starship configuration works after a new shell
+  starts when those modules are selected.
 - A second apply is idempotent.
-- No unrelated files or packages are removed.
+- No software is installed, upgraded, or removed, and no unrelated file changes.
 
-**Non-goals:** workstation applications, remote access, or broad package sets.
+**Non-goals:** software installation, provider adapters, workstation
+applications, remote access, or broad configuration sets.
 
 **Depends on:** phase 2.
 
 ## Phase 4: Configuration workflow
 
-**Status:** Planned.
+**Status:** Complete.
 
 **Objective:** make normal setup possible without editing TOML.
 
 **Deliverables:**
 
 - Interactive and flag-based configuration commands.
-- Local chezmoi configuration schema and validation.
+- A dedicated CLI-owned schema-1 active-selection file and validation.
 - Inspect and doctor commands.
 - Clear separation between changing choices and applying them.
-- Migration-free reset of generated cache data.
+- A generated-cache reset only if a real cache consumer is first accepted and
+  implemented.
+
+**Implementation increments:**
+
+1. **Architecture gate (complete):** accepted
+   [ADR 0011](adr/0011-define-local-configuration-workflow.md), which defines
+   local-selection purpose, storage, schema, precedence, command effects,
+   filesystem safety, diagnostics, and cache boundaries. Documentation only.
+2. **Flag-based local selection (complete):** implemented the private
+   configuration-state library and `config set` with isolated macOS and Debian
+   coverage. Depends on accepted ADR 0011 and is the first implementation
+   increment it unlocks.
+3. **Interactive local selection (complete):** implemented exact, terminal-only
+   selection, deterministic compatible inventory, no-change preflight, and
+   confirmation on the same state library. Depends on increment 2.
+4. **Saved-selection consumption (complete):** `resolve`, `prerequisite check`,
+   `plan`, and `apply` load local intent only when an invocation omits an
+   explicit base. Explicit-selector precedence, invocation-only additions,
+   strict read-only state safety, and all fresh Phase 3 checks remain intact.
+   Depends on increment 2 and follows increment 3.
+5. **Inspect and doctor (complete):** implemented read-only effective-selection
+   inspection and narrow standard local-state diagnosis through the shared
+   precedence adapter, strict reader, and resolver. Exact output, privacy,
+   path safety, drift, descriptor, lock-preservation, macOS/Debian, and zero-
+   mutation coverage is included. Depends on increment 2 and the consuming-
+   command contract in increment 4.
+6. **Generated-cache reset (conditional):** implement only after a named cache
+   consumer and exact entry allowlist are accepted and implemented. Otherwise
+   defer this increment indefinitely.
 
 **Acceptance criteria:**
 
@@ -121,8 +186,67 @@ remain outside every increment.
 - Configuration changes never apply system changes implicitly.
 - Local settings contain no secrets or repository-visible machine identity.
 - Invalid combinations are rejected before apply.
+- Explicit selectors remain independent of saved local state.
+- Effective intent is inspectable without checking software or managed HOME.
+- Local-selection health is diagnosable without repair or broader system
+  health checks.
 
 **Depends on:** phase 3.
+
+Portable saved/shared profiles are the next planned Phase 5 work. Broader
+workstation modules and profiles remain Phase 6 work. Generated-cache reset
+remains deferred indefinitely unless a named persistent consumer and bounded
+allowlist are accepted and implemented.
+
+## Cross-phase maintenance gate: Production shell decomposition
+
+**Status:** Complete; required before Phase 5 implementation.
+
+The production CLI and local-selection state monoliths are decomposed into
+fixed, source-only modules with one-way loader order and one owner per
+function. `bin/dotfiles` remains the thin executable entrypoint, while
+`lib/config-state.sh` remains the stable state-library facade. Automated
+guards enforce a 250-line entrypoint limit, a 500-line limit for every
+production shell file, Bash syntax, modes, fixed loader membership, duplicate
+function absence, source-time effects, arbitrary-CWD loading, and paths with
+spaces or shell metacharacters.
+
+This maintenance gate changes no public behavior, accepted ADR, schema,
+catalog, state path, effect boundary, or provider ownership. Phase 5 remained
+unstarted while the gate was implemented and did not begin before it merged
+into `next`.
+
+## Cross-phase maintenance gate: Behavioral test-suite decomposition
+
+**Status:** Complete; required before Phase 5 implementation.
+
+The five behavioral suites that exceeded 500 lines retain their stable
+top-level entrypoints and exact assertion behavior while using explicit,
+ordered support-and-case layouts. Automated guards enforce a 500-line limit on
+every recursive test shell, a 150-line decomposed-runner limit, complete fixed
+manifests, recursive syntax, internal modes, one function owner, source-safe
+support, stable-runner-only execution, and arbitrary-CWD/copied-path behavior.
+
+This second maintenance gate changed no product behavior, command, output,
+status, schema, catalog, state, production ownership, or accepted ADR. Phase 5
+remained planned and unstarted and did not begin before the gate merged into
+`next`.
+
+## Cross-phase maintenance gate: Catalog and source-size decomposition
+
+**Status:** Complete; required before Phase 5 implementation.
+
+The POSIX AWK catalog engine and saturated maintainability checker/test are
+decomposed into fixed, one-owner leaves behind their stable entrypoints. A
+repository-wide guard enforces a 500-physical-line maximum for every regular
+maintained file below the catalog, workflow, executable, managed-home,
+library, script, and test roots, with the existing 250-line CLI entrypoint and
+150-line decomposed-runner limits retained.
+
+This final maintenance gate changes no product behavior, command, output,
+status, schema, catalog data, state, managed target, ownership boundary, or
+accepted ADR. Phase 5 remains planned and unstarted and must not begin until
+this gate has merged.
 
 ## Phase 5: Saved and shared profiles
 
@@ -144,7 +268,7 @@ remain outside every increment.
 - Import never applies changes.
 - Missing or incompatible modules produce actionable errors.
 
-**Depends on:** phase 4.
+**Depends on:** phase 4 and all three merged cross-phase maintenance gates.
 
 ## Phase 6: Personal and developer workstations
 
@@ -156,16 +280,18 @@ through explicit profiles.
 **Deliverables:**
 
 - Personal-client and developer-workstation profiles.
-- Curated CLI, version-control, editor, terminal, and runtime modules.
-- Homebrew, mise, chezmoi, Ghostty, and tmux integration within their ownership
-  boundaries.
+- Curated configuration modules for CLI, version-control, editors, terminals,
+  and runtimes.
+- Chezmoi-managed configuration and static prerequisite validation for
+  explicitly selected tools such as Ghostty and tmux.
 - Role-specific documentation and platform tests.
 
 **Acceptance criteria:**
 
 - Profiles share modules without duplicated configuration.
 - Personal and developer choices remain explicit and inspectable.
-- Provider ownership validation prevents duplicate resource management.
+- Rendered-target ownership validation prevents duplicate configuration
+  management.
 - Apply remains idempotent on supported macOS targets.
 
 **Depends on:** phase 5.
@@ -220,22 +346,25 @@ through explicit profiles.
 
 **Status:** Planned.
 
-**Objective:** prepare the implementation on the default branch for a stable
-public release.
+**Objective:** prepare the implementation on `master` for a stable public
+release.
 
-The development branch cutover is complete before this phase. The `legacy`
-branch remains only as a temporary recovery snapshot.
+Development integrates directly into `master`, which is the active, stable, and
+only integration branch, as recorded in
+[ADR 0012](adr/0012-consolidate-development-on-master.md). A release identifies a
+commit on `master` rather than a promotion merge. The `legacy` branch remains
+only as a read-only recovery snapshot.
 
 **Deliverables:**
 
 - End-to-end clean-machine tests and upgrade tests.
 - Versioning, changelog, release, and support policies.
-- Bootstrap integrity and failure-recovery tests.
+- Configuration-source integrity and failure-recovery tests.
 - Release-readiness checklist and legacy-branch removal decision.
 
 **Acceptance criteria:**
 
-- Supported targets pass installation and idempotency tests.
+- Supported targets pass configuration and idempotency tests.
 - Security and privacy review has no unresolved high-risk findings.
 - Documentation matches the released CLI.
 - A production release and legacy-branch removal each require an explicit

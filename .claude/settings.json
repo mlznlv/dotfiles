@@ -1,0 +1,46 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./bin/dotfiles help *)",
+      "Bash(./bin/dotfiles version *)",
+      "Bash(./bin/dotfiles catalog *)",
+      "Bash(./bin/dotfiles module *)",
+      "Bash(./bin/dotfiles profile *)",
+      "Bash(./bin/dotfiles resolve *)",
+      "Bash(./bin/dotfiles prerequisite *)",
+      "Bash(./bin/dotfiles plan *)",
+      "Bash(./bin/dotfiles config inspect *)",
+      "Bash(./bin/dotfiles config doctor *)",
+      "Bash(bash scripts/check.sh *)",
+      "Bash(bash scripts/check-maintainability.sh *)",
+      "Bash(bash scripts/check-branch-policy.sh *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git show *)"
+    ],
+    "deny": [
+      "Bash(./bin/dotfiles apply *)",
+      "Bash(./bin/dotfiles config set *)",
+      "Bash(./bin/dotfiles config interactive *)",
+      "Bash(chezmoi *)",
+      "Bash(brew *)",
+      "Bash(mise *)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/verify-edit.sh\"",
+            "timeout": 60,
+            "statusMessage": "Checking maintained-source limits"
+          }
+        ]
+      }
+    ]
+  }
+}

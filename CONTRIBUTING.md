@@ -6,9 +6,12 @@ Follow the roadmap in dependency order. Do not implement work before its archite
 
 ## Branches
 
-- `master` is the active default branch and the base for all new work.
-- `legacy` is a temporary, read-only snapshot of the previous implementation.
-  Do not target it with pull requests.
+- `master` is the active, stable, and only integration branch. Create every
+  branch from its latest commit and target every pull request to `master`.
+- `legacy` is a read-only recovery snapshot. Never modify it or target it with
+  pull requests.
+
+Task branches use the `agent/<description>` form and are deleted after merge.
 
 The legacy branch may be removed after the new implementation has passed its
 recovery window and no rollback need remains.
@@ -17,12 +20,22 @@ recovery window and no rollback need remains.
 
 1. Read the [architecture](docs/architecture.md) and relevant [ADRs](docs/adr/README.md).
 2. Open an issue for material design changes or new module categories.
-3. Create a focused branch from `master`.
-4. Keep the pull request limited to one roadmap outcome.
+3. Update `master`, then create a focused branch from its latest commit.
+4. Keep the pull request limited to one roadmap outcome and target it to
+   `master`.
 5. Update documentation and tests in the same pull request as behavior.
 6. Use clear, English commit messages.
 7. Run the repository checks.
 8. Complete the pull request checklist.
+
+Every implementation, maintenance, documentation, dependency, and release pull
+request is based on the current `master` and targets `master`. The repository
+owner reviews and explicitly approves before merge, and the task branch is
+deleted afterward.
+
+There is no separate integration branch. A change is integrated when its pull
+request merges into `master`, so keep each one small enough to review and green
+before requesting approval.
 
 Catalog and CLI changes require chezmoi. Validate them with:
 
@@ -68,6 +81,85 @@ Every command must ship with:
 - A clear statement of files and state it may change.
 
 Read the [CLI contract](docs/cli/README.md).
+
+## Maintained source structure
+
+Every regular maintained file below `.chezmoidata/`, `.github/workflows/`,
+`bin/`, `home/`, `lib/`, `scripts/`, and `tests/` is limited to 500 physical
+lines, including comments, blank lines, and an unterminated final line.
+`bin/dotfiles` is limited to 250 lines. Decomposed stable test runners plus
+`scripts/check-maintainability.sh` and `tests/maintainability.sh` are limited
+to 150 lines. The rule is independent of extension, rejects NUL bytes, and
+rejects physical lines longer than 1,000 bytes so binary or minified
+representations cannot evade reviewable module boundaries.
+
+Narrative documentation, accepted ADRs, licenses, governance files, and
+machine-generated lock or vendor artifacts are outside this automated rule by
+semantic category. This is not a per-file allowlist. Split a responsibility
+into a narrow module before it approaches its limit; never meet a budget by
+combining statements, deleting useful diagnostics or comments, weakening
+error handling, renaming an extension, or generating maintained source.
+
+## Production shell structure
+
+Keep production Bash cohesive and reviewable. Split by one-owner
+responsibility before growth reaches the standing maintained-source limit.
+
+CLI and config-state facades use documented, explicit, fixed source lists in
+one-way dependency order. Do not add globs, directory scans, PATH or
+current-working-directory lookup, environment-selected modules, dynamic
+evaluation, autoloading, or circular source edges. Each production function
+has one owner, source-only libraries are non-executable and silent when
+sourced, and `bin/dotfiles` remains executable with a direct-execution guard.
+
+Run both the focused architecture guard and the complete regression suite:
+
+~~~text
+bash scripts/check-maintainability.sh
+bash scripts/check.sh
+~~~
+
+## Test shell structure
+
+Every maintained test file below `tests/`, recursively, is limited to 500
+physical lines. A decomposed stable top-level suite runner is additionally
+limited to 150 physical lines. Split an oversized suite into one
+non-executable, source-safe `support.sh` and cohesive non-executable case
+files; keep the existing top-level runner path as the only public entrypoint.
+
+Each runner records one fixed ordered manifest and uses explicit, quoted
+sources resolved from its physical path. Support loads first, performs no work
+when merely sourced, and exposes explicit root allocation and initialization.
+The runner allocates its private root, immediately installs its cleanup trap,
+initializes the remaining fixtures, and then sources cases in manifest order in
+one shell. It also owns the final summary. Cases execute assertions in that
+order; they do not source files, install traps, define helpers, finalize, or exit.
+
+When adding a case, add its path once to the runner manifest and fixed source
+list. Do not use globs, scans, dynamic or environment-selected loading, sibling
+sources, or direct fragment execution. `scripts/check.sh` syntax-checks every
+test shell recursively but executes only stable top-level runners.
+
+## Repository automation
+
+The repository ships Claude Code configuration in `.claude/`. Its permissions
+allow only the read-only command surface; `apply`, `config set`, and `config
+interactive` are denied, as are direct `chezmoi`, `brew`, and `mise` calls. The
+CLI is unaffected, because it invokes chezmoi as a subprocess and permission
+rules apply only to the command the agent itself runs. Denying `chezmoi`
+wholesale is necessary rather than tidy: `chezmoi execute-template` evaluates the
+`output` template function and so runs arbitrary commands.
+
+To apply real home configuration deliberately, opt in through
+`.claude/settings.local.json`, which is not committed. Mutation stays a local
+choice rather than a repository default.
+
+A hook runs `scripts/check-maintainability.sh` and `scripts/check-branch-policy.sh`
+after Write and Edit tool changes below the governed roots, reporting without
+blocking. It does not run the full gate, which takes about five minutes, and it
+does not see a file rewritten through Bash. Contributor commands for adding an
+ADR, a catalog entry, a CLI command, or a manifest field live in
+`.claude/skills`.
 
 ## Security and privacy
 

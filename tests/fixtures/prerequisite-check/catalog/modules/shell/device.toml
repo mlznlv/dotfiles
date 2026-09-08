@@ -1,0 +1,12 @@
+[dotfiles.modules."shell.device"]
+schema = 1
+id = "shell.device"
+name = "Device"
+summary = "Non-regular metadata fixture"
+docs = "docs/modules/shell/device.md"
+platforms = ["macos", "debian"]
+depends = []
+conflicts = []
+exclusive_group = ""
+prerequisites.macos.artifacts = ["share:null"]
+prerequisites.debian.artifacts = ["share:null"]

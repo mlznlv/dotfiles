@@ -29,13 +29,13 @@ Do not combine `--platform` and `--all`.
 ./bin/dotfiles module list --all
 ~~~
 
-The production catalog is currently empty, so these commands succeed without
-printing rows. A populated catalog prints tab-separated rows in identifier
-order:
+The production catalog prints the three released shell modules as tab-separated
+rows in identifier order:
 
 ~~~text
 prompt.starship    Starship    Cross-shell prompt renderer
 shell.zsh          Zsh         Interactive Zsh shell experience
+shell.zsh.autosuggestions    Zsh autosuggestions    Interactive command suggestions for Zsh
 ~~~
 
 ## Exit codes

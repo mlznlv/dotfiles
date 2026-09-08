@@ -8,6 +8,13 @@ Describe the user-visible outcome and why this change is needed.
 
 List the included work and explicit non-goals.
 
+## Branch contract
+
+- [ ] The branch started from the current `master` and this pull request
+      targets `master`.
+- [ ] This pull request does not target `legacy`.
+- [ ] The task branch will be deleted after merge.
+
 ## Architecture and ownership
 
 - Relevant ADRs:

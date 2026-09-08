@@ -1,0 +1,13 @@
+[dotfiles.modules."prompt.starship"]
+schema = 1
+id = "prompt.starship"
+name = "Starship"
+summary = "Cross-shell prompt rendering"
+docs = "docs/modules/prompt/starship.md"
+platforms = ["macos", "debian"]
+depends = []
+conflicts = []
+exclusive_group = "prompt.primary"
+prerequisites.macos.commands = ["starship"]
+prerequisites.debian.commands = ["starship"]
+home.chezmoi.sources = ["home/dot_config/starship.toml"]

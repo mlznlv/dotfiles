@@ -1,0 +1,12 @@
+[dotfiles.modules."shell.application"]
+schema = 1
+id = "shell.application"
+name = "Application"
+summary = "Unsupported application prerequisite fixture"
+docs = "docs/modules/shell/application.md"
+platforms = ["macos", "debian"]
+depends = []
+conflicts = []
+exclusive_group = ""
+prerequisites.macos.applications = ["example.app"]
+prerequisites.debian.applications = ["example.app"]

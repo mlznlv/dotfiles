@@ -1,8 +1,13 @@
 # Modules
 
 Modules are the smallest documented, selectable units of capability. This page
-defines their contract. The production catalog remains empty until Phase 3.
+defines their contract. The production catalog releases three shell modules.
 Catalog entries below tests/fixtures are test data, not product modules.
+
+Under the configuration-only contract accepted in ADR 0007, a module is one
+optional, tool-specific configuration capability. The core selects none by
+default: Zsh, Starship, Ghostty, VS Code, tmux, and every other tool require an
+explicit module selection.
 
 ## Categories
 
@@ -34,20 +39,35 @@ Manifests are grouped by category.
 ~~~text
 .chezmoidata/modules/
 ├── shell/
-│   ├── zsh.toml
-│   └── zsh-autosuggestions.toml
+│   └── zsh/
+│       ├── zsh.toml
+│       └── autosuggestions.toml
 └── prompt/
     └── starship.toml
 ~~~
 
-The planned initial modules are:
+Module pages mirror that identifier hierarchy.
+
+~~~text
+docs/modules/
+├── shell/
+│   └── zsh/
+│       ├── zsh.md
+│       └── autosuggestions.md
+└── prompt/
+    └── starship.md
+~~~
+
+The available pre-release modules are:
 
 - shell.zsh
 - shell.zsh.autosuggestions, depending on shell.zsh
 - prompt.starship
 
-These identifiers and relationships are design targets for the minimal shell
-vertical slice, not released functionality.
+Their metadata and dependencies are available for discovery and resolution.
+Their selected sources are available to the internal isolated renderer and the
+public read-only planner. Public apply can converge only freshly recomputed,
+confirmed selected targets; no public render command exists.
 
 ## Manifest contract
 
@@ -64,20 +84,43 @@ schema = 1
 id = "shell.zsh"
 name = "Zsh"
 summary = "Interactive Zsh shell experience"
-docs = "docs/modules/shell/zsh.md"
+docs = "docs/modules/shell/zsh/zsh.md"
 platforms = ["macos", "debian"]
 depends = []
 conflicts = []
 exclusive_group = "shell.primary"
 ~~~
 
-Provider requests, chezmoi home-state selection, and module options arrive with
-the Phase 3 schema extension. See the [catalog contract](../catalog.md).
+Schema 1 is the pre-release production contract. It includes static platform
+command, application, or artifact prerequisite identifiers and chezmoi source
+selections. Each production module declares its one ADR-0010-owned source. No
+earlier integration iteration is a compatibility contract. See the [catalog
+contract](../catalog.md).
+
+When one module identifier is the namespace prefix of another, manifests use a
+matching directory hierarchy. `shell.zsh` is stored at
+`.chezmoidata/modules/shell/zsh/zsh.toml`, while its
+`shell.zsh.autosuggestions` descendant is stored beside it as
+`autosuggestions.toml`. Their pages use the corresponding
+`docs/modules/shell/zsh/zsh.md` and `docs/modules/shell/zsh/autosuggestions.md`
+paths. This changes no public identifier. A module without a module namespace
+prefix, such as `prompt.starship`, remains directly below its category
+directory.
+
+This namespace is an explicit schema-1 mapping, not an inference from the set
+of modules currently present. Future namespace roots require an explicit
+contract change before use.
 
 ## Module boundaries
 
-A module represents user-visible capability, not every file or package needed
-to provide it. Provider requests remain implementation details shown in plans.
+A module represents one user-visible configuration capability, not software
+installation. A selected module may verify that its tool already exists, but it
+never installs, updates, or removes that tool.
+
+Dependencies express configuration requirements only. `prompt.starship` does
+not depend on `shell.zsh`; future `terminal.ghostty` and `editor.vscode` modules
+must not select a shell, prompt, multiplexer, terminal, or editor implicitly.
+Platform-specific prerequisites and templates stay inside the selected module.
 
 Use a profile when the only purpose is to group selectable modules. Do not
 create a grouping module with no capability of its own.
@@ -85,7 +128,10 @@ create a grouping module with no capability of its own.
 A module must not:
 
 - Select itself from a hostname, username, or hidden machine rule.
-- Own resources assigned to another provider.
+- Install or update packages, runtimes, providers, or applications.
+- Encode commands, arguments, URLs, hooks, scripts, or credentials as
+  prerequisites.
+- Own a rendered target assigned to another module.
 - Include secrets, tokens, private keys, or machine identity.
 - Run imported or catalog-supplied executable text.
 - Remove unmanaged resources.
@@ -94,14 +140,5 @@ A module must not:
 ## Documentation requirement
 
 Every module is introduced or changed with a matching page below this
-directory. The page must include:
-
-- Purpose and user-visible result.
-- Dependencies, conflicts, and exclusive group.
-- Supported and unsupported platforms.
-- Provider requests and files managed.
-- Options, defaults, and privacy notes.
-- Plan, apply, verification, rollback, and known limitations.
-- Test coverage and examples.
-
-Start from [the module documentation template](template.md).
+directory, covering each applicable section of
+[the module documentation template](template.md).

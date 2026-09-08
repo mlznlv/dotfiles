@@ -1,14 +1,21 @@
 # Command guide
 
-Use the CLI to inspect and validate the catalog or preview a module composition.
-Every command available today is read-only: nothing is installed, saved, or
-applied.
+Use the CLI to inspect and validate the catalog, preview a module composition,
+save or inspect local selection intent, diagnose its narrow health, or
+explicitly apply selected home configuration. Only `apply` mutates managed
+home targets; `config set` and `config interactive` change only the CLI-owned
+local selection file. No command installs software.
 
 Run commands from the repository root with `./bin/dotfiles`.
 
 > [!NOTE]
-> The production catalog is empty until Phase 3. List commands therefore return
-> no rows, and example module or profile identifiers are not available yet.
+> The production catalog contains three shell modules and the `shell.minimal`
+> profile. Command and artifact prerequisite checks are available; application
+> checks remain deferred. Configuration planning and selected apply are
+> available. Flag-based and terminal-only interactive local selection are
+> available, and the four Phase 3 consumers use saved intent only when an
+> explicit base is omitted. Effective-selection inspection and narrow
+> local-selection diagnosis are available.
 
 ## Quick start
 
@@ -17,11 +24,11 @@ $ ./bin/dotfiles help
 $ ./bin/dotfiles version
 dotfiles 0.1.0-dev
 $ ./bin/dotfiles catalog validate
-catalog valid: 0 modules, 0 profiles
+catalog valid: 3 modules, 1 profile
 ~~~
 
-Catalog commands require [chezmoi](https://www.chezmoi.io/). Help and version do
-not.
+Catalog-backed commands, including planning, require
+[chezmoi](https://www.chezmoi.io/). Help and version do not.
 
 ## Find the right command
 
@@ -35,34 +42,97 @@ not.
 | Discover profiles | `dotfiles profile list` | [profile list](profile/list.md) |
 | Inspect one profile | `dotfiles profile show <profile-id>` | [profile show](profile/show.md) |
 | Preview a composition | `dotfiles resolve ...` | [resolve](resolve.md) |
-
-## Planned Phase 3 commands
-
-The following contracts are documented for implementation but are not
-available in the current CLI:
-
-| I will be able to... | Planned command | Contract |
-| --- | --- | --- |
-| Build a read-only provider and home-state plan | `dotfiles plan ...` | [plan](plan.md) |
-| Recompute, confirm, and safely apply a plan | `dotfiles apply ...` | [apply](apply.md) |
-
-Neither command may be presented as released until its implementation and tests
-merge. Phase 3 will not support saved plans, replay, rollback, or removal.
+| Save local selection intent | `dotfiles config set ...` | [config set](config/set.md) |
+| Choose and save local selection interactively | `dotfiles config interactive ...` | [config interactive](config/interactive.md) |
+| Show effective selection and resolved order | `dotfiles config inspect ...` | [config inspect](config/inspect.md) |
+| Diagnose standard local selection health | `dotfiles config doctor ...` | [config doctor](config/doctor.md) |
+| Check selected prerequisites | `dotfiles prerequisite check ...` | [prerequisite check](prerequisite/check.md) |
+| Build a read-only configuration plan | `dotfiles plan ...` | [plan](plan.md) |
+| Recompute, confirm, and apply selected configuration | `dotfiles apply ...` | [apply](apply.md) |
 
 ## Typical workflow
 
 1. List available modules or profiles.
 2. Inspect an identifier with `show`.
-3. Preview the final dependency-expanded composition with `resolve`.
+3. Preview the final dependency-expanded composition with an explicit base.
+4. Save that intent with `config set`, or choose it in a terminal with
+   `config interactive`.
+5. Inspect the effective intent, and use doctor when local selection health
+   needs an independent check.
+6. Run prerequisite checking, planning, and apply without repeating the base;
+   each command strictly reloads and freshly validates saved intent.
+7. Review apply's freshly recomputed plan and confirm it independently.
 
 ~~~console
 ./bin/dotfiles profile list
 ./bin/dotfiles profile show shell.minimal
 ./bin/dotfiles resolve --profile shell.minimal
+./bin/dotfiles config set --profile shell.minimal
+# Or: ./bin/dotfiles config interactive
+./bin/dotfiles config inspect
+./bin/dotfiles config doctor
+./bin/dotfiles prerequisite check
+./bin/dotfiles plan
+./bin/dotfiles apply
 ~~~
 
-The example identifier above is planned and remains unavailable while the
-production catalog is empty.
+The example identifier above is released on macOS and Debian-family Linux.
+
+## Save local selection
+
+`config set` validates and saves one profile or ordered module composition as
+the CLI-owned schema-1 active selection:
+
+~~~console
+./bin/dotfiles config set --profile shell.minimal --platform debian
+~~~
+
+For a guided terminal workflow, `config interactive` lists compatible released
+identifiers, reads exact literal choices, prints the same proposal, and asks for
+exact `yes` only when state differs:
+
+~~~console
+./bin/dotfiles config interactive --platform debian
+~~~
+
+Both commands change only the standard local selection file and necessary
+owned configuration directories. They never check prerequisites, render,
+plan, apply, or install software. See [config set](config/set.md) for the flag
+form and [config interactive](config/interactive.md) for exact prompts,
+cancellation, and terminal requirements.
+
+`resolve`, `prerequisite check`, `plan`, and `apply` load saved intent only when
+an explicit `--profile` or `--modules` base is omitted. An explicit base and
+its invocation `--add` bypass local state completely. With no explicit base,
+an invocation `--add` is appended after saved additions in memory and is never
+persisted. Saved selection is convenience input, not apply approval; apply
+still prints, confirms, reloads the state, and recomputes every Phase 3 fact.
+
+## Inspect and diagnose local selection
+
+`config inspect` shows the invocation-effective base, additions, source, and
+fresh deterministic module order:
+
+~~~console
+./bin/dotfiles config inspect --platform debian
+~~~
+
+An explicit base is labeled `invocation` and bypasses state. An omitted base
+loads saved state and is labeled `local`; invocation additions are transient
+and use `local plus invocation additions`. Inspect checks no prerequisites,
+artifacts, render, plan, cache, or managed HOME state. See
+[config inspect](config/inspect.md) for exact output and precedence.
+
+`config doctor` validates only the standard root, dedicated directory and
+file, canonical schema-1 intent, stable read, and fresh composition:
+
+~~~console
+./bin/dotfiles config doctor --platform debian
+~~~
+
+It never repairs or rewrites the selection and does not diagnose software,
+Chezmoi, plans, managed targets, cache, or the adjacent writer lock. See
+[config doctor](config/doctor.md) for exact healthy output and recovery.
 
 ## Choose a platform
 
@@ -88,18 +158,21 @@ Use `--all` with a list command to disable platform filtering. Do not combine
 | --- | --- |
 | `0` | Success, including an empty list |
 | `2` | Invalid command syntax |
-| `3` | Unsupported platform, invalid catalog, or failed resolution |
-| `4` | Chezmoi or an internal CLI file is unavailable |
+| `3` | Missing or unsafe local selection, invalid catalog/composition/platform/destination/prerequisite data/ownership, or an unsafe comparison result |
+| `4` | A required component or safe local-state read/update is unavailable, a post-rename result is uncertain, or application checking is required |
+| `5` | A selected prerequisite is missing or a Chezmoi comparison failed |
+| `6` | A selected target failed during Chezmoi apply or post-write verification |
+| `129`, `130`, `143` | Handled HUP, INT, or TERM interruption |
 
 Errors are written to standard error. Invalid syntax also suggests
 `dotfiles help`.
 
 ## Common problems
 
-### A list command prints nothing
+### A list command omits an identifier
 
-This is expected while the production catalog is empty. The command still exits
-successfully.
+Use `--all` to determine whether an identifier exists but does not support the
+selected platform.
 
 ### `chezmoi is required for catalog commands`
 
@@ -109,13 +182,53 @@ remain available.
 ### A module or profile is unknown
 
 Use `module list --all` or `profile list --all` to find released identifiers.
-Identifiers shown as planned examples are not released yet.
+The shell identifiers documented in this guide are released.
+
+### Local selection is unsafe or invalid
+
+Preserve or move the abbreviated active-selection file aside, or repair its
+path and permissions, before rerunning a consuming command. A missing file can
+be created with `config set` or `config interactive`; an explicit `--profile`
+or `--modules` invocation bypasses local state where accepted. Run
+`config doctor` for a narrow independent diagnosis. No read-only consumer
+repairs, normalizes, locks, or deletes the file. See
+[config set](config/set.md) for writer lock and uncertain-write recovery.
+
+### Interactive selection refuses input
+
+Run `config interactive` with its standard input attached to a real terminal.
+Pipes, redirected or closed stdin, environment answers, and `/dev/tty`
+fallback are intentionally unsupported. Redirecting stdout is allowed.
+
+### Planning reports a missing prerequisite
+
+Provide the named command or artifact outside this project, then rerun the
+same plan. The CLI will not select or invoke an installer for you.
+
+### Planning rejects HOME or a selected target
+
+Use a literal absolute HOME directory. Replace unsafe selected-path symlinks,
+directories, or special files outside this CLI, then rerun the plan. The
+planner does not repair or follow them.
+
+### Apply stops after a partial result
+
+The report identifies every changed target as completed, failed, or
+unattempted. Completed targets are not rolled back. Correct the failure and
+rerun `plan` or `apply`; the new invocation recomputes current state and omits
+targets that already converged.
 
 ## Safety
 
-The current CLI reads versioned catalog data and basic operating-system facts.
-It does not use the network, request elevated privileges, call providers, read
-secrets, or change the machine.
+The CLI reads catalog data, basic operating-system facts, PATH and artifact
+metadata, selected destination targets, and the standard local selection path
+only for a config command or a consumer with no explicit base. Inspect and
+doctor are strict, non-mutating, and never print state contents or raw private
+roots. Doctor diagnoses no broader system or home health. The CLI does not open
+or invoke prerequisites, use the network, request elevated privileges, call
+software providers, or display destination or state contents. Apply delegates
+only confirmed, freshly verified selected files to Chezmoi and performs no
+rollback or removal.
 
 For an end-to-end introduction, read the [user guide](../user-guide/README.md).
 Future commands are tracked in the [roadmap](../roadmap.md). Contributors adding

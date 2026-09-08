@@ -1,7 +1,7 @@
 # Profiles
 
 Profiles are transparent, named compositions of module identifiers. This page
-defines their contract. The production catalog remains empty until Phase 3.
+defines their contract. The production catalog releases `shell.minimal`.
 Catalog entries below tests/fixtures are test data, not curated profiles.
 
 ## Composition types
@@ -14,7 +14,11 @@ Catalog entries below tests/fixtures are test data, not curated profiles.
 Profiles use composition, not inheritance. They contain no executable code and
 do not silently select another profile based on a machine name.
 
-## Planned layout
+Profiles contain only explicit module identifiers. They never contain software
+installation behavior, prerequisite declarations, provider choices, or hidden
+platform defaults. Selecting a platform does not select a profile or tool.
+
+## Layout
 
 Profiles are grouped by intent.
 
@@ -27,7 +31,7 @@ Profiles are grouped by intent.
 └── homelab/
 ~~~
 
-The first planned profile is shell.minimal, containing shell.zsh,
+The first released profile is shell.minimal, containing shell.zsh,
 shell.zsh.autosuggestions, and prompt.starship.
 
 Later curated profiles can represent:
@@ -52,6 +56,11 @@ but requested identifiers remain the portable source of intent.
 Unknown, unavailable, or incompatible modules must produce an actionable error.
 Importing or selecting a profile never applies system changes.
 
+The resolved set contains exactly the requested identifiers plus dependencies
+declared by those modules. For example, a profile may visibly request Zsh,
+autosuggestions, and Starship; Starship remains independent of Zsh, and a
+future Ghostty or VS Code module appears only when listed explicitly.
+
 ## Save and share
 
 The planned CLI will support local and repository scopes:
@@ -62,20 +71,10 @@ The planned CLI will support local and repository scopes:
 - Import validates data and stores it without executing or applying it.
 
 Exports must exclude usernames, hostnames, private addresses, local absolute
-paths, secrets, tokens, and provider credentials.
+paths, secrets, tokens, prerequisite overrides, and provider credentials.
 
 ## Documentation requirement
 
 Every curated profile is introduced or changed with a matching page below this
-directory. The page must include:
-
-- Intent and intended audience.
-- Requested modules and why each is included.
-- Resolved dependencies.
-- Supported platforms and expected target types.
-- Optional additions and known conflicts.
-- Security, privacy, resource, and connectivity effects.
-- Example selection, plan, verification, and limitations.
-- Test coverage.
-
-Start from [the profile documentation template](template.md).
+directory, covering each applicable section of
+[the profile documentation template](template.md).
