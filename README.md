@@ -101,7 +101,7 @@ complete: explicit composition, prerequisites, isolated rendering,
 deterministic planning, safe idempotent selected apply, and flag-based and
 terminal-only interactive local selection, saved-selection consumption,
 inspection, and diagnosis are established. Phase 4 is complete. Application
-checks, portable saved/shared profiles, broader modules, and stable promotion
+checks, portable saved/shared profiles, broader modules, and a stable release
 remain later [roadmap](docs/roadmap.md) increments.
 
 Development integrates directly into `master`, the active, stable, and only

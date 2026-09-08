@@ -102,6 +102,27 @@ assert_contains 'CLAUDE.md names master the only integration branch' \
 assert_contains 'the contribution agent audits against master' \
     .claude/agents/contribution-check.md 'targeted at `master`'
 
+# --- the branch model is recorded as a decision ----------------------------
+
+adr_path='docs/adr/0012-consolidate-development-on-master.md'
+if [ -f "${PROJECT_ROOT}/${adr_path}" ]; then
+    pass 'the branch-model change is recorded in an ADR'
+else
+    fail 'the branch-model change is recorded in an ADR' "missing ${adr_path}"
+fi
+assert_contains 'the ADR is listed in the ADR index' \
+    docs/adr/README.md '0012-consolidate-development-on-master.md'
+assert_contains 'the ADR is listed in the architecture accepted decisions' \
+    docs/architecture.md '0012-consolidate-development-on-master.md'
+assert_contains 'the ADR is accepted' "$adr_path" '- Status: Accepted'
+
+# --- the roadmap no longer describes promotion -----------------------------
+
+assert_absent 'phase 9 does not describe promotion to master' \
+    docs/roadmap.md 'promotion to'
+assert_absent 'no promotion pull-request route remains in contributing' \
+    CONTRIBUTING.md 'promotion pull request'
+
 # --- historical records stay historical ------------------------------------
 
 if grep -Fq '`next` is the integration branch' \
@@ -144,6 +165,33 @@ expect_guard_status 'guard passes on the current policy' 0 "$baseline"
 reinstated=$(stage_policy_fixture reinstated-next)
 printf '\n- `next` is the active integration branch\n' >> "${reinstated}/CONTRIBUTING.md"
 expect_guard_status 'guard fails when next is reinstated as active policy' 1 "$reinstated"
+
+# The guard must reject a reworded reintroduction, not only the sentence that
+# was removed. Each of these uses wording that never appeared in the file.
+reworded=$(stage_policy_fixture reworded-next)
+printf '\nStart every branch from the `next` line and open pull requests there.\n' \
+    >> "${reworded}/CONTRIBUTING.md"
+expect_guard_status 'guard fails on a reworded next branch reference' 1 "$reworded"
+
+unquoted=$(stage_policy_fixture unquoted-next)
+printf '\nUse the next branch for day-to-day integration work.\n' \
+    >> "${unquoted}/CONTRIBUTING.md"
+expect_guard_status 'guard fails on an unquoted next branch reference' 1 "$unquoted"
+
+reworded_template=$(stage_policy_fixture reworded-template)
+printf '\n- [ ] Release: this is a promotion pull request awaiting approval.\n' \
+    >> "${reworded_template}/.github/PULL_REQUEST_TEMPLATE.md"
+expect_guard_status 'guard fails on a reworded promotion route' 1 "$reworded_template"
+
+foreign_branch=$(stage_policy_fixture foreign-trigger)
+sed -i.bak 's/^      - master$/      - master\n      - develop/' \
+    "${foreign_branch}/.github/workflows/documentation.yml"
+rm -f "${foreign_branch}/.github/workflows/documentation.yml.bak"
+expect_guard_status 'guard fails on any workflow trigger other than master' 1 "$foreign_branch"
+
+extra_target=$(stage_policy_fixture extra-dependabot-target)
+printf '    target-branch: develop\n' >> "${extra_target}/.github/dependabot.yml"
+expect_guard_status 'guard fails on an additional non-master dependabot target' 1 "$extra_target"
 
 retargeted=$(stage_policy_fixture dependabot-next)
 sed -i.bak 's/target-branch: master/target-branch: next/' "${retargeted}/.github/dependabot.yml"

@@ -346,12 +346,14 @@ through explicit profiles.
 
 **Status:** Planned.
 
-**Objective:** prepare the integrated implementation for explicit promotion to
-`master` and a stable public release.
+**Objective:** prepare the implementation on `master` for a stable public
+release.
 
-Development integrates directly into `master`, which is the active, stable,
-and only integration branch. The `legacy` branch remains only as a read-only
-recovery snapshot.
+Development integrates directly into `master`, which is the active, stable, and
+only integration branch, as recorded in
+[ADR 0012](adr/0012-consolidate-development-on-master.md). A release identifies a
+commit on `master` rather than a promotion merge. The `legacy` branch remains
+only as a read-only recovery snapshot.
 
 **Deliverables:**
 
