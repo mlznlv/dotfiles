@@ -4,6 +4,7 @@
 - Date: 2026-08-15
 - Supersedes: None
 - Superseded by: None
+- Amended by: [ADR 0013](0013-allow-standalone-optional-tool-modules.md)
 
 ## Context
 

@@ -15,7 +15,9 @@ the accepted and fully implemented Phase 4 local-selection architecture.
 configuration-only direction. [ADR 0009](adr/0009-define-pre-release-schema-versioning.md)
 defines one strict pre-release schema for the root, modules, and profiles.
 Provider requests and unreleased schema compatibility are not part of the
-active contract.
+active contract. [ADR 0013](adr/0013-allow-standalone-optional-tool-modules.md)
+permits planned standalone schema-1 configuration modules to ship before
+profile portability or workstation profiles without changing that boundary.
 
 ## Product boundary
 
@@ -233,6 +235,9 @@ planning, or apply, even when their source paths or intended content differ.
 [ADR 0010](adr/0010-define-selection-aware-shell-rendering.md) defines the
 accepted rendering contract. The repository implements it as an internal,
 read-only adapter; there is no public render command and no home mutation.
+[ADR 0013](adr/0013-allow-standalone-optional-tool-modules.md) extends the
+contract for planned independent tool modules while preserving ADR 0010's
+original three-module shell slice.
 
 A render invocation translates its explicit composition into a
 closed, temporary chezmoi override-data file containing only the platform,
@@ -248,6 +253,21 @@ The accepted ownership boundary is exact:
 | `shell.zsh` | `.zshrc` | All Zsh startup and optional integration activation |
 | `shell.zsh.autosuggestions` | `.config/zsh/autosuggestions.zsh` | Autosuggestions tool configuration only |
 | `prompt.starship` | `.config/starship.toml` | Shell-independent Starship configuration only |
+
+Two additional ownership mappings are accepted but remain unimplemented:
+
+| Planned module | Rendered target | Activation responsibility |
+| --- | --- | --- |
+| `cli.atuin` | `.config/atuin/config.toml` | Static Atuin client configuration only |
+| `runtime.mise` | `.config/mise/config.toml` | Static mise configuration only |
+
+Both planned modules are independently selectable, have no Zsh dependency,
+and own none of their tool's runtime state. When Zsh and a tool module are both
+selected, only the Zsh-owned template may emit that tool's fixed activation.
+The complete order is core Zsh, autosuggestions, Atuin, mise, then Starship;
+each selected activation occurs once. Tool-only selection never renders or
+changes `.zshrc`, and a narrower Zsh apply removes omitted activation without
+deleting tool configuration or runtime-owned state.
 
 The Zsh-owned template compares only known validated module identifiers and
 never globs integration files. Autosuggestions uses only the current, fully
@@ -365,3 +385,4 @@ in [repository structure](repository-structure.md), and delivery order in the
 - [ADR 0010: Define selection-aware shell rendering](adr/0010-define-selection-aware-shell-rendering.md)
 - [ADR 0011: Define the local configuration workflow](adr/0011-define-local-configuration-workflow.md)
 - [ADR 0012: Consolidate development on master](adr/0012-consolidate-development-on-master.md)
+- [ADR 0013: Allow standalone optional tool modules](adr/0013-allow-standalone-optional-tool-modules.md)
