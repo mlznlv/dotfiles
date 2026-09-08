@@ -234,7 +234,7 @@ remained planned and unstarted and did not begin before the gate merged into
 
 ## Cross-phase maintenance gate: Catalog and source-size decomposition
 
-**Status:** Complete. Required before Phase 5 implementation.
+**Status:** Complete; required before Phase 5 implementation.
 
 The POSIX AWK catalog engine and saturated maintainability checker/test are
 decomposed into fixed, one-owner leaves behind their stable entrypoints. A
@@ -268,7 +268,7 @@ this gate has merged.
 - Import never applies changes.
 - Missing or incompatible modules produce actionable errors.
 
-**Depends on:** phase 4 and both merged cross-phase maintenance gates.
+**Depends on:** phase 4 and all three merged cross-phase maintenance gates.
 
 ## Phase 6: Personal and developer workstations
 
