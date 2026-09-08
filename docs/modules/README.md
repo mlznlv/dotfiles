@@ -69,6 +69,22 @@ Their selected sources are available to the internal isolated renderer and the
 public read-only planner. Public apply can converge only freshly recomputed,
 confirmed selected targets; no public render command exists.
 
+## Planned standalone modules
+
+[ADR 0013](../adr/0013-allow-standalone-optional-tool-modules.md) accepts two
+planned, independently selectable schema-1 modules:
+
+| Module | Planned manifest | Planned documentation | Managed target |
+| --- | --- | --- | --- |
+| `cli.atuin` | `.chezmoidata/modules/cli/atuin.toml` | `docs/modules/cli/atuin.md` | `.config/atuin/config.toml` |
+| `runtime.mise` | `.chezmoidata/modules/runtime/mise.toml` | `docs/modules/runtime/mise.md` | `.config/mise/config.toml` |
+
+These direct category paths are explicit schema-1 mappings. Neither module is
+released yet, depends on Zsh, or belongs to a profile. Each will require its
+own owner-reviewed implementation pull request with a matching module page,
+manifest, managed file, fixed Zsh-owned conditional activation, and macOS and
+Debian tests. `shell.minimal` remains unchanged.
+
 ## Manifest contract
 
 Schema 1 declares resolution metadata:
@@ -108,8 +124,9 @@ prefix, such as `prompt.starship`, remains directly below its category
 directory.
 
 This namespace is an explicit schema-1 mapping, not an inference from the set
-of modules currently present. Future namespace roots require an explicit
-contract change before use.
+of modules currently present. ADR 0013 explicitly accepts the direct paths for
+`cli.atuin` and `runtime.mise`; other future namespace roots require an
+explicit contract change before use.
 
 ## Module boundaries
 

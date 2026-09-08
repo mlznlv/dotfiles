@@ -27,6 +27,7 @@ supersedes an earlier one instead of rewriting history.
 | [0010](0010-define-selection-aware-shell-rendering.md) | Accepted | Define selection-aware shell rendering |
 | [0011](0011-define-local-configuration-workflow.md) | Accepted | Define the local configuration workflow |
 | [0012](0012-consolidate-development-on-master.md) | Accepted | Consolidate development on master |
+| [0013](0013-allow-standalone-optional-tool-modules.md) | Accepted | Allow standalone optional tool modules |
 
 ADR 0007 partially supersedes ADRs 0004 and 0006. Their unaffected safety
 decisions and immutable historical text remain accepted.
@@ -40,6 +41,8 @@ Its substantive configuration-only decisions remain accepted.
 
 ADR 0010 defines an ephemeral render context, exact shell-target ownership,
 and selection-aware activation for the later managed-shell implementation.
+ADR 0013 amends that contract for later standalone optional tool modules while
+preserving ADR 0010's original three-module shell slice.
 
 ADR 0011 defines a CLI-owned active-selection file and the Phase 4 command,
 precedence, safety, inspection, and cache boundaries. Its acceptance introduces

@@ -193,10 +193,12 @@ applications, remote access, or broad configuration sets.
 
 **Depends on:** phase 3.
 
-Portable saved/shared profiles are the next planned Phase 5 work. Broader
-workstation modules and profiles remain Phase 6 work. Generated-cache reset
-remains deferred indefinitely unless a named persistent consumer and bounded
-allowlist are accepted and implemented.
+Portable saved/shared profiles remain planned Phase 5 work. The standalone
+module architecture gate below permits narrow configuration modules to ship
+independently without beginning profile work. Broader workstation profiles and
+curated compositions remain Phase 6 work. Generated-cache reset remains
+deferred indefinitely unless a named persistent consumer and bounded allowlist
+are accepted and implemented.
 
 ## Cross-phase maintenance gate: Production shell decomposition
 
@@ -247,6 +249,24 @@ This final maintenance gate changes no product behavior, command, output,
 status, schema, catalog data, state, managed target, ownership boundary, or
 accepted ADR. Phase 5 remains planned and unstarted and must not begin until
 this gate has merged.
+
+## Cross-phase architecture gate: Standalone optional tool modules
+
+**Status:** Complete; standalone implementations may proceed independently.
+
+[ADR 0013](adr/0013-allow-standalone-optional-tool-modules.md) permits a
+standalone schema-1 configuration module to ship before Phase 5 when it uses
+the existing catalog, prerequisite, resolver, renderer, planner, and apply
+contracts without introducing a profile or state format. Atuin and mise are
+the first accepted instances, and each remains planned until its separate,
+owner-reviewed implementation pull request merges.
+
+This lane does not start or complete Phase 5 saved and shared profile
+portability or Phase 6 workstation profiles and broader curated compositions.
+It does not allow a profile to bypass its phase dependencies, and it does not
+add either planned module to `shell.minimal` or another profile implicitly.
+Each module implementation remains one focused pull request targeting
+`master`.
 
 ## Phase 5: Saved and shared profiles
 
